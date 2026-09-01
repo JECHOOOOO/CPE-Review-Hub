@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] · CPE Review Hub</title>
+    <link rel="stylesheet" href="~/css/hub.css" asp-append-version="true" />
+</head>
+<body class="@ViewData["BodyClass"]">
+    <a class="skip-link" href="#main">Skip to content</a>
+    <header class="site-header liquid-glass">
+        <a class="brand" asp-area="" asp-controller="Home" asp-action="Index"><span class="brand-mark">CPE</span><span>Review Hub<small>COMPUTER ENGINEERING</small></span></a>
+        <nav aria-label="Student navigation"><a href="/student.html">Student login</a><a asp-area="Student" asp-controller="Account" asp-action="Register">Create account</a></nav>
+    </header>
+    <main id="main" class="public-main">
+        @if (TempData["Success"] is string success) { <div class="notice success" role="status">@success</div> }
+        @RenderBody()
+    </main>
+    <footer class="site-footer"><span>© @DateTime.UtcNow.Year CPE Review Hub</span><a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a></footer>
+    <script src="~/js/ambient-video.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>

@@ -1,0 +1,27 @@
+@model StudentLessonDetailsViewModel
+@{ ViewData["Title"] = Model.Title; }
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-area="Student" asp-controller="Subjects" asp-action="Index">Subjects</a><span>/</span><a asp-area="Student" asp-controller="Subjects" asp-action="Details" asp-route-id="@Model.SubjectId">@Model.SubjectCode</a><span>/</span><span>@Model.Title</span></nav>
+<span class="eyebrow">@Model.SubjectCode · LESSON</span><h1>@Model.Title</h1><p class="lead">@Model.Summary</p>
+@if (Model.Materials.Count == 0) { <section class="panel empty-state"><h2>No published materials yet</h2><p>The lesson outline is available, but its review material is still being prepared.</p></section> }
+else { <div class="material-stack">@foreach (var material in Model.Materials) { <article class="panel material-card"><h2>@material.Title</h2><div class="material-content">@material.Content</div>@if (!string.IsNullOrWhiteSpace(material.ResourceUrl)) { <p><a class="button secondary" href="@material.ResourceUrl" target="_blank" rel="noopener noreferrer">Open supporting resource ↗</a></p> }</article> }</div> }
+@if (Model.Activity is not null) {
+    <section class="panel activity-card"><span class="eyebrow">REQUIRED BEFORE QUIZ</span><h2>@Model.Activity.Title</h2>
+        <div class="material-content">@Model.Activity.Instructions</div><div class="expected-output"><strong>Expected output</strong><p>@Model.Activity.ExpectedOutput</p></div>
+        <form asp-area="Student" asp-controller="Activities" asp-action="Submit" asp-route-id="@Model.Activity.Id" method="post" class="activity-form">
+            <label for="Response">Your activity response</label>
+            <textarea id="Response" name="Response" rows="10" minlength="50" maxlength="10000" required>@Model.Activity.Response</textarea>
+            <div class="form-actions"><button class="button" type="submit">@(Model.Activity.IsCompleted ? "Update activity" : "Submit activity and unlock quiz")</button>
+                @if (Model.Activity.IsCompleted) { <span class="status-complete">Completed @Model.Activity.CompletedAtUtc?.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</span> }
+            </div>
+        </form>
+    </section>
+}
+@if (Model.Quiz is not null) {
+    <section class="panel assessment-status" id="quiz"><div><span class="eyebrow">LESSON CHECK</span><h2>10-item lesson quiz</h2>
+        <p>@(Model.Quiz.IsUnlocked ? "Your activity is complete. You may take the quiz." : "Submit the required activity above before attempting this quiz.")</p>
+        @if (Model.Quiz.BestPercentage is not null) { <p><strong>Best score: @Model.Quiz.BestPercentage.Value.ToString("0.##")%</strong> from @Model.Quiz.AttemptCount attempt(s)</p> }
+    </div><div><strong>@Model.Quiz.CurrentQuestions / @Model.Quiz.RequiredQuestions</strong><span>@(Model.Quiz.IsReady ? "Questions ready" : "Questions being prepared")</span>
+        @if (Model.Quiz.IsReady && Model.Quiz.IsUnlocked) { <form asp-area="Student" asp-controller="Assessments" asp-action="Start" asp-route-id="@Model.Quiz.Id" method="post"><button class="button" type="submit">@(Model.Quiz.AttemptCount > 0 ? "Retake quiz" : "Start quiz") →</button></form> }
+        else if (!Model.Quiz.IsUnlocked) { <span class="badge">Locked</span> }
+    </div></section>
+}

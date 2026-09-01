@@ -1,0 +1,12 @@
+@model LessonFormViewModel
+@{ ViewData["Title"] = Model.Id == 0 ? "Add lesson" : "Edit lesson"; }
+<span class="eyebrow">CONTENT MANAGEMENT</span><h1>@ViewData["Title"]</h1><p class="lead">A lesson appears to students only when both its subject and lesson are published.</p>
+<section class="panel form-panel"><form asp-action="Save" method="post">
+    <div asp-validation-summary="All" class="validation" role="alert"></div><input asp-for="Id" type="hidden" />
+    <label asp-for="SubjectId">Subject</label><select asp-for="SubjectId" required><option value="">Select subject</option>@foreach (var option in Model.Subjects) { <option value="@option.Id">@option.Label</option> }</select>
+    <label asp-for="Title"></label><input asp-for="Title" required />
+    <label asp-for="Summary"></label><textarea asp-for="Summary" rows="5"></textarea>
+    <label asp-for="SortOrder"></label><input asp-for="SortOrder" type="number" min="0" />
+    <label class="check-row"><input asp-for="IsPublished" /> <span>Publish this lesson to students</span></label>
+    <div class="form-actions"><button class="button" type="submit">Save lesson</button><a class="button secondary" asp-action="Index">Cancel</a></div>
+</form></section>

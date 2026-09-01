@@ -1,0 +1,5 @@
+@model Subject
+@{ ViewData["Title"] = "Delete subject"; }
+<span class="eyebrow">CONFIRM DELETE</span><h1>Delete @Model.Code?</h1>
+<section class="panel danger-panel"><p>This permanently deletes <strong>@Model.Title</strong>, its @Model.Lessons.Count lesson(s), and all review materials inside those lessons.</p><p>This action cannot be undone.</p>
+<form asp-action="DeleteConfirmed" asp-route-id="@Model.Id" method="post" class="form-actions"><button class="button danger" type="submit">Delete subject</button><a class="button secondary" asp-action="Index">Cancel</a></form></section>

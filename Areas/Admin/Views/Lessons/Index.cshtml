@@ -1,0 +1,9 @@
+@model IReadOnlyList<LessonAdminRow>
+@{ ViewData["Title"] = "Manage lessons"; }
+<div class="page-heading"><div><span class="eyebrow">CONTENT MANAGEMENT</span><h1>Lessons</h1><p class="lead">Create ordered lessons inside each subject.</p></div><a class="button" asp-action="Create" asp-route-subjectId="@ViewData["SubjectId"]">Add lesson</a></div>
+<section class="panel">
+    @if (Model.Count == 0) { <div class="empty-state"><h2>No lessons found</h2><p>Add a subject first, then create its lessons.</p></div> }
+    else { <div class="table-scroll"><table><thead><tr><th>Subject</th><th>Order</th><th>Lesson</th><th>Materials</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+    @foreach (var item in Model) { <tr><td><strong>@item.SubjectCode</strong></td><td>@item.SortOrder</td><td>@item.Title</td><td>@item.MaterialCount</td><td><span class="badge">@(item.IsPublished ? "Published" : "Draft")</span></td><td class="table-actions"><a asp-action="Edit" asp-route-id="@item.Id">Edit</a><a asp-area="Admin" asp-controller="Materials" asp-action="Create" asp-route-lessonId="@item.Id">Add material</a><a class="danger-link" asp-action="Delete" asp-route-id="@item.Id">Delete</a></td></tr> }
+    </tbody></table></div> }
+</section>

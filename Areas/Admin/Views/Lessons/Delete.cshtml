@@ -1,0 +1,5 @@
+@model Lesson
+@{ ViewData["Title"] = "Delete lesson"; }
+<span class="eyebrow">CONFIRM DELETE</span><h1>Delete this lesson?</h1>
+<section class="panel danger-panel"><p><strong>@Model.Subject.Code · @Model.Title</strong> and its @Model.ReviewMaterials.Count review material(s) will be permanently deleted.</p>
+<form asp-action="DeleteConfirmed" asp-route-id="@Model.Id" method="post" class="form-actions"><button class="button danger" type="submit">Delete lesson</button><a class="button secondary" asp-action="Index" asp-route-subjectId="@Model.SubjectId">Cancel</a></form></section>

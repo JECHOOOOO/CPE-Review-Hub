@@ -480,3 +480,13 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+
+# Local credentials and database dumps must not be committed.
+.env.*
+!.env.example
+appsettings.Local.json
+appsettings.Secrets.json
+*.sql.dump
+*.sql.gz
+secrets.json
+.vscode/

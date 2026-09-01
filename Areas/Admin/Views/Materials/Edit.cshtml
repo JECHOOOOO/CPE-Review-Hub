@@ -1,0 +1,13 @@
+@model MaterialFormViewModel
+@{ ViewData["Title"] = Model.Id == 0 ? "Add review material" : "Edit review material"; }
+<span class="eyebrow">CONTENT MANAGEMENT</span><h1>@ViewData["Title"]</h1><p class="lead">Content is displayed as plain text to prevent unsafe embedded scripts.</p>
+<section class="panel form-panel"><form asp-action="Save" method="post">
+    <div asp-validation-summary="All" class="validation" role="alert"></div><input asp-for="Id" type="hidden" />
+    <label asp-for="LessonId">Lesson</label><select asp-for="LessonId" required><option value="">Select lesson</option>@foreach (var option in Model.Lessons) { <option value="@option.Id">@option.Label</option> }</select>
+    <label asp-for="Title"></label><input asp-for="Title" required />
+    <label asp-for="Content"></label><textarea asp-for="Content" rows="16" required></textarea>
+    <label asp-for="ResourceUrl"></label><input asp-for="ResourceUrl" type="url" placeholder="https://..." />
+    <label asp-for="SortOrder"></label><input asp-for="SortOrder" type="number" min="0" />
+    <label class="check-row"><input asp-for="IsPublished" /> <span>Publish this material to students</span></label>
+    <div class="form-actions"><button class="button" type="submit">Save material</button><a class="button secondary" asp-action="Index">Cancel</a></div>
+</form></section>

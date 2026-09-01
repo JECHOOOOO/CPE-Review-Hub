@@ -1,0 +1,20 @@
+@model StudentDashboardViewModel
+@{ ViewData["Title"] = "Student dashboard"; }
+<span class="eyebrow">STUDENT DASHBOARD</span><h1>Welcome, @Model.FullName.</h1><p class="lead">Your personal space for Computer Engineering review.</p>
+<section class="welcome-banner"><div><span class="badge">Learning library</span><h2>Continue your CPE review.</h2><p>Choose an academic level, open a published subject, and study its lessons.</p><a class="button" asp-area="Student" asp-controller="Subjects" asp-action="Index">Browse all subjects →</a></div><div class="banner-mark" aria-hidden="true">&lt; CPE /&gt;</div></section>
+<div class="section-heading"><h2>Explore Computer Engineering</h2><span class="muted small">Learn · build · measure</span></div>
+<section class="dashboard-visual-grid" aria-label="Computer Engineering learning areas">
+    <article class="dashboard-visual-card liquid-glass">
+        <img src="~/images/landing/cpe-student-lab.png" alt="Computer Engineering student assembling a microcontroller circuit" />
+        <div class="dashboard-visual-copy"><span class="eyebrow">HANDS-ON LEARNING</span><h3>Connect theory with practice.</h3><p>Complete activities that apply the concepts taught in each lesson.</p></div>
+    </article>
+    <article class="dashboard-visual-card liquid-glass">
+        <img src="~/images/landing/cpe-hardware-lab.png" alt="Microprocessor, oscilloscope, networking equipment, and robotic mechanism" />
+        <div class="dashboard-visual-copy"><span class="eyebrow">CPE SYSTEMS</span><h3>Review the systems you will build.</h3><p>Study hardware, signals, networks, software, and embedded design.</p></div>
+    </article>
+</section>
+<div class="section-heading"><h2>Academic levels</h2><span class="muted small">Published content</span></div>
+<div class="level-grid">@foreach (var level in Model.Levels) { <a class="level-card" asp-area="Student" asp-controller="Subjects" asp-action="Index" asp-route-level="@level.Id"><span class="eyebrow">ACADEMIC LEVEL</span><strong>@level.Id</strong><span>@level.SubjectCount published subject(s)</span></a> }</div>
+<div class="section-heading"><h2>Your learning tools</h2><span class="muted small">Ready to use</span></div>
+<div class="feature-grid"><article class="feature-card"><h3>Lesson quizzes</h3><p>Ten-item quizzes with results and incorrect-answer review.</p><span class="status-label">Available after each activity</span></article><article class="feature-card"><h3>Final exams</h3><p>Fifty-item subject exams covering all six lessons.</p><span class="status-label">Unlock after course lessons</span></article><article class="feature-card"><h3>Progress</h3><p>Review lesson completion, scores, and learning history.</p><a asp-area="Student" asp-controller="Progress" asp-action="Index">Open My Progress →</a></article></div>
+<section class="panel account-summary"><h2>Account details</h2><dl><dt>Email</dt><dd>@Model.Email</dd><dt>Access</dt><dd>Student portal only</dd></dl></section>

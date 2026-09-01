@@ -1,0 +1,10 @@
+@model ProfileViewModel
+@{ ViewData["Title"] = "My profile"; }
+<span class="eyebrow">YOUR ACCOUNT</span><h1>My profile</h1><p class="lead">Keep your student details up to date.</p>
+<section class="panel profile-panel"><form asp-area="Student" asp-controller="Profile" asp-action="Index" method="post">
+    <div asp-validation-summary="All" class="validation" role="alert"></div>
+    <label asp-for="FullName"></label><input asp-for="FullName" autocomplete="name" required />
+    <label asp-for="University"></label><input asp-for="University" autocomplete="organization" />
+    <label asp-for="YearLevel"></label><input asp-for="YearLevel" />
+    <button class="button" type="submit">Save profile</button>
+</form></section>

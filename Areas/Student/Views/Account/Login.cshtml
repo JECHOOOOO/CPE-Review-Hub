@@ -1,0 +1,16 @@
+@model LoginViewModel
+@{ Layout = "_SiteLayout"; ViewData["Title"] = "Student login"; ViewData["BodyClass"] = "auth-page student-auth-page"; }
+<div class="auth-moving-bg" aria-hidden="true"></div>
+<div class="auth-grid">
+    <section class="auth-intro"><span class="eyebrow">STUDENT PORTAL</span><h1>Your next step<br />starts here.</h1><p>A dedicated space for your Computer Engineering review journey.</p><div class="intro-note"><strong>One place for your learning</strong><p>Your own account, profile, and student workspace.</p></div></section>
+    <section class="auth-card"><span class="badge">For students</span><h2>Welcome back</h2><p>Sign in with your student account.</p>
+        <form action="/student.html" method="post" asp-antiforgery="true">
+            <div asp-validation-summary="All" class="validation" role="alert"></div>
+            <input asp-for="ReturnUrl" type="hidden" />
+            <label asp-for="Email"></label><input asp-for="Email" autocomplete="username" placeholder="you@university.edu" required />
+            <label asp-for="Password"></label><input asp-for="Password" autocomplete="current-password" required />
+            <button type="submit" class="button full">Sign in to student portal →</button>
+        </form>
+        <p class="form-foot">New here? <a asp-area="Student" asp-controller="Account" asp-action="Register">Create a student account</a></p>
+    </section>
+</div>

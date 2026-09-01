@@ -1,8 +1,58 @@
-﻿@{
-    ViewData["Title"] = "Home Page";
+@{
+    ViewData["Title"] = "Your CPE review workspace";
+    ViewData["BodyClass"] = "landing-page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
-</div>
+<section class="landing-hero" aria-labelledby="hero-title">
+    <video class="hero-video" data-crossfade-video muted autoplay playsinline preload="auto" aria-hidden="true">
+        <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260405_074625_a81f018a-956b-43fb-9aee-4d1508e30e6a.mp4" type="video/mp4" />
+    </video>
+    <div class="hero-shade" aria-hidden="true"></div>
+    <div class="landing-hero-content">
+        <span class="eyebrow">CPE REVIEW HUB</span>
+        <h1 id="hero-title">Know it, then <em>apply it.</em></h1>
+        <p>Build confidence across Computer Engineering subjects through focused lessons, practical activities, quizzes, and exams.</p>
+        <div class="hero-actions">
+            <a class="button hero-primary" href="/student.html">Start reviewing <span aria-hidden="true">→</span></a>
+            <a class="button secondary" href="#about">Explore the hub</a>
+        </div>
+    </div>
+    <a class="scroll-cue liquid-glass" href="#about" aria-label="Scroll to about CPE Review Hub">↓</a>
+</section>
+
+<section class="landing-section about-section reveal" id="about">
+    <span class="section-label">About the hub</span>
+    <h2>Clear concepts for minds that <em>create, build, and solve.</em></h2>
+</section>
+
+<section class="landing-section featured-section reveal">
+    <div class="featured-media reveal">
+        <video muted autoplay loop playsinline preload="metadata" aria-label="Abstract technology visual">
+            <source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260402_054547_9875cfc5-155a-4229-8ec8-b7ba7125cbf8.mp4" type="video/mp4" />
+        </video>
+        <div class="media-shade" aria-hidden="true"></div>
+        <div class="featured-overlay">
+            <article class="liquid-glass featured-copy"><span class="section-label">Our approach</span><p>Every lesson begins with clear objectives, develops real engineering concepts, and connects practice directly to assessment.</p></article>
+            <a class="button secondary" href="/student.html">Explore courses →</a>
+        </div>
+    </div>
+</section>
+
+<section class="landing-section philosophy-section reveal">
+    <h2>Knowledge <em>×</em> practice</h2>
+    <div class="philosophy-grid">
+        <video muted autoplay loop playsinline preload="metadata" aria-label="Engineering innovation visual"><source src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260307_083826_e938b29f-a43a-41ec-a153-3d4730578ab8.mp4" type="video/mp4" /></video>
+        <div class="philosophy-copy">
+            <article><span class="section-label">Choose your level</span><p>Move through 200, 300, and 400-level subjects in a structured review path designed for Computer Engineering students.</p></article>
+            <article><span class="section-label">Prove your understanding</span><p>Complete a relevant activity, take each ten-item lesson quiz, then finish a comprehensive fifty-item course exam.</p></article>
+        </div>
+    </div>
+</section>
+
+<section class="landing-section services-section reveal">
+    <div class="landing-section-header"><h2>What you can do</h2><span class="section-label">Learning workspace</span></div>
+    <div class="service-grid">
+        <article class="liquid-glass service-card reveal"><div class="service-media"><img src="~/images/landing/cpe-student-lab.png" alt="Computer Engineering student assembling a microcontroller circuit at a dark laboratory workbench" loading="lazy" /></div><div class="service-copy"><span class="section-label">Learn</span><h3>Lessons &amp; activities</h3><p>Review substantial course-specific material, worked examples, key definitions, and practical exercises.</p></div></article>
+        <article class="liquid-glass service-card reveal"><div class="service-media"><img src="~/images/landing/cpe-hardware-lab.png" alt="Microprocessor, oscilloscope, network cables, and robotic mechanism in a Computer Engineering laboratory" loading="lazy" /></div><div class="service-copy"><span class="section-label">Measure</span><h3>Quizzes &amp; progress</h3><p>Check understanding, review incorrect answers, and follow your scores across every course.</p></div></article>
+    </div>
+</section>

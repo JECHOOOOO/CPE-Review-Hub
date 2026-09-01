@@ -1,0 +1,36 @@
+@{
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+}
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] · Student · CPE Review Hub</title>
+    <link rel="stylesheet" href="~/css/hub.css" asp-append-version="true" />
+</head>
+<body class="portal-body student-portal">
+    <a class="skip-link" href="#main">Skip to content</a>
+    <aside class="sidebar liquid-glass">
+        <a class="brand" asp-area="Student" asp-controller="Dashboard" asp-action="Index"><span class="brand-mark">CPE</span><span>Review Hub<small>STUDENT PORTAL</small></span></a>
+        <p class="nav-caption">LEARNING WORKSPACE</p>
+        <nav aria-label="Student navigation">
+            <a class="nav-item @(controller == "Dashboard" ? "active" : "")" asp-area="Student" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
+            <a class="nav-item @(controller is "Subjects" or "Lessons" ? "active" : "")" asp-area="Student" asp-controller="Subjects" asp-action="Index">Subjects &amp; lessons</a>
+            <a class="nav-item @(controller is "Assessments" or "Progress" ? "active" : "")" asp-area="Student" asp-controller="Progress" asp-action="Index">Quizzes, exams &amp; progress</a>
+            <a class="nav-item @(controller == "Profile" ? "active" : "")" asp-area="Student" asp-controller="Profile" asp-action="Index">Profile</a>
+        </nav>
+        <div class="sidebar-bottom"><p>Signed in as<br /><strong>@User.Identity?.Name</strong></p>
+            <form asp-area="Student" asp-controller="Account" asp-action="Logout" method="post"><button class="button secondary full" type="submit">Log out</button></form>
+        </div>
+    </aside>
+    <div class="portal-content">
+        <header class="portal-header liquid-glass"><span>Student workspace</span><span class="badge">Student account</span></header>
+        <main id="main" class="dashboard-main">
+            @if (TempData["Success"] is string success) { <div class="notice success" role="status">@success</div> }
+            @if (TempData["Error"] is string error) { <div class="notice" role="alert">@error</div> }
+            @RenderBody()
+        </main>
+        <footer class="site-footer">CPE Review Hub · Learn with purpose.</footer>
+    </div>
+</body>
+</html>

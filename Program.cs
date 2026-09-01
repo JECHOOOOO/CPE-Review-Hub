@@ -1,29 +1,44 @@
+using CPE_Review_Hub.Security;
+using CPE_Review_Hub.Services;
+using Microsoft.AspNetCore.Mvc;
+using System.Threading.RateLimiting;
+
 var builder = WebApplication.CreateBuilder(args);
-
-// Add services to the container.
-builder.Services.AddControllersWithViews();
-
+builder.Services.AddControllersWithViews(options =>
+    options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute()));
+builder.Services.AddPortalSecurity(builder.Configuration, builder.Environment.IsDevelopment());
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddPolicy("account", context => RateLimitPartition.GetFixedWindowLimiter(
+        context.Connection.RemoteIpAddress?.ToString() ?? "unknown", _ => new FixedWindowRateLimiterOptions
+        {
+            PermitLimit = 20, Window = TimeSpan.FromMinutes(1), QueueLimit = 0
+        }));
+});
 var app = builder.Build();
-
-// Configure the HTTP request pipeline.
+if (await DatabaseCommands.TryRunAsync(app, args)) return;
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
-    // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
     app.UseHsts();
+    app.UseHttpsRedirection();
 }
-
-app.UseHttpsRedirection();
+app.Use(async (context, next) =>
+{
+    context.Response.Headers["X-Content-Type-Options"] = "nosniff";
+    context.Response.Headers["X-Frame-Options"] = "DENY";
+    context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
+    context.Response.Headers.CacheControl = "no-cache, no-store";
+    context.Response.Headers.Pragma = "no-cache";
+    await next();
+});
 app.UseRouting();
-
+app.UseRateLimiter();
+app.UseMiddleware<DatabaseErrorMiddleware>();
+app.UseAuthentication();
 app.UseAuthorization();
-
 app.MapStaticAssets();
-
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}")
-    .WithStaticAssets();
-
-
+app.MapControllerRoute("areas", "{area:exists}/{controller=Dashboard}/{action=Index}/{id?}");
+app.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}").WithStaticAssets();
 app.Run();

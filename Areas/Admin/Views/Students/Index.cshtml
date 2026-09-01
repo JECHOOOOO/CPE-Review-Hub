@@ -1,0 +1,15 @@
+@model IReadOnlyList<CPE_Review_Hub.Areas.Admin.Controllers.StudentRow>
+@{ ViewData["Title"] = "Manage students"; }
+<span class="eyebrow">ADMINISTRATION</span><h1>Manage students</h1><p class="lead">View registered students and control account access.</p>
+<section class="panel">
+    <form method="get" class="search-form" asp-area="Admin" asp-controller="Students" asp-action="Index"><label for="search">Find a student</label><div><input id="search" name="search" value="@ViewData["Search"]" placeholder="Name or email" /><button class="button" type="submit">Search</button></div></form>
+    <p class="small muted">Showing up to 100 matching accounts, newest first.</p>
+    @if (Model.Count == 0) { <div class="empty-state"><h2>No students found</h2><p>Students will appear here after registering through the student portal.</p></div> }
+    else {
+        <div class="table-scroll"><table><thead><tr><th scope="col">Student</th><th scope="col">Email</th><th scope="col">Joined (UTC)</th><th scope="col">Status</th><th scope="col">Account access</th></tr></thead><tbody>
+        @foreach (var student in Model) {
+            <tr><td>@student.FullName</td><td>@student.Email</td><td>@student.CreatedAtUtc.ToString("MMM dd, yyyy")</td><td><span class="badge">@(student.IsActive ? "Active" : "Disabled")</span></td><td><form asp-area="Admin" asp-controller="Students" asp-action="SetActive" method="post"><input type="hidden" name="id" value="@student.Id" /><input type="hidden" name="active" value="@(!student.IsActive ? "true" : "false")" /><button class="button secondary compact" type="submit">@(student.IsActive ? "Disable" : "Enable")</button></form></td></tr>
+        }
+        </tbody></table></div>
+    }
+</section>

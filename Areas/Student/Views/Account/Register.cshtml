@@ -1,0 +1,16 @@
+@model RegisterViewModel
+@{ Layout = "_SiteLayout"; ViewData["Title"] = "Create student account"; }
+<section class="auth-card register-card">
+    <span class="eyebrow">STUDENT REGISTRATION</span><h1>Start your review journey</h1><p>This creates a student account only.</p>
+    <form asp-area="Student" asp-controller="Account" asp-action="Register" method="post">
+        <div asp-validation-summary="All" class="validation" role="alert"></div>
+        <label asp-for="FullName"></label><input asp-for="FullName" autocomplete="name" required />
+        <label asp-for="Email"></label><input asp-for="Email" autocomplete="email" required />
+        <div class="form-row"><div><label asp-for="University"></label><input asp-for="University" autocomplete="organization" /></div><div><label asp-for="YearLevel"></label><select asp-for="YearLevel"><option value="">Select year</option><option>1st Year</option><option>2nd Year</option><option>3rd Year</option><option>4th Year</option><option>Graduate / Reviewer</option></select></div></div>
+        <label asp-for="Password"></label><input asp-for="Password" autocomplete="new-password" minlength="8" aria-describedby="password-help" required />
+        <p id="password-help" class="small muted">At least 8 characters. Uppercase letters, numbers, and symbols are optional.</p>
+        <label asp-for="ConfirmPassword"></label><input asp-for="ConfirmPassword" autocomplete="new-password" required />
+        <button type="submit" class="button full">Create student account</button>
+    </form>
+    <p class="form-foot">Already registered? <a href="/student.html">Sign in</a></p>
+</section>

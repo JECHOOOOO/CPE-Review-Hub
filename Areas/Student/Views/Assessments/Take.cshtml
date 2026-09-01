@@ -1,0 +1,17 @@
+@model AssessmentTakeViewModel
+@{ ViewData["Title"] = Model.Title; }
+<nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-area="Student" asp-controller="Subjects" asp-action="Index">Subjects</a><span>/</span><span>@Model.CourseCode</span><span>/</span><span>@Model.AssessmentLabel</span></nav>
+<span class="eyebrow">@Model.AssessmentLabel · @Model.CourseCode</span><h1>@Model.Title</h1>
+<p class="lead">Answer every question, then submit once. Suggested time: @Model.DurationMinutes minutes.</p>
+@if (Model.Error is not null) { <div class="notice" role="alert">@Model.Error</div> }
+<form asp-area="Student" asp-controller="Assessments" asp-action="Submit" asp-route-attemptId="@Model.AttemptId" method="post" class="assessment-form">
+    <input type="hidden" name="AttemptId" value="@Model.AttemptId" />
+    @foreach (var question in Model.Questions) {
+        <fieldset class="panel liquid-glass question-card"><legend><span class="question-number">@question.Number</span><span class="question-prompt">@question.Prompt</span></legend>
+            @foreach (var choice in question.Choices) {
+                <label class="choice-option"><input type="radio" name="Answers[@question.Id]" value="@choice.Id" required /><span>@choice.Text</span></label>
+            }
+        </fieldset>
+    }
+    <div class="assessment-submit liquid-glass"><button class="button" type="submit">Submit @Model.AssessmentLabel.ToLowerInvariant()</button><p class="muted small">Your score and answer feedback will be saved to My Progress.</p></div>
+</form>

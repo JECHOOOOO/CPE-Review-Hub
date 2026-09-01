@@ -1,0 +1,6 @@
+@model AssessmentResultViewModel
+@{ ViewData["Title"] = "Assessment result"; }
+<span class="eyebrow">@Model.CourseCode · RESULT</span><h1>@Model.Title</h1>
+<section class="panel result-hero @(Model.IsPassed ? "passed" : "needs-review")"><div><span>Score</span><strong>@Model.Score / @Model.Total</strong></div><div><span>Percentage</span><strong>@Model.Percentage.ToString("0.##")%</strong></div><div><span>Status</span><strong>@(Model.IsPassed ? "Passed" : "Needs review")</strong></div></section>
+<div class="form-actions"><form asp-area="Student" asp-controller="Assessments" asp-action="Start" asp-route-id="@Model.AssessmentId" method="post"><button class="button" type="submit">Try again</button></form><a class="button secondary" asp-area="Student" asp-controller="Progress" asp-action="Index">View my progress</a></div>
+<div class="answer-review"><h2>Answer review</h2>@foreach (var answer in Model.Answers) { <article class="panel answer-card @(answer.IsCorrect ? "correct" : "incorrect")"><span class="eyebrow">QUESTION @answer.Number · @(answer.IsCorrect ? "CORRECT" : "INCORRECT")</span><h3>@answer.Prompt</h3><p><strong>Your answer:</strong> @answer.SelectedAnswer</p>@if (!answer.IsCorrect) { <p><strong>Correct answer:</strong> @answer.CorrectAnswer</p> }<p class="feedback"><strong>Explanation:</strong> @answer.Explanation</p></article> }</div>

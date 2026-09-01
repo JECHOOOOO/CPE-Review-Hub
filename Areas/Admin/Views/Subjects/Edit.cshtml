@@ -1,0 +1,11 @@
+@model SubjectFormViewModel
+@{ ViewData["Title"] = Model.Id == 0 ? "Add subject" : "Edit subject"; }
+<span class="eyebrow">CONTENT MANAGEMENT</span><h1>@ViewData["Title"]</h1><p class="lead">Only published subjects appear in the Student portal.</p>
+<section class="panel form-panel"><form asp-action="Save" method="post">
+    <div asp-validation-summary="All" class="validation" role="alert"></div><input asp-for="Id" type="hidden" />
+    <div class="form-row"><div><label asp-for="Code"></label><input asp-for="Code" placeholder="CPE 211" required /></div><div><label asp-for="AcademicLevelId"></label><select asp-for="AcademicLevelId" required><option value="">Select level</option>@foreach (var option in Model.Levels) { <option value="@option.Id">@option.Label</option> }</select></div></div>
+    <label asp-for="Title"></label><input asp-for="Title" required />
+    <label asp-for="Description"></label><textarea asp-for="Description" rows="5"></textarea>
+    <label class="check-row"><input asp-for="IsPublished" /> <span>Publish this subject to students</span></label>
+    <div class="form-actions"><button class="button" type="submit">Save subject</button><a class="button secondary" asp-action="Index">Cancel</a></div>
+</form></section>
