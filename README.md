@@ -22,6 +22,10 @@ password and no public admin registration. Never send passwords in chat or
 commit them to Git. User-secrets are unencrypted local development storage,
 outside this repository; use a protected secret store for deployment.
 
+The Windows setup uses a non-TLS connection only when MySQL is reached through
+`localhost`, `127.0.0.1`, or another loopback address, so the traffic remains on
+the same PC. TLS remains required when a remote MySQL host is configured.
+
 ## Start on Windows
 
 1. Install the .NET 10 SDK if it is not already installed.

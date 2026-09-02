@@ -102,10 +102,14 @@ public static class DatabaseCommands
         var database = Prompt("Database name", "cpe_review_hub");
         var username = Prompt("MySQL username", "cpe_review_hub");
         var password = ReadPassword("MySQL password");
+        var loopback = host.Equals("localhost", StringComparison.OrdinalIgnoreCase) ||
+            IPAddress.TryParse(host, out var hostAddress) && IPAddress.IsLoopback(hostAddress);
         var connection = new MySqlConnectionStringBuilder
         {
             Server = host, Port = port, Database = database, UserID = username, Password = password,
-            SslMode = MySqlSslMode.Required, ConnectionTimeout = 5, PersistSecurityInfo = false
+            // Traffic never leaves the PC for loopback. Remote databases must still use TLS.
+            SslMode = loopback ? MySqlSslMode.Disabled : MySqlSslMode.Required,
+            ConnectionTimeout = 5, PersistSecurityInfo = false
         };
         await using (var testConnection = new MySqlConnection(connection.ConnectionString))
         {
@@ -121,6 +125,8 @@ public static class DatabaseCommands
             ["ConnectionStrings:ReviewHub"] = connection.ConnectionString
         });
         Console.WriteLine("MySQL connection verified and saved. Password was not printed or added to Git.");
+        if (loopback)
+            Console.WriteLine("Local loopback connection selected. TLS is disabled only for localhost traffic.");
     }
 
     private static async Task ConfigureEmailAsync(string projectDirectory)
