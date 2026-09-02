@@ -19,8 +19,10 @@
             <a class="nav-item @(controller == "Subjects" ? "active" : "")" asp-area="Admin" asp-controller="Subjects" asp-action="Index">Manage subjects</a>
             <a class="nav-item @(controller == "Lessons" ? "active" : "")" asp-area="Admin" asp-controller="Lessons" asp-action="Index">Manage lessons</a>
             <a class="nav-item @(controller == "Materials" ? "active" : "")" asp-area="Admin" asp-controller="Materials" asp-action="Index">Review materials</a>
-            <span class="nav-item unavailable" aria-disabled="true">Questions &amp; quizzes <small>Planned</small></span>
-            <span class="nav-item unavailable" aria-disabled="true">Exams &amp; statistics <small>Planned</small></span>
+            <a class="nav-item @(controller is "Assessments" or "Questions" && Context.Request.Query["type"] != "FinalExam" ? "active" : "")" asp-area="Admin" asp-controller="Assessments" asp-action="Index" asp-route-type="LessonQuiz">Questions &amp; quizzes</a>
+            <a class="nav-item @(controller == "Assessments" && Context.Request.Query["type"] == "FinalExam" ? "active" : "")" asp-area="Admin" asp-controller="Assessments" asp-action="Index" asp-route-type="FinalExam">Final exams</a>
+            <a class="nav-item @(controller == "Results" ? "active" : "")" asp-area="Admin" asp-controller="Results" asp-action="Index">Student results</a>
+            <a class="nav-item @(controller == "Statistics" ? "active" : "")" asp-area="Admin" asp-controller="Statistics" asp-action="Index">Statistics</a>
         </nav>
         <div class="sidebar-bottom"><p>Signed in as<br /><strong>@User.Identity?.Name</strong></p>
             <form asp-area="Admin" asp-controller="Account" asp-action="Logout" method="post"><button class="button secondary full" type="submit">Log out</button></form>

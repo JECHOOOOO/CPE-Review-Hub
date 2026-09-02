@@ -1,6 +1,28 @@
 @model AssessmentResultViewModel
 @{ ViewData["Title"] = "Assessment result"; }
-<span class="eyebrow">@Model.CourseCode · RESULT</span><h1>@Model.Title</h1>
-<section class="panel result-hero @(Model.IsPassed ? "passed" : "needs-review")"><div><span>Score</span><strong>@Model.Score / @Model.Total</strong></div><div><span>Percentage</span><strong>@Model.Percentage.ToString("0.##")%</strong></div><div><span>Status</span><strong>@(Model.IsPassed ? "Passed" : "Needs review")</strong></div></section>
+
+<span class="eyebrow">@Model.CourseCode · ASSESSMENT RESULT</span>
+<h1>@Model.Title</h1>
+<p class="lead">Submitted @Model.SubmittedAtUtc.ToLocalTime().ToString("MMM d, yyyy · h:mm tt")</p>
+
+<section class="result-hero @(Model.IsPassed ? "passed" : "needs-review")" aria-label="Assessment result summary">
+    <div><span>Score</span><strong>@Model.Score / @Model.Total</strong></div>
+    <div><span>Percentage</span><strong>@Model.Percentage.ToString("0.##")%</strong></div>
+    <div><span>Status</span><strong>@(Model.IsPassed ? "Passed" : "Needs review")</strong></div>
+    <div><span>Attempt</span><strong>#@Model.AttemptNumber</strong></div>
+</section>
+
 <div class="form-actions"><form asp-area="Student" asp-controller="Assessments" asp-action="Start" asp-route-id="@Model.AssessmentId" method="post"><button class="button" type="submit">Try again</button></form><a class="button secondary" asp-area="Student" asp-controller="Progress" asp-action="Index">View my progress</a></div>
-<div class="answer-review"><h2>Answer review</h2>@foreach (var answer in Model.Answers) { <article class="panel answer-card @(answer.IsCorrect ? "correct" : "incorrect")"><span class="eyebrow">QUESTION @answer.Number · @(answer.IsCorrect ? "CORRECT" : "INCORRECT")</span><h3>@answer.Prompt</h3><p><strong>Your answer:</strong> @answer.SelectedAnswer</p>@if (!answer.IsCorrect) { <p><strong>Correct answer:</strong> @answer.CorrectAnswer</p> }<p class="feedback"><strong>Explanation:</strong> @answer.Explanation</p></article> }</div>
+
+<section class="answer-review" aria-labelledby="answer-review-heading">
+    <div class="section-heading"><div><span class="eyebrow">DETAILED FEEDBACK</span><h2 id="answer-review-heading">Answer review</h2></div><span class="muted small">@Model.Answers.Count question(s)</span></div>
+    @foreach (var answer in Model.Answers)
+    {
+        <article class="answer-card @(answer.IsCorrect ? "correct" : "incorrect")">
+            <span class="answer-status">Question @answer.Number · @(answer.IsCorrect ? "Correct" : "Incorrect")</span>
+            <h3>@answer.Prompt</h3>
+            <div class="answer-values"><p><span>Your answer</span><strong>@answer.SelectedAnswer</strong></p>@if (!answer.IsCorrect) { <p><span>Correct answer</span><strong>@answer.CorrectAnswer</strong></p> }</div>
+            <p class="feedback"><strong>Why:</strong> @answer.Explanation</p>
+        </article>
+    }
+</section>

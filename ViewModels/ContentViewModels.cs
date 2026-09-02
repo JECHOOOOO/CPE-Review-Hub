@@ -46,7 +46,8 @@ public record StudentDashboardViewModel(string FullName, string Email, IReadOnly
 public record StudentSubjectRow(int Id, string Code, string Title, string Description, string Level, int LessonCount);
 public record StudentSubjectIndexViewModel(int? SelectedLevel, IReadOnlyList<SelectionOption> Levels, IReadOnlyList<StudentSubjectRow> Subjects);
 public record StudentLessonRow(int Id, string Title, string Summary, int MaterialCount,
-    bool ActivityCompleted, decimal? BestQuizPercentage);
+    bool ActivityCompleted, decimal? BestQuizPercentage, bool IsUnlocked, bool IsCompleted,
+    int PassingPercentage);
 public record StudentAssessmentStatusViewModel(int Id, string Title, int RequiredQuestions, int CurrentQuestions,
     bool IsPublished, bool IsUnlocked, decimal? BestPercentage, int AttemptCount)
 {
@@ -76,11 +77,12 @@ public record AssessmentChoiceViewModel(int Id, string Text);
 public record AssessmentQuestionViewModel(int Id, int Number, string Prompt,
     IReadOnlyList<AssessmentChoiceViewModel> Choices);
 public record AssessmentTakeViewModel(int AttemptId, string Title, string CourseCode, string AssessmentLabel,
-    int DurationMinutes, IReadOnlyList<AssessmentQuestionViewModel> Questions, string? Error);
+    int DurationMinutes, int PassingPercentage, int AttemptNumber,
+    IReadOnlyList<AssessmentQuestionViewModel> Questions, string? Error);
 public record AssessmentAnswerResultViewModel(int Number, string Prompt, string SelectedAnswer,
     string CorrectAnswer, bool IsCorrect, string Explanation);
 public record AssessmentResultViewModel(int AttemptId, int AssessmentId, string Title, string CourseCode,
-    int Score, int Total, decimal Percentage, bool IsPassed, DateTime SubmittedAtUtc,
+    int Score, int Total, decimal Percentage, bool IsPassed, int AttemptNumber, DateTime SubmittedAtUtc,
     IReadOnlyList<AssessmentAnswerResultViewModel> Answers);
 public record CourseProgressRow(int SubjectId, string Code, string Title, int CompletedActivities,
     int CompletedQuizzes, int LessonCount, int ProgressPercentage, decimal? BestFinalPercentage);

@@ -1,6 +1,7 @@
 using CPE_Review_Hub.Data;
 using CPE_Review_Hub.Models;
 using CPE_Review_Hub.Security;
+using CPE_Review_Hub.Services;
 using CPE_Review_Hub.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +11,7 @@ using System.Security.Claims;
 namespace CPE_Review_Hub.Areas.Student.Controllers;
 
 [Area("Student"), Authorize(Policy = PortalSecurity.Student), Route("student/subjects")]
-public class SubjectsController(ApplicationDbContext db) : Controller
+public class SubjectsController(ApplicationDbContext db, StudentProgressService progressService) : Controller
 {
     [HttpGet("")]
     public async Task<IActionResult> Index(int? level)
@@ -37,10 +38,8 @@ public class SubjectsController(ApplicationDbContext db) : Controller
             .Include(x => x.Assessments).ThenInclude(x => x.AssessmentQuestions)
             .SingleOrDefaultAsync(x => x.Id == id && x.IsPublished);
         if (subject is null) return NotFound();
-        var lessonIds = subject.Lessons.Where(x => x.IsPublished).Select(x => x.Id).ToList();
-        var completedActivityIds = await db.ActivitySubmissions.AsNoTracking()
-            .Where(x => x.UserId == userId && lessonIds.Contains(x.LessonActivity.LessonId))
-            .Select(x => x.LessonActivity.LessonId).ToHashSetAsync();
+        var progressState = await progressService.GetCourseAsync(id, userId);
+        if (progressState is null) return NotFound();
         var submittedAttempts = await db.AssessmentAttempts.AsNoTracking()
             .Where(x => x.UserId == userId && x.Assessment.SubjectId == id && x.SubmittedAtUtc != null)
             .ToListAsync();
@@ -48,22 +47,22 @@ public class SubjectsController(ApplicationDbContext db) : Controller
         var rows = subject.Lessons.Where(x => x.IsPublished).OrderBy(x => x.SortOrder).ThenBy(x => x.Title)
             .Select(x =>
             {
+                var lessonProgress = progressState.Lessons.Single(p => p.LessonId == x.Id);
                 var quizId = x.Assessments.FirstOrDefault(a => a.Type == AssessmentType.LessonQuiz)?.Id;
                 var attempts = quizId is null ? [] : submittedAttempts.Where(a => a.AssessmentId == quizId).ToList();
                 return new StudentLessonRow(x.Id, x.Title, x.Summary,
-                    x.ReviewMaterials.Count(m => m.IsPublished), completedActivityIds.Contains(x.Id),
-                    attempts.Count == 0 ? null : attempts.Max(a => a.Percentage));
+                    x.ReviewMaterials.Count(m => m.IsPublished), lessonProgress.ActivityCompleted,
+                    attempts.Count == 0 ? null : attempts.Max(a => a.Percentage),
+                    lessonProgress.IsUnlocked, lessonProgress.IsCompleted,
+                    lessonProgress.PassingPercentage);
             }).ToList();
-        var completedQuizzes = rows.Count(x => x.BestQuizPercentage is not null);
-        var progress = rows.Count == 0 ? 0 : (int)Math.Round(
-            100m * (rows.Count(x => x.ActivityCompleted) + completedQuizzes) / (rows.Count * 2));
         var finalAttempts = exam is null ? [] : submittedAttempts.Where(x => x.AssessmentId == exam.Id).ToList();
-        var finalUnlocked = rows.Count == 6 && rows.All(x => x.ActivityCompleted && x.BestQuizPercentage is not null);
         return View(new StudentSubjectDetailsViewModel(subject.Id, subject.Code, subject.Title,
             subject.Description, subject.AcademicLevel.Name, rows,
             exam is null ? null : new StudentAssessmentStatusViewModel(exam.Id, exam.Title,
                 exam.RequiredQuestionCount, exam.AssessmentQuestions.Count, exam.IsPublished,
-                finalUnlocked, finalAttempts.Count == 0 ? null : finalAttempts.Max(x => x.Percentage),
-                finalAttempts.Count), progress));
+                progressState.FinalExamUnlocked,
+                finalAttempts.Count == 0 ? null : finalAttempts.Max(x => x.Percentage),
+                finalAttempts.Count), progressState.CompletionPercentage));
     }
 }

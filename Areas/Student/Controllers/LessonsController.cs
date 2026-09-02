@@ -1,6 +1,7 @@
 using CPE_Review_Hub.Data;
 using CPE_Review_Hub.Models;
 using CPE_Review_Hub.Security;
+using CPE_Review_Hub.Services;
 using CPE_Review_Hub.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +11,7 @@ using System.Security.Claims;
 namespace CPE_Review_Hub.Areas.Student.Controllers;
 
 [Area("Student"), Authorize(Policy = PortalSecurity.Student), Route("student/lessons")]
-public class LessonsController(ApplicationDbContext db) : Controller
+public class LessonsController(ApplicationDbContext db, StudentProgressService progressService) : Controller
 {
     [HttpGet("{id:int}")]
     public async Task<IActionResult> Details(int id)
@@ -21,6 +22,11 @@ public class LessonsController(ApplicationDbContext db) : Controller
             .Include(x => x.Assessments).ThenInclude(x => x.AssessmentQuestions)
             .SingleOrDefaultAsync(x => x.Id == id && x.IsPublished && x.Subject.IsPublished);
         if (lesson is null) return NotFound();
+        if (!await progressService.IsLessonUnlockedAsync(lesson.Id, userId))
+        {
+            TempData["Error"] = "Complete and pass the previous lesson before opening this lesson.";
+            return RedirectToAction("Details", "Subjects", new { area = "Student", id = lesson.SubjectId });
+        }
         var quiz = lesson.Assessments.FirstOrDefault(x => x.Type == AssessmentType.LessonQuiz);
         var submission = lesson.Activity is null ? null : await db.ActivitySubmissions.AsNoTracking()
             .SingleOrDefaultAsync(x => x.UserId == userId && x.LessonActivityId == lesson.Activity.Id);

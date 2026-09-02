@@ -2,6 +2,7 @@ using System.Security.Claims;
 using CPE_Review_Hub.Data;
 using CPE_Review_Hub.Models;
 using CPE_Review_Hub.Security;
+using CPE_Review_Hub.Services;
 using CPE_Review_Hub.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 namespace CPE_Review_Hub.Areas.Student.Controllers;
 
 [Area("Student"), Authorize(Policy = PortalSecurity.Student), Route("student/assessments")]
-public class AssessmentsController(ApplicationDbContext db) : Controller
+public class AssessmentsController(ApplicationDbContext db, StudentProgressService progressService) : Controller
 {
     [HttpPost("{id:int}/start")]
     public async Task<IActionResult> Start(int id)
@@ -19,11 +20,11 @@ public class AssessmentsController(ApplicationDbContext db) : Controller
         if (assessment is null || !assessment.IsPublished ||
             assessment.AssessmentQuestions.Count < assessment.RequiredQuestionCount) return NotFound();
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        if (!await IsUnlockedAsync(assessment, userId))
+        if (!await progressService.IsAssessmentUnlockedAsync(assessment, userId))
         {
             TempData["Error"] = assessment.Type == AssessmentType.LessonQuiz
-                ? "Submit the required lesson activity before starting the quiz."
-                : "Complete all six activities and lesson quizzes before starting the final exam.";
+                ? "Complete the current lesson activity and any previous lesson before starting this quiz."
+                : "Complete every lesson activity and pass all six lesson quizzes before starting the final exam.";
             return ReturnToContent(assessment);
         }
 
@@ -43,7 +44,7 @@ public class AssessmentsController(ApplicationDbContext db) : Controller
         var attempt = await LoadAttemptAsync(attemptId);
         if (attempt is null) return NotFound();
         if (attempt.SubmittedAtUtc is not null) return RedirectToAction(nameof(Result), new { attemptId });
-        return View(BuildTakeModel(attempt));
+        return View(BuildTakeModel(attempt, await GetAttemptNumberAsync(attempt)));
     }
 
     [HttpPost("attempts/{attemptId:int}/submit")]
@@ -59,7 +60,7 @@ public class AssessmentsController(ApplicationDbContext db) : Controller
             q.Choices.All(c => c.Id != choiceId));
         if (invalid)
         {
-            return View("Take", BuildTakeModel(attempt,
+            return View("Take", BuildTakeModel(attempt, await GetAttemptNumberAsync(attempt),
                 $"Answer all {attempt.TotalQuestions} questions before submitting."));
         }
 
@@ -97,9 +98,11 @@ public class AssessmentsController(ApplicationDbContext db) : Controller
                 answer.Question.Prompt, answer.Choice.Text,
                 answer.Question.Choices.Single(x => x.IsCorrect).Text,
                 answer.IsCorrect, answer.Question.Explanation)).ToList();
+        var attemptNumber = await db.AssessmentAttempts.CountAsync(x => x.UserId == userId &&
+            x.AssessmentId == attempt.AssessmentId && x.SubmittedAtUtc != null && x.Id <= attempt.Id);
         return View(new AssessmentResultViewModel(attempt.Id, attempt.AssessmentId,
             attempt.Assessment.Title, attempt.Assessment.Subject.Code, attempt.Score,
-            attempt.TotalQuestions, attempt.Percentage, attempt.IsPassed,
+            attempt.TotalQuestions, attempt.Percentage, attempt.IsPassed, attemptNumber,
             attempt.SubmittedAtUtc!.Value, answers));
     }
 
@@ -121,35 +124,13 @@ public class AssessmentsController(ApplicationDbContext db) : Controller
             .SingleOrDefaultAsync(x => x.Id == attemptId && x.UserId == userId);
     }
 
-    private async Task<bool> IsUnlockedAsync(Assessment assessment, string userId)
-    {
-        if (assessment.Type == AssessmentType.LessonQuiz)
-        {
-            var activityId = assessment.Lesson?.Activity?.Id;
-            return activityId.HasValue && await db.ActivitySubmissions.AnyAsync(x =>
-                x.UserId == userId && x.LessonActivityId == activityId.Value);
-        }
+    private async Task<int> GetAttemptNumberAsync(AssessmentAttempt attempt) =>
+        await db.AssessmentAttempts.CountAsync(x => x.UserId == attempt.UserId &&
+            x.AssessmentId == attempt.AssessmentId && x.Id <= attempt.Id &&
+            (x.SubmittedAtUtc != null || x.Id == attempt.Id));
 
-        var lessons = await db.Lessons.AsNoTracking().Where(x =>
-                x.SubjectId == assessment.SubjectId && x.IsPublished)
-            .Select(x => new
-            {
-                x.Id, ActivityId = x.Activity == null ? (int?)null : x.Activity.Id,
-                QuizId = x.Assessments.Where(a => a.Type == AssessmentType.LessonQuiz && a.IsPublished)
-                    .Select(a => (int?)a.Id).FirstOrDefault()
-            }).ToListAsync();
-        if (lessons.Count != 6 || lessons.Any(x => x.ActivityId is null || x.QuizId is null)) return false;
-        var activityIds = lessons.Select(x => x.ActivityId!.Value).ToList();
-        var quizIds = lessons.Select(x => x.QuizId!.Value).ToList();
-        var completedActivities = await db.ActivitySubmissions.CountAsync(x =>
-            x.UserId == userId && activityIds.Contains(x.LessonActivityId));
-        var completedQuizzes = await db.AssessmentAttempts.Where(x =>
-                x.UserId == userId && x.SubmittedAtUtc != null && quizIds.Contains(x.AssessmentId))
-            .Select(x => x.AssessmentId).Distinct().CountAsync();
-        return completedActivities == 6 && completedQuizzes == 6;
-    }
-
-    private static AssessmentTakeViewModel BuildTakeModel(AssessmentAttempt attempt, string? error = null)
+    private static AssessmentTakeViewModel BuildTakeModel(AssessmentAttempt attempt, int attemptNumber,
+        string? error = null)
     {
         var questions = attempt.Assessment.AssessmentQuestions.OrderBy(x => x.SortOrder)
             .Take(attempt.TotalQuestions).Select((x, index) => new AssessmentQuestionViewModel(
@@ -159,7 +140,8 @@ public class AssessmentsController(ApplicationDbContext db) : Controller
         return new AssessmentTakeViewModel(attempt.Id, attempt.Assessment.Title,
             attempt.Assessment.Subject.Code,
             attempt.Assessment.Type == AssessmentType.FinalExam ? "FINAL EXAM" : "LESSON QUIZ",
-            attempt.Assessment.DurationMinutes, questions, error);
+            attempt.Assessment.DurationMinutes, attempt.Assessment.PassingPercentage,
+            attemptNumber, questions, error);
     }
 
     private IActionResult ReturnToContent(Assessment assessment) => assessment.LessonId.HasValue

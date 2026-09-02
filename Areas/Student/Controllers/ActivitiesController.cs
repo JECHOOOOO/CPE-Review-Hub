@@ -2,6 +2,7 @@ using System.Security.Claims;
 using CPE_Review_Hub.Data;
 using CPE_Review_Hub.Models;
 using CPE_Review_Hub.Security;
+using CPE_Review_Hub.Services;
 using CPE_Review_Hub.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -10,7 +11,7 @@ using Microsoft.EntityFrameworkCore;
 namespace CPE_Review_Hub.Areas.Student.Controllers;
 
 [Area("Student"), Authorize(Policy = PortalSecurity.Student), Route("student/activities")]
-public class ActivitiesController(ApplicationDbContext db) : Controller
+public class ActivitiesController(ApplicationDbContext db, StudentProgressService progressService) : Controller
 {
     [HttpPost("{id:int}/submit")]
     public async Task<IActionResult> Submit(int id, ActivitySubmissionViewModel model)
@@ -18,13 +19,18 @@ public class ActivitiesController(ApplicationDbContext db) : Controller
         var activity = await db.LessonActivities.Include(x => x.Lesson).ThenInclude(x => x.Subject)
             .SingleOrDefaultAsync(x => x.Id == id && x.IsPublished && x.Lesson.IsPublished && x.Lesson.Subject.IsPublished);
         if (activity is null) return NotFound();
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        if (!await progressService.IsLessonUnlockedAsync(activity.LessonId, userId))
+        {
+            TempData["Error"] = "Complete and pass the previous lesson before submitting this activity.";
+            return RedirectToAction("Details", "Subjects", new { area = "Student", id = activity.Lesson.SubjectId });
+        }
         if (!ModelState.IsValid)
         {
             TempData["Error"] = "Write at least 50 characters and complete the required activity before taking the quiz.";
             return RedirectToAction("Details", "Lessons", new { area = "Student", id = activity.LessonId });
         }
 
-        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         var submission = await db.ActivitySubmissions.SingleOrDefaultAsync(x =>
             x.UserId == userId && x.LessonActivityId == id);
         if (submission is null)

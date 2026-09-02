@@ -6,9 +6,9 @@
     <p class="small muted">Showing up to 100 matching accounts, newest first.</p>
     @if (Model.Count == 0) { <div class="empty-state"><h2>No students found</h2><p>Students will appear here after registering through the student portal.</p></div> }
     else {
-        <div class="table-scroll"><table><thead><tr><th scope="col">Student</th><th scope="col">Email</th><th scope="col">Joined (UTC)</th><th scope="col">Status</th><th scope="col">Account access</th></tr></thead><tbody>
+        <div class="table-scroll"><table><thead><tr><th scope="col">Student</th><th scope="col">Email</th><th scope="col">Joined (UTC)</th><th scope="col">Status</th><th scope="col">Actions</th></tr></thead><tbody>
         @foreach (var student in Model) {
-            <tr><td>@student.FullName</td><td>@student.Email</td><td>@student.CreatedAtUtc.ToString("MMM dd, yyyy")</td><td><span class="badge">@(student.IsActive ? "Active" : "Disabled")</span></td><td><form asp-area="Admin" asp-controller="Students" asp-action="SetActive" method="post"><input type="hidden" name="id" value="@student.Id" /><input type="hidden" name="active" value="@(!student.IsActive ? "true" : "false")" /><button class="button secondary compact" type="submit">@(student.IsActive ? "Disable" : "Enable")</button></form></td></tr>
+            <tr><td>@student.FullName</td><td>@student.Email</td><td>@student.CreatedAtUtc.ToString("MMM dd, yyyy")</td><td><span class="badge">@(student.IsActive ? "Active" : "Disabled")</span></td><td class="table-actions"><a asp-action="Progress" asp-route-id="@student.Id">View progress</a><form asp-area="Admin" asp-controller="Students" asp-action="SetActive" method="post"><input type="hidden" name="id" value="@student.Id" /><input type="hidden" name="active" value="@(!student.IsActive ? "true" : "false")" /><button class="button secondary compact" type="submit">@(student.IsActive ? "Disable" : "Enable")</button></form></td></tr>
         }
         </tbody></table></div>
     }

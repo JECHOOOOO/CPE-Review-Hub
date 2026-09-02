@@ -1,17 +1,46 @@
 @model AssessmentTakeViewModel
 @{ ViewData["Title"] = Model.Title; }
+
 <nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-area="Student" asp-controller="Subjects" asp-action="Index">Subjects</a><span>/</span><span>@Model.CourseCode</span><span>/</span><span>@Model.AssessmentLabel</span></nav>
-<span class="eyebrow">@Model.AssessmentLabel · @Model.CourseCode</span><h1>@Model.Title</h1>
-<p class="lead">Answer every question, then submit once. Suggested time: @Model.DurationMinutes minutes.</p>
+
+<header class="quiz-heading">
+    <span class="eyebrow">@Model.AssessmentLabel · @Model.CourseCode</span>
+    <h1>@Model.Title</h1>
+    <p>Attempt @Model.AttemptNumber · Pass at @Model.PassingPercentage% · Suggested time: @Model.DurationMinutes minutes</p>
+</header>
+
+<section class="quiz-overview" aria-label="Quiz completion">
+    <div><strong id="answered-count">0 of @Model.Questions.Count answered</strong><span>Complete every item before submitting.</span></div>
+    <div class="progress-track"><span id="answered-progress" style="width:0%"></span></div>
+</section>
+
 @if (Model.Error is not null) { <div class="notice" role="alert">@Model.Error</div> }
-<form asp-area="Student" asp-controller="Assessments" asp-action="Submit" asp-route-attemptId="@Model.AttemptId" method="post" class="assessment-form">
+
+<form asp-area="Student" asp-controller="Assessments" asp-action="Submit" asp-route-attemptId="@Model.AttemptId" method="post" class="assessment-form" data-assessment-form>
     <input type="hidden" name="AttemptId" value="@Model.AttemptId" />
-    @foreach (var question in Model.Questions) {
-        <fieldset class="panel liquid-glass question-card"><legend><span class="question-number">@question.Number</span><span class="question-prompt">@question.Prompt</span></legend>
-            @foreach (var choice in question.Choices) {
-                <label class="choice-option"><input type="radio" name="Answers[@question.Id]" value="@choice.Id" required /><span>@choice.Text</span></label>
+    @for (var questionIndex = 0; questionIndex < Model.Questions.Count; questionIndex++)
+    {
+        var question = Model.Questions[questionIndex];
+        <fieldset class="question-card">
+            <legend>
+                <span class="question-position">Question @(questionIndex + 1) of @Model.Questions.Count</span>
+                <span class="question-prompt">@question.Prompt</span>
+            </legend>
+            <div class="choice-list">
+            @for (var choiceIndex = 0; choiceIndex < question.Choices.Count; choiceIndex++)
+            {
+                var choice = question.Choices[choiceIndex];
+                var letter = (char)('A' + choiceIndex);
+                <label class="choice-option">
+                    <input type="radio" name="Answers[@question.Id]" value="@choice.Id" required />
+                    <span class="choice-letter" aria-hidden="true">@letter</span>
+                    <span class="choice-text">@choice.Text</span>
+                </label>
             }
+            </div>
         </fieldset>
     }
-    <div class="assessment-submit liquid-glass"><button class="button" type="submit">Submit @Model.AssessmentLabel.ToLowerInvariant()</button><p class="muted small">Your score and answer feedback will be saved to My Progress.</p></div>
+    <div class="assessment-submit"><div><strong>Ready to submit?</strong><p>Your score and feedback will be saved to My Progress.</p></div><button class="button" type="submit">Submit @Model.AssessmentLabel.ToLowerInvariant()</button></div>
 </form>
+
+@section Scripts { <script src="~/js/quiz.js" asp-append-version="true"></script> }

@@ -32,16 +32,21 @@ public class ProgressController(ApplicationDbContext db) : Controller
         {
             var quizIds = subject.Lessons.SelectMany(x => x.Assessments)
                 .Where(x => x.Type == AssessmentType.LessonQuiz).Select(x => x.Id).ToHashSet();
-            var completedQuizzes = attempts.Where(x => quizIds.Contains(x.AssessmentId))
+            var completedQuizzes = attempts.Where(x => quizIds.Contains(x.AssessmentId) && x.IsPassed)
                 .Select(x => x.AssessmentId).Distinct().Count();
             var completedActivities = subject.Lessons.Count(x => completedLessonIds.Contains(x.Id));
-            var stepCount = Math.Max(1, subject.Lessons.Count * 2);
+            var completedLessons = subject.Lessons.Count(lesson =>
+            {
+                var quizId = lesson.Assessments.FirstOrDefault(x => x.Type == AssessmentType.LessonQuiz)?.Id;
+                return completedLessonIds.Contains(lesson.Id) && quizId.HasValue &&
+                    attempts.Any(x => x.AssessmentId == quizId.Value && x.IsPassed);
+            });
             var finalId = subject.Assessments.FirstOrDefault(x =>
                 x.Type == AssessmentType.FinalExam && x.LessonId is null)?.Id;
             var finalAttempts = finalId.HasValue ? attempts.Where(x => x.AssessmentId == finalId.Value).ToList() : [];
             return new CourseProgressRow(subject.Id, subject.Code, subject.Title,
                 completedActivities, completedQuizzes, subject.Lessons.Count,
-                (int)Math.Round(100m * (completedActivities + completedQuizzes) / stepCount),
+                subject.Lessons.Count == 0 ? 0 : (int)Math.Round(100m * completedLessons / subject.Lessons.Count),
                 finalAttempts.Count == 0 ? null : finalAttempts.Max(x => x.Percentage));
         }).ToList();
 

@@ -1,9 +1,57 @@
 @model StudentSubjectDetailsViewModel
 @{ ViewData["Title"] = Model.Code; }
+
 <nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-action="Index">Subjects</a><span>/</span><span>@Model.Code</span></nav>
-<span class="eyebrow">@Model.Level</span><h1>@Model.Code · @Model.Title</h1><p class="lead">@Model.Description</p>
-<section class="panel course-progress-summary"><div><span class="eyebrow">COURSE PROGRESS</span><h2>@Model.ProgressPercentage%</h2></div><div class="progress-track" aria-label="Course progress @Model.ProgressPercentage percent"><span style="width:@Model.ProgressPercentage%"></span></div></section>
-<div class="section-heading"><h2>Lessons</h2><span class="muted small">@Model.Lessons.Count published</span></div>
-@if (Model.Lessons.Count == 0) { <section class="panel empty-state"><h2>No published lessons yet</h2><p>Lesson content for this subject is still being prepared.</p></section> }
-else { <div class="lesson-list">@for (var i = 0; i < Model.Lessons.Count; i++) { var lesson = Model.Lessons[i]; <article class="lesson-row"><span class="lesson-number">@(i + 1)</span><div><h2>@lesson.Title</h2><p>@lesson.Summary</p><span class="small muted">@lesson.MaterialCount study guide · Activity @(lesson.ActivityCompleted ? "completed" : "pending") · Quiz @(lesson.BestQuizPercentage is null ? "pending" : $"best {lesson.BestQuizPercentage:0.##}%")</span></div><a class="button secondary" asp-area="Student" asp-controller="Lessons" asp-action="Details" asp-route-id="@lesson.Id">@(lesson.BestQuizPercentage is null ? "Open lesson" : "Review lesson") →</a></article> }</div> }
-@if (Model.FinalExam is not null) { <section class="panel assessment-status"><div><span class="eyebrow">COURSE ASSESSMENT</span><h2>50-item final examination</h2><p>@(Model.FinalExam.IsUnlocked ? "All six activities and lesson quizzes are complete." : "Complete all six activities and lesson quizzes before taking the course examination.")</p>@if (Model.FinalExam.BestPercentage is not null) { <p><strong>Best final score: @Model.FinalExam.BestPercentage.Value.ToString("0.##")%</strong></p> }</div><div><strong>@Model.FinalExam.CurrentQuestions / @Model.FinalExam.RequiredQuestions</strong><span>@(Model.FinalExam.IsReady ? "Questions ready" : "Questions being prepared")</span>@if (Model.FinalExam.IsReady && Model.FinalExam.IsUnlocked) { <form asp-area="Student" asp-controller="Assessments" asp-action="Start" asp-route-id="@Model.FinalExam.Id" method="post"><button class="button" type="submit">@(Model.FinalExam.AttemptCount > 0 ? "Retake final exam" : "Start final exam") →</button></form> } else { <span class="badge">Locked</span> }</div></section> }
+<span class="eyebrow">@Model.Level</span>
+<h1>@Model.Code · @Model.Title</h1>
+<p class="lead">@Model.Description</p>
+
+<section class="panel course-progress-summary">
+    <div><span class="eyebrow">COURSE COMPLETION</span><h2>@Model.ProgressPercentage%</h2></div>
+    <div><div class="progress-track" aria-label="Course completion @Model.ProgressPercentage percent"><span style="width:@Model.ProgressPercentage%"></span></div><p class="small muted">A lesson is completed after its activity is submitted and its quiz is passed.</p></div>
+</section>
+
+<div class="section-heading"><h2>Learning path</h2><span class="muted small">Complete lessons in order</span></div>
+@if (Model.Lessons.Count == 0)
+{
+    <section class="panel empty-state"><h2>No published lessons yet</h2><p>Lesson content for this subject is still being prepared.</p></section>
+}
+else
+{
+    <div class="lesson-list">
+    @for (var i = 0; i < Model.Lessons.Count; i++)
+    {
+        var lesson = Model.Lessons[i];
+        var statusClass = lesson.IsCompleted ? "completed" : lesson.IsUnlocked ? "available" : "locked";
+        var statusText = lesson.IsCompleted ? "Completed" : lesson.IsUnlocked ? "Available" : "Locked";
+        <article class="lesson-row @statusClass">
+            <span class="lesson-number">@(lesson.IsCompleted ? "✓" : lesson.IsUnlocked ? "▶" : "🔒")</span>
+            <div>
+                <span class="lesson-position">Lesson @(i + 1) of @Model.Lessons.Count</span>
+                <h2>@lesson.Title</h2>
+                <p>@lesson.Summary</p>
+                <span class="small muted">@lesson.MaterialCount study guide · Activity @(lesson.ActivityCompleted ? "completed" : "pending") · Quiz @(lesson.BestQuizPercentage is null ? "not attempted" : $"best {lesson.BestQuizPercentage:0.##}%") · Pass at @lesson.PassingPercentage%</span>
+            </div>
+            <div class="lesson-row-action">
+                <span class="lesson-status @statusClass">@statusText</span>
+                @if (lesson.IsUnlocked)
+                {
+                    <a class="button secondary" asp-area="Student" asp-controller="Lessons" asp-action="Details" asp-route-id="@lesson.Id">@(lesson.IsCompleted ? "Review lesson" : "Open lesson") →</a>
+                }
+                else
+                {
+                    <span class="small muted">Pass Lesson @i first</span>
+                }
+            </div>
+        </article>
+    }
+    </div>
+}
+
+@if (Model.FinalExam is not null)
+{
+    <section class="panel assessment-status @(Model.FinalExam.IsUnlocked ? "available" : "locked")">
+        <div><span class="eyebrow">COURSE ASSESSMENT</span><h2>50-item final examination</h2><p>@(Model.FinalExam.IsUnlocked ? "All six lessons are completed. The final examination is available." : "Complete all six activities and pass all six lesson quizzes to unlock the final examination.")</p>@if (Model.FinalExam.BestPercentage is not null) { <p><strong>Best final score: @Model.FinalExam.BestPercentage.Value.ToString("0.##")%</strong></p> }</div>
+        <div><strong>@Model.FinalExam.CurrentQuestions / @Model.FinalExam.RequiredQuestions</strong><span>@(Model.FinalExam.IsReady ? "Questions ready" : "Questions being prepared")</span>@if (Model.FinalExam.IsReady && Model.FinalExam.IsUnlocked) { <form asp-area="Student" asp-controller="Assessments" asp-action="Start" asp-route-id="@Model.FinalExam.Id" method="post"><button class="button" type="submit">@(Model.FinalExam.AttemptCount > 0 ? "Retake final exam" : "Start final exam") →</button></form> } else { <span class="lesson-status locked">🔒 Locked</span> }</div>
+    </section>
+}

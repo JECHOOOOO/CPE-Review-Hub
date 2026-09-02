@@ -80,11 +80,16 @@ def verify(mysql_bin):
     simple_password = "abcdefgh"
     admin_password = "Admin!" + secrets.token_hex(12)
     env = os.environ.copy()
+    # Keep disposable antiforgery/data-protection keys inside the disposable test folder.
+    env["DataProtection__KeysPath"] = str(work / "keys")
     env["ASPNETCORE_ENVIRONMENT"] = "Development"
     env["Logging__LogLevel__Default"] = "Warning"
+    env["Logging__EventLog__LogLevel__Default"] = "None"
     env["ConnectionStrings__ReviewHub"] = (
         f"Server=127.0.0.1;Port={db_port};Database=cpe_integration;"
-        f"User ID=cpe_test;Password={app_password};SslMode=Required;ConnectionTimeout=5")
+        # This disposable loopback-only server has no TLS certificate. The real
+        # development connection remains in user-secrets and is not changed.
+        f"User ID=cpe_test;Password={app_password};SslMode=Disabled;AllowPublicKeyRetrieval=True;ConnectionTimeout=5")
 
     def sql(statement, authenticated=True):
         sql_env = os.environ.copy()
@@ -208,11 +213,13 @@ def verify(mysql_bin):
         assert student.request("/Admin/Dashboard")[0] == 302
         assert student.request("/Admin/Students")[0] == 302
         first_lesson_id = sql("SELECT l.Id FROM cpe_integration.Lessons l JOIN cpe_integration.Subjects s ON s.Id=l.SubjectId WHERE s.Code='CPE 211' AND l.SortOrder=1;")
+        second_lesson_id = sql("SELECT l.Id FROM cpe_integration.Lessons l JOIN cpe_integration.Subjects s ON s.Id=l.SubjectId WHERE s.Code='CPE 211' AND l.SortOrder=2;")
         first_activity_id = sql("SELECT la.Id FROM cpe_integration.LessonActivities la WHERE la.LessonId=" + first_lesson_id + ";")
         first_quiz_id = sql("SELECT a.Id FROM cpe_integration.Assessments a WHERE a.LessonId=" + first_lesson_id + " AND a.Type=1;")
         lesson_path = f"/student/lessons/{first_lesson_id}"
         lesson_body = student.request(lesson_path)[1]
         assert "Arrays and Linked Lists" in lesson_body and "Array access by index is O(1)" in lesson_body
+        assert student.request(f"/student/lessons/{second_lesson_id}")[0] == 302
         assert student.post(f"/student/activities/{first_activity_id}/submit", {
             "Response": "I compared indexed array access with linked-node traversal, traced insertion links, checked the empty case, and documented the resulting structure."
         }, lesson_path)[0] == 302
@@ -222,6 +229,7 @@ def verify(mysql_bin):
         attempt_id = take_path.rsplit("/", 1)[-1]
         take_body = student.request(take_path)[1]
         assert take_body.count('question-card') == 10
+        assert "Question 1 of 10" in take_body and "choice-letter" in take_body and "0 of 10 answered" in take_body
         correct_rows = sql("SELECT aq.QuestionId,c.Id FROM cpe_integration.AssessmentQuestions aq "
             "JOIN cpe_integration.Choices c ON c.QuestionId=aq.QuestionId AND c.IsCorrect=1 "
             f"WHERE aq.AssessmentId={first_quiz_id} ORDER BY aq.SortOrder;").splitlines()
@@ -230,7 +238,9 @@ def verify(mysql_bin):
         status, _, headers = student.post(f"{take_path}/submit", answer_data, take_path)
         assert status == 302 and headers["Location"].endswith("/result")
         result_body = student.request(urllib.parse.urlparse(headers["Location"]).path)[1]
-        assert "10 / 10" in result_body and "100%" in result_body and "CORRECT" in result_body
+        assert "10 / 10" in result_body and "100%" in result_body and "Correct" in result_body
+        assert ">Attempt<" in result_body and ">#1<" in result_body
+        assert student.request(f"/student/lessons/{second_lesson_id}")[0] == 200
         assert "Data Structures And Algorithms" in student.request("/student/progress")[1]
         assert sql("SELECT COUNT(*) FROM cpe_integration.ActivitySubmissions;") == "1"
         assert sql("SELECT COUNT(*) FROM cpe_integration.AssessmentAttempts WHERE Score=10 AND IsPassed=1;") == "1"
@@ -238,6 +248,24 @@ def verify(mysql_bin):
         assert admin.request("/Admin/Dashboard")[0] == 200
         assert admin.request("/Student/Dashboard")[0] == 302
         assert admin.request("/Student/Profile")[0] == 302
+        assert admin.request("/admin/assessments?type=LessonQuiz")[0] == 200
+        assert admin.request("/admin/assessments?type=FinalExam")[0] == 200
+        assert admin.request("/admin/results")[0] == 200
+        assert admin.request("/admin/statistics")[0] == 200
+        assert admin.request(f"/admin/assessments/{first_quiz_id}")[0] == 200
+        assert admin.request(f"/admin/questions/create?assessmentId={first_quiz_id}")[0] == 200
+        assert admin.request(f"/admin/results/{attempt_id}")[0] == 200
+        assert admin.post("/admin/questions/save", {"AssessmentId": first_quiz_id,
+            "LessonId": first_lesson_id, "Prompt": "Which access pattern is taught for an array?",
+            "Explanation": "Arrays support direct indexed access.", "ChoiceA": "Direct indexed access",
+            "ChoiceB": "Pointer-only traversal", "ChoiceC": "Network routing", "ChoiceD": "Disk scheduling",
+            "CorrectChoiceIndex": "0", "IsActive": "true"},
+            f"/admin/questions/create?assessmentId={first_quiz_id}")[0] == 302
+        added_question_id = sql("SELECT MAX(q.Id) FROM cpe_integration.Questions q WHERE q.SourceKey IS NULL;")
+        assert sql(f"SELECT COUNT(*) FROM cpe_integration.AssessmentQuestions WHERE AssessmentId={first_quiz_id};") == "11"
+        assert admin.post(f"/admin/questions/{added_question_id}/delete", {"assessmentId": first_quiz_id},
+            f"/admin/questions/{added_question_id}/delete?assessmentId={first_quiz_id}")[0] == 302
+        assert sql(f"SELECT COUNT(*) FROM cpe_integration.AssessmentQuestions WHERE AssessmentId={first_quiz_id};") == "10"
         print("PASS: Student activity gating, 10-item scoring, result feedback, progress, CSRF, and portal separation.", flush=True)
         assert student.request("/admin/subjects")[0] == 302
         assert admin.request("/student/subjects")[0] == 302
@@ -279,6 +307,7 @@ def verify(mysql_bin):
         assert "Saved Profile" in student.request("/Student/Profile")[1]
         assert "Saved Profile" in admin.request("/Admin/Students")[1]
         student_id = sql("SELECT Id FROM cpe_integration.AspNetUsers WHERE Email='student@example.test';")
+        assert admin.request(f"/Admin/Students/Progress?id={student_id}")[0] == 200
         assert admin.post("/Admin/Students/SetActive", {"id": student_id, "active": "false"}, "/Admin/Students")[0] == 302
         assert student.request("/Student/Dashboard")[0] == 302
         assert login(student, "student", "student@example.test", password)[0] == 200

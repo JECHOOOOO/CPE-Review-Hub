@@ -1,0 +1,4 @@
+@model CPE_Review_Hub.ViewModels.AttemptAdminDetailsViewModel
+@{ ViewData["Title"] = "Attempt details"; }
+<span class="eyebrow">@Model.SubjectCode · ATTEMPT #@Model.AttemptNumber</span><h1>@Model.StudentName</h1><p class="lead">@Model.AssessmentTitle · @Model.Score/@Model.Total (@Model.Percentage.ToString("0.#")%) · @(Model.IsPassed ? "Passed" : "Needs review")</p>
+<section class="admin-question-list">@foreach (var answer in Model.Answers) { <article class="result-answer-card @(answer.IsCorrect ? "correct" : "incorrect")"><span class="badge">Question @answer.Number</span><h2>@answer.Prompt</h2><p><strong>Student answer:</strong> @answer.SelectedAnswer</p>@if (!answer.IsCorrect) { <p><strong>Correct answer:</strong> @answer.CorrectAnswer</p> }<p class="explanation"><strong>Feedback:</strong> @answer.Explanation</p></article> }</section>
