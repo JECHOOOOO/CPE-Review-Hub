@@ -5,6 +5,7 @@ Never connects to the user's MySQL service or reads their connection secrets.
 Run from the repository: python tests/verify_mysql.py
 """
 import argparse
+import base64
 import html
 import http.cookiejar
 import os
@@ -50,7 +51,7 @@ class Client:
             response = self.opener.open(req, timeout=10)
         except urllib.error.HTTPError as error:
             response = error
-        return response.code, response.read().decode(), response.headers
+        return response.code, response.read().decode(errors="replace"), response.headers
 
     def token(self, path):
         status, body, _ = self.request(path)
@@ -61,6 +62,23 @@ class Client:
 
     def post(self, path, data, source=None):
         return self.request(path, {**data, "__RequestVerificationToken": self.token(source or path)})
+
+    def multipart_post(self, path, data, files, source=None):
+        boundary = "----CpeReviewHub" + secrets.token_hex(12)
+        parts = []
+        fields = {**data, "__RequestVerificationToken": self.token(source or path)}
+        for name, value in fields.items():
+            parts.append((f"--{boundary}\r\nContent-Disposition: form-data; name=\"{name}\"\r\n\r\n{value}\r\n").encode())
+        for name, filename, content_type, content in files:
+            parts.append((f"--{boundary}\r\nContent-Disposition: form-data; name=\"{name}\"; filename=\"{filename}\"\r\nContent-Type: {content_type}\r\n\r\n").encode() + content + b"\r\n")
+        parts.append(f"--{boundary}--\r\n".encode())
+        req = urllib.request.Request(self.base + path, data=b"".join(parts),
+            headers={"Content-Type": f"multipart/form-data; boundary={boundary}"})
+        try:
+            response = self.opener.open(req, timeout=10)
+        except urllib.error.HTTPError as error:
+            response = error
+        return response.code, response.read(), response.headers
 
 
 def verify(mysql_bin):
@@ -222,9 +240,16 @@ def verify(mysql_bin):
         lesson_body = student.request(lesson_path)[1]
         assert "Arrays and Linked Lists" in lesson_body and "Array access by index is O(1)" in lesson_body
         assert student.request(f"/student/lessons/{second_lesson_id}")[0] == 302
-        assert student.post(f"/student/activities/{first_activity_id}/submit", {
+        sample_png = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=")
+        assert student.multipart_post(f"/student/activities/{first_activity_id}/submit", {
             "Response": "I compared indexed array access with linked-node traversal, traced insertion links, checked the empty case, and documented the resulting structure."
-        }, lesson_path)[0] == 302
+        }, [("Attachments", "array-trace.png", "image/png", sample_png)], lesson_path)[0] == 302
+        attachment_id = sql("SELECT Id FROM cpe_integration.SubmissionAttachments LIMIT 1;")
+        assert student.request(f"/student/activities/attachments/{attachment_id}")[0] == 200
+        assert student.multipart_post(f"/student/activities/{first_activity_id}/submit", {
+            "Response": "This update must be rejected because executable attachments are not allowed by the activity submission policy."
+        }, [("Attachments", "unsafe.exe", "application/octet-stream", b"MZ-not-allowed")], lesson_path)[0] == 302
+        assert sql("SELECT COUNT(*) FROM cpe_integration.SubmissionAttachments;") == "1"
         status, _, headers = student.post(f"/student/assessments/{first_quiz_id}/start", {}, lesson_path)
         assert status == 302 and "/student/assessments/attempts/" in headers["Location"]
         take_path = urllib.parse.urlparse(headers["Location"]).path
@@ -245,6 +270,7 @@ def verify(mysql_bin):
         assert student.request(f"/student/lessons/{second_lesson_id}")[0] == 200
         assert "Data Structures And Algorithms" in student.request("/student/progress")[1]
         assert sql("SELECT COUNT(*) FROM cpe_integration.ActivitySubmissions;") == "1"
+        assert sql("SELECT COUNT(*) FROM cpe_integration.SubmissionAttachments WHERE FileName='array-trace.png' AND FileSize>0;") == "1"
         assert sql("SELECT COUNT(*) FROM cpe_integration.AssessmentAttempts WHERE Score=10 AND IsPassed=1;") == "1"
         assert login(admin, "admin", "admin@example.test", admin_password)[0] == 302
         assert admin.request("/Admin/Dashboard")[0] == 200
@@ -257,6 +283,9 @@ def verify(mysql_bin):
         assert admin.request(f"/admin/assessments/{first_quiz_id}")[0] == 200
         assert admin.request(f"/admin/questions/create?assessmentId={first_quiz_id}")[0] == 200
         assert admin.request(f"/admin/results/{attempt_id}")[0] == 200
+        submission_id = sql("SELECT Id FROM cpe_integration.ActivitySubmissions LIMIT 1;")
+        assert admin.request(f"/admin/activity-submissions/{submission_id}")[0] == 200
+        assert admin.request(f"/admin/activity-submissions/attachments/{attachment_id}")[0] == 200
         assert admin.post("/admin/questions/save", {"AssessmentId": first_quiz_id,
             "LessonId": first_lesson_id, "Prompt": "Which access pattern is taught for an array?",
             "Explanation": "Arrays support direct indexed access.", "ChoiceA": "Direct indexed access",

@@ -10,7 +10,7 @@
     <a class="skip-link" href="#main">Skip to content</a>
     <header class="site-header liquid-glass">
         <a class="brand" asp-area="" asp-controller="Home" asp-action="Index"><span class="brand-mark">CPE</span><span>Review Hub<small>COMPUTER ENGINEERING</small></span></a>
-        <nav aria-label="Student navigation"><a href="/student.html">Student login</a><a asp-area="Student" asp-controller="Account" asp-action="Register">Create account</a></nav>
+        <nav aria-label="Student navigation">@if (ViewData["BodyClass"]?.ToString() == "landing-page") { <span class="landing-nav-links"><a href="/">Home</a><a href="#about">About</a><a href="#learning">Learning</a></span> }<a href="/student.html">Student login</a><a class="nav-journey liquid-glass" asp-area="Student" asp-controller="Account" asp-action="Register">Begin journey</a></nav>
     </header>
     <main id="main" class="public-main">
         @if (TempData["Success"] is string success) { <div class="notice success" role="status">@success</div> }

@@ -11,10 +11,11 @@ using Microsoft.EntityFrameworkCore;
 namespace CPE_Review_Hub.Areas.Student.Controllers;
 
 [Area("Student"), Authorize(Policy = PortalSecurity.Student), Route("student/activities")]
-public class ActivitiesController(ApplicationDbContext db, StudentProgressService progressService) : Controller
+public class ActivitiesController(ApplicationDbContext db, StudentProgressService progressService,
+    ActivityAttachmentService attachmentService) : Controller
 {
-    [HttpPost("{id:int}/submit")]
-    public async Task<IActionResult> Submit(int id, ActivitySubmissionViewModel model)
+    [HttpPost("{id:int}/submit"), RequestSizeLimit(ActivityAttachmentService.MaximumTotalSize + 1024 * 1024)]
+    public async Task<IActionResult> Submit(int id, ActivitySubmissionViewModel model, CancellationToken cancellationToken)
     {
         var activity = await db.LessonActivities.Include(x => x.Lesson).ThenInclude(x => x.Subject)
             .SingleOrDefaultAsync(x => x.Id == id && x.IsPublished && x.Lesson.IsPublished && x.Lesson.Subject.IsPublished);
@@ -30,9 +31,20 @@ public class ActivitiesController(ApplicationDbContext db, StudentProgressServic
             TempData["Error"] = "Write at least 50 characters and complete the required activity before taking the quiz.";
             return RedirectToAction("Details", "Lessons", new { area = "Student", id = activity.LessonId });
         }
-
-        var submission = await db.ActivitySubmissions.SingleOrDefaultAsync(x =>
+        var submission = await db.ActivitySubmissions.Include(x => x.Attachments).SingleOrDefaultAsync(x =>
             x.UserId == userId && x.LessonActivityId == id);
+        var (attachments, attachmentError) = await attachmentService.ReadAsync(model.Attachments, cancellationToken);
+        if (attachmentError is not null)
+        {
+            TempData["Error"] = attachmentError;
+            return RedirectToAction("Details", "Lessons", new { area = "Student", id = activity.LessonId });
+        }
+        if ((submission?.Attachments.Count ?? 0) + attachments.Count > ActivityAttachmentService.MaximumFiles ||
+            (submission?.Attachments.Sum(x => x.FileSize) ?? 0) + attachments.Sum(x => x.FileSize) > ActivityAttachmentService.MaximumTotalSize)
+        {
+            TempData["Error"] = "Keep no more than 3 attachments totaling 10 MB. Remove an existing file before adding another.";
+            return RedirectToAction("Details", "Lessons", new { area = "Student", id = activity.LessonId });
+        }
         if (submission is null)
         {
             submission = new ActivitySubmission
@@ -43,8 +55,33 @@ public class ActivitiesController(ApplicationDbContext db, StudentProgressServic
         }
         submission.Response = model.Response.Trim();
         submission.UpdatedAtUtc = DateTime.UtcNow;
+        foreach (var attachment in attachments) submission.Attachments.Add(attachment);
         await db.SaveChangesAsync();
         TempData["Success"] = "Activity saved. The 10-item lesson quiz is now unlocked.";
         return RedirectToAction("Details", "Lessons", new { area = "Student", id = activity.LessonId }, "quiz");
+    }
+
+    [HttpGet("attachments/{id:int}")]
+    public async Task<IActionResult> Download(int id)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var file = await db.SubmissionAttachments.AsNoTracking().SingleOrDefaultAsync(x =>
+            x.Id == id && x.ActivitySubmission.UserId == userId);
+        return file is null ? NotFound() : File(file.Data, file.ContentType, file.FileName);
+    }
+
+    [HttpPost("attachments/{id:int}/delete")]
+    public async Task<IActionResult> DeleteAttachment(int id)
+    {
+        var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
+        var file = await db.SubmissionAttachments.Include(x => x.ActivitySubmission)
+            .ThenInclude(x => x.LessonActivity).SingleOrDefaultAsync(x =>
+                x.Id == id && x.ActivitySubmission.UserId == userId);
+        if (file is null) return NotFound();
+        var lessonId = file.ActivitySubmission.LessonActivity.LessonId;
+        db.SubmissionAttachments.Remove(file);
+        await db.SaveChangesAsync();
+        TempData["Success"] = "Attachment removed. Your written activity response remains saved.";
+        return RedirectToAction("Details", "Lessons", new { area = "Student", id = lessonId });
     }
 }

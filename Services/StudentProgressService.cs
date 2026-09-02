@@ -15,7 +15,8 @@ public sealed record LessonProgressState(
     bool IsCompleted,
     bool IsUnlocked,
     decimal? BestQuizPercentage,
-    int AttemptCount);
+    int AttemptCount,
+    int? ActivitySubmissionId);
 
 public sealed record CourseProgressState(
     int SubjectId,
@@ -46,7 +47,7 @@ public sealed class StudentProgressService(ApplicationDbContext db)
         var quizIds = lessons.Where(x => x.Quiz != null).Select(x => x.Quiz!.Id).ToList();
         var submissions = await db.ActivitySubmissions.AsNoTracking()
             .Where(x => x.UserId == userId && activityIds.Contains(x.LessonActivityId))
-            .Select(x => x.LessonActivityId).ToHashSetAsync();
+            .Select(x => new { x.LessonActivityId, x.Id }).ToDictionaryAsync(x => x.LessonActivityId, x => x.Id);
         var attempts = await db.AssessmentAttempts.AsNoTracking()
             .Where(x => x.UserId == userId && x.SubmittedAtUtc != null && quizIds.Contains(x.AssessmentId))
             .Select(x => new { x.AssessmentId, x.Percentage, x.IsPassed }).ToListAsync();
@@ -57,7 +58,7 @@ public sealed class StudentProgressService(ApplicationDbContext db)
         {
             var quizAttempts = attempts.Where(x => lesson.Quiz != null &&
                 x.AssessmentId == lesson.Quiz.Id).ToList();
-            var activityCompleted = lesson.ActivityId is null || submissions.Contains(lesson.ActivityId.Value);
+            var activityCompleted = lesson.ActivityId is null || submissions.ContainsKey(lesson.ActivityId.Value);
             var quizPassed = quizAttempts.Any(x => x.IsPassed);
             var completed = activityCompleted && lesson.Quiz != null && quizPassed;
             states.Add(new LessonProgressState(
@@ -65,7 +66,9 @@ public sealed class StudentProgressService(ApplicationDbContext db)
                 lesson.Quiz?.PassingPercentage ?? 70, activityCompleted, quizPassed,
                 completed, previousCompleted,
                 quizAttempts.Count == 0 ? null : quizAttempts.Max(x => x.Percentage),
-                quizAttempts.Count));
+                quizAttempts.Count,
+                lesson.ActivityId.HasValue && submissions.TryGetValue(lesson.ActivityId.Value, out var submissionId)
+                    ? submissionId : null));
             previousCompleted = previousCompleted && completed;
         }
 

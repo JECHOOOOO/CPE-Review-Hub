@@ -28,7 +28,7 @@ public class LessonsController(ApplicationDbContext db, StudentProgressService p
             return RedirectToAction("Details", "Subjects", new { area = "Student", id = lesson.SubjectId });
         }
         var quiz = lesson.Assessments.FirstOrDefault(x => x.Type == AssessmentType.LessonQuiz);
-        var submission = lesson.Activity is null ? null : await db.ActivitySubmissions.AsNoTracking()
+        var submission = lesson.Activity is null ? null : await db.ActivitySubmissions.AsNoTracking().Include(x => x.Attachments)
             .SingleOrDefaultAsync(x => x.UserId == userId && x.LessonActivityId == lesson.Activity.Id);
         var quizAttempts = quiz is null ? [] : await db.AssessmentAttempts.AsNoTracking()
             .Where(x => x.UserId == userId && x.AssessmentId == quiz.Id && x.SubmittedAtUtc != null)
@@ -40,7 +40,8 @@ public class LessonsController(ApplicationDbContext db, StudentProgressService p
             lesson.Activity is { IsPublished: true } activity
                 ? new StudentActivityViewModel(activity.Id, activity.Title, activity.Instructions,
                     activity.ExpectedOutput, submission is not null, submission?.Response ?? "",
-                    submission?.CompletedAtUtc) : null,
+                    submission?.CompletedAtUtc, submission?.Attachments.OrderBy(x => x.UploadedAtUtc)
+                        .Select(x => new AttachmentViewModel(x.Id, x.FileName, x.ContentType, x.FileSize)).ToList() ?? []) : null,
             quiz is null ? null : new StudentAssessmentStatusViewModel(quiz.Id, quiz.Title,
                 quiz.RequiredQuestionCount, quiz.AssessmentQuestions.Count, quiz.IsPublished,
                 submission is not null, quizAttempts.Count == 0 ? null : quizAttempts.Max(x => x.Percentage),

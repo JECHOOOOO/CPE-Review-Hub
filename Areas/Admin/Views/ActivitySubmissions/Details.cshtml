@@ -1,0 +1,4 @@
+@model CPE_Review_Hub.ViewModels.AdminActivitySubmissionViewModel
+@{ ViewData["Title"] = "Activity submission"; }
+<span class="eyebrow">@Model.SubjectCode · @Model.LessonTitle</span><h1>@Model.StudentName</h1><p class="lead">@Model.StudentEmail · Submitted @Model.CompletedAtUtc.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</p>
+<section class="panel"><h2>@Model.ActivityTitle</h2><div class="submission-response">@Model.Response</div>@if (Model.Attachments.Count > 0) { <div class="attachment-list"><h3>Attachments</h3>@foreach (var file in Model.Attachments) { <div class="attachment-row"><a asp-area="Admin" asp-controller="ActivitySubmissions" asp-action="Download" asp-route-id="@file.Id">@file.FileName</a><span class="small muted">@((file.FileSize / 1024d).ToString("0.#")) KB</span></div> }</div> } else { <p class="muted">No files attached.</p> }</section>

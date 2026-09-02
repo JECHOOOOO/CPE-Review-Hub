@@ -12,6 +12,7 @@ builder.Services.AddControllersWithViews(options =>
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute()));
 builder.Services.AddPortalSecurity(builder.Configuration, builder.Environment.IsDevelopment());
 builder.Services.AddScoped<StudentProgressService>();
+builder.Services.AddScoped<ActivityAttachmentService>();
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;

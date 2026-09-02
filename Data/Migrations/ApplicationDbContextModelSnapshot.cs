@@ -536,6 +536,42 @@ namespace CPE_Review_Hub.Data.Migrations
                     b.ToTable("Subjects");
                 });
 
+            modelBuilder.Entity("CPE_Review_Hub.Models.SubmissionAttachment", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<int>("ActivitySubmissionId")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("varchar(100)");
+
+                    b.Property<byte[]>("Data")
+                        .IsRequired()
+                        .HasColumnType("longblob");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(255)
+                        .HasColumnType("varchar(255)");
+
+                    b.Property<long>("FileSize")
+                        .HasColumnType("bigint");
+
+                    b.Property<DateTime>("UploadedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ActivitySubmissionId");
+
+                    b.ToTable("SubmissionAttachments");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
                     b.Property<int>("Id")
@@ -779,6 +815,17 @@ namespace CPE_Review_Hub.Data.Migrations
                     b.Navigation("AcademicLevel");
                 });
 
+            modelBuilder.Entity("CPE_Review_Hub.Models.SubmissionAttachment", b =>
+                {
+                    b.HasOne("CPE_Review_Hub.Models.ActivitySubmission", "ActivitySubmission")
+                        .WithMany("Attachments")
+                        .HasForeignKey("ActivitySubmissionId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("ActivitySubmission");
+                });
+
             modelBuilder.Entity("Microsoft.AspNetCore.Identity.IdentityUserClaim<string>", b =>
                 {
                     b.HasOne("CPE_Review_Hub.Models.ApplicationUser", null)
@@ -809,6 +856,11 @@ namespace CPE_Review_Hub.Data.Migrations
             modelBuilder.Entity("CPE_Review_Hub.Models.AcademicLevel", b =>
                 {
                     b.Navigation("Subjects");
+                });
+
+            modelBuilder.Entity("CPE_Review_Hub.Models.ActivitySubmission", b =>
+                {
+                    b.Navigation("Attachments");
                 });
 
             modelBuilder.Entity("CPE_Review_Hub.Models.ApplicationUser", b =>

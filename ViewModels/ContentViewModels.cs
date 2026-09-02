@@ -57,7 +57,9 @@ public record StudentSubjectDetailsViewModel(int Id, string Code, string Title, 
     IReadOnlyList<StudentLessonRow> Lessons, StudentAssessmentStatusViewModel? FinalExam, int ProgressPercentage);
 public record StudentMaterialViewModel(string Title, string Content, string ResourceUrl);
 public record StudentActivityViewModel(int Id, string Title, string Instructions, string ExpectedOutput,
-    bool IsCompleted, string Response, DateTime? CompletedAtUtc);
+    bool IsCompleted, string Response, DateTime? CompletedAtUtc,
+    IReadOnlyList<AttachmentViewModel> Attachments);
+public record AttachmentViewModel(int Id, string FileName, string ContentType, long FileSize);
 public record StudentLessonDetailsViewModel(int Id, string Title, string Summary, string SubjectCode, int SubjectId,
     IReadOnlyList<StudentMaterialViewModel> Materials, StudentActivityViewModel? Activity,
     StudentAssessmentStatusViewModel? Quiz);
@@ -65,6 +67,7 @@ public record StudentLessonDetailsViewModel(int Id, string Title, string Summary
 public class ActivitySubmissionViewModel
 {
     [Required, StringLength(10000, MinimumLength = 50)] public string Response { get; set; } = "";
+    [Display(Name = "Attach files or images")] public List<IFormFile> Attachments { get; set; } = [];
 }
 
 public class AssessmentSubmissionViewModel

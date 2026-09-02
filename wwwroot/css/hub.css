@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Inter:wght@400;500&display=swap');
 
 :root {
     --ink:#15253c;
@@ -9,7 +9,9 @@
     --line:#dce5e8;
     --paper:#fff;
     --bg:#f5f7f9;
-    font-family:system-ui,-apple-system,"Segoe UI",sans-serif;
+    --font-display:'Instrument Serif',serif;
+    --font-body:'Inter',system-ui,-apple-system,"Segoe UI",sans-serif;
+    font-family:var(--font-body);
     color:var(--ink);
     background:var(--bg);
     font-size:16px
@@ -1182,7 +1184,10 @@ h1 em,h2 em { font-family:'Instrument Serif',serif;font-weight:400 }
 
 .public-main { position:relative;z-index:1 }
 .landing-page .public-main { max-width:none;padding:0;min-height:100vh }
-.landing-page .site-header { position:absolute;left:24px;right:24px;top:0 }
+.landing-page { --background:201 100% 13%;--foreground:0 0% 100%;--muted-foreground:240 4% 66%;background:hsl(var(--background));font-family:var(--font-body) }
+.landing-page .site-header { position:absolute;left:32px;right:32px;top:0;max-width:1280px;margin:24px auto 0;padding:14px 20px }
+.landing-page .landing-nav-links { display:flex;gap:26px }
+.landing-page .nav-journey { padding:10px 22px;border-radius:999px;color:#fff }
 .landing-page .site-footer { max-width:1152px;margin:auto }
 .site-footer { border-color:var(--line) }
 
@@ -1410,6 +1415,15 @@ th { color:rgba(255,255,255,.45) }
 .assessment-submit { z-index:3;display:flex;align-items:center;justify-content:space-between;gap:20px;background:rgba(15,21,19,.96) }
 .assessment-submit p { margin:4px 0 0;color:rgba(255,255,255,.55);font-size:.82rem }
 .answer-card h3,.answer-card p,.material-content { max-width:100%;overflow-wrap:anywhere }
+.attachment-picker { margin-top:18px;padding:18px;border:1px dashed rgba(255,255,255,.22);border-radius:16px;background:rgba(255,255,255,.025) }
+.attachment-picker input[type=file] { width:100%;margin-top:10px;padding:12px;background:rgba(255,255,255,.04);border-radius:12px }
+.attachment-list { margin-top:20px;padding-top:18px;border-top:1px solid rgba(255,255,255,.1) }
+.attachment-list h3 { margin:0 0 12px;font-size:1rem }
+.attachment-row { display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid rgba(255,255,255,.07) }
+.attachment-row>a { min-width:0;flex:1;overflow-wrap:anywhere }
+.attachment-row form { margin:0 }
+.attachment-row .danger-link { padding:0;border:0;background:none;cursor:pointer }
+.submission-response { margin:18px 0;padding:20px;border-radius:16px;background:rgba(255,255,255,.035);white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.75 }
 
 /* Public landing page */
 .landing-hero {
@@ -1419,25 +1433,25 @@ th { color:rgba(255,255,255,.45) }
     overflow:hidden;
     align-items:center;
     justify-content:center;
-    padding:130px 24px 90px;
+    padding:150px 24px 110px;
     text-align:center
 }
-.hero-video,.hero-shade { position:absolute;inset:0;width:100%;height:100% }
-.hero-video { object-fit:cover;object-position:center bottom;opacity:0 }
-.hero-shade { background:linear-gradient(180deg,rgba(0,0,0,.25),rgba(0,0,0,.42) 55%,#000) }
-.landing-hero-content { position:relative;z-index:2;max-width:960px;transform:translateY(-5%) }
+.hero-video { position:absolute;inset:0;width:100%;height:100%;z-index:0;object-fit:cover;object-position:center;opacity:1 }
+.landing-hero-content { position:relative;z-index:2;max-width:1280px;transform:translateY(-2%) }
 .landing-hero h1 {
     margin:0;
     color:#fff;
-    font-family:'Instrument Serif',serif;
-    font-size:clamp(4rem,9vw,8.5rem);
+    font-family:var(--font-display);
+    font-size:clamp(3.5rem,8vw,8rem);
     font-weight:400;
     letter-spacing:-.045em;
     line-height:.92
 }
-.landing-hero h1 em { color:rgba(255,255,255,.72) }
-.landing-hero p { max-width:620px;margin:30px auto;color:rgba(255,255,255,.75);font-size:1rem }
+.landing-hero h1 em { color:hsl(var(--muted-foreground));font-style:normal }
+.landing-hero p { max-width:680px;margin:32px auto;color:hsl(var(--muted-foreground));font-size:clamp(1rem,1.5vw,1.14rem);line-height:1.75 }
 .hero-actions { display:flex;flex-wrap:wrap;justify-content:center;gap:12px }
+.hero-journey { margin-top:14px;padding:18px 54px;border-radius:999px;color:#fff;font-size:1rem;transition:transform .2s ease }
+.hero-journey:hover,.nav-journey:hover { transform:scale(1.03) }
 .scroll-cue { position:absolute;z-index:3;bottom:34px;width:46px;height:46px;display:grid;place-items:center;border-radius:50%;color:#fff;text-decoration:none }
 .landing-section { max-width:1152px;margin:auto;padding:120px 24px }
 .section-label { display:block;margin-bottom:20px;color:rgba(255,255,255,.4);font-size:.75rem;font-weight:700;letter-spacing:.16em;text-transform:uppercase }
@@ -1478,6 +1492,10 @@ th { color:rgba(255,255,255,.45) }
 }
 .reveal.is-visible { opacity:1;transform:none }
 .service-grid .reveal:nth-child(2) { transition-delay:.12s }
+@keyframes fade-rise { from { opacity:0;transform:translateY(24px) } to { opacity:1;transform:translateY(0) } }
+.animate-fade-rise { animation:fade-rise .8s ease-out both }
+.animate-fade-rise-delay { animation:fade-rise .8s ease-out .2s both }
+.animate-fade-rise-delay-2 { animation:fade-rise .8s ease-out .4s both }
 .panel,.feature-card,.subject-card,.level-card,.lesson-row { animation:surface-in .5s both }
 @keyframes surface-in {
     from { opacity:0;transform:translateY(12px) }
@@ -1487,6 +1505,7 @@ th { color:rgba(255,255,255,.45) }
 @media(max-width:760px) {
     .site-header { margin:12px;gap:12px;border-radius:24px }
     .landing-page .site-header { left:0;right:0 }
+    .landing-page .landing-nav-links { display:none }
     .site-header nav { width:100%;justify-content:flex-end }
     .landing-hero { padding-top:180px }
     .landing-hero h1 { font-size:clamp(3.5rem,18vw,5.5rem) }

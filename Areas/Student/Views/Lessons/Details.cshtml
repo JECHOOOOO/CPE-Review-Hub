@@ -7,13 +7,15 @@ else { <div class="material-stack">@foreach (var material in Model.Materials) { 
 @if (Model.Activity is not null) {
     <section class="panel activity-card"><span class="eyebrow">REQUIRED BEFORE QUIZ</span><h2>@Model.Activity.Title</h2>
         <div class="material-content">@Model.Activity.Instructions</div><div class="expected-output"><strong>Expected output</strong><p>@Model.Activity.ExpectedOutput</p></div>
-        <form asp-area="Student" asp-controller="Activities" asp-action="Submit" asp-route-id="@Model.Activity.Id" method="post" class="activity-form">
+        <form asp-area="Student" asp-controller="Activities" asp-action="Submit" asp-route-id="@Model.Activity.Id" method="post" enctype="multipart/form-data" class="activity-form">
             <label for="Response">Your activity response</label>
             <textarea id="Response" name="Response" rows="10" minlength="50" maxlength="10000" required>@Model.Activity.Response</textarea>
+            <div class="attachment-picker"><label for="Attachments">Attach files or images <span class="muted">(optional)</span></label><input id="Attachments" name="Attachments" type="file" multiple accept=".png,.jpg,.jpeg,.webp,.pdf,.docx,.txt" /><p class="small muted">Up to 3 files · 5 MB each · 10 MB total. PNG, JPG, WEBP, PDF, DOCX, or TXT.</p></div>
             <div class="form-actions"><button class="button" type="submit">@(Model.Activity.IsCompleted ? "Update activity" : "Submit activity and unlock quiz")</button>
                 @if (Model.Activity.IsCompleted) { <span class="status-complete">Completed @Model.Activity.CompletedAtUtc?.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</span> }
             </div>
         </form>
+        @if (Model.Activity.Attachments.Count > 0) { <div class="attachment-list"><h3>Submitted attachments</h3>@foreach (var file in Model.Activity.Attachments) { <div class="attachment-row"><a asp-area="Student" asp-controller="Activities" asp-action="Download" asp-route-id="@file.Id">@file.FileName</a><span class="small muted">@((file.FileSize / 1024d).ToString("0.#")) KB</span><form asp-area="Student" asp-controller="Activities" asp-action="DeleteAttachment" asp-route-id="@file.Id" method="post"><button class="danger-link" type="submit">Remove</button></form></div> }</div> }
     </section>
 }
 @if (Model.Quiz is not null) {

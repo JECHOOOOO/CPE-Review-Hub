@@ -12,4 +12,5 @@ public class ActivitySubmission
     public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
     public LessonActivity LessonActivity { get; set; } = null!;
     public ApplicationUser User { get; set; } = null!;
+    public ICollection<SubmissionAttachment> Attachments { get; set; } = [];
 }

@@ -18,6 +18,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Choice> Choices => Set<Choice>();
     public DbSet<AssessmentQuestion> AssessmentQuestions => Set<AssessmentQuestion>();
     public DbSet<ActivitySubmission> ActivitySubmissions => Set<ActivitySubmission>();
+    public DbSet<SubmissionAttachment> SubmissionAttachments => Set<SubmissionAttachment>();
     public DbSet<AssessmentAttempt> AssessmentAttempts => Set<AssessmentAttempt>();
     public DbSet<AttemptAnswer> AttemptAnswers => Set<AttemptAnswer>();
 
@@ -113,6 +114,13 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
                 .HasForeignKey(x => x.LessonActivityId).OnDelete(DeleteBehavior.Cascade);
             entity.HasOne(x => x.User).WithMany(x => x.ActivitySubmissions)
                 .HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+        });
+        builder.Entity<SubmissionAttachment>(entity =>
+        {
+            entity.Property(x => x.Data).HasColumnType("longblob");
+            entity.HasIndex(x => x.ActivitySubmissionId);
+            entity.HasOne(x => x.ActivitySubmission).WithMany(x => x.Attachments)
+                .HasForeignKey(x => x.ActivitySubmissionId).OnDelete(DeleteBehavior.Cascade);
         });
         builder.Entity<AssessmentAttempt>(entity =>
         {

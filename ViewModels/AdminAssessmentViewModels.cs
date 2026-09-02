@@ -64,7 +64,7 @@ public record AdminStatisticsViewModel(int StudentCount, int QuizAttempts, int E
     decimal LessonCompletionRate, IReadOnlyList<CourseStatisticsRow> Courses);
 
 public record AdminStudentLessonProgressRow(int Number, string Title, bool ActivityCompleted,
-    bool QuizPassed, bool IsCompleted, bool IsUnlocked, decimal? BestScore);
+    bool QuizPassed, bool IsCompleted, bool IsUnlocked, decimal? BestScore, int? ActivitySubmissionId);
 
 public record AdminStudentCourseProgressRow(int SubjectId, string Code, string Title,
     int CompletionPercentage, bool FinalExamUnlocked,
@@ -72,3 +72,7 @@ public record AdminStudentCourseProgressRow(int SubjectId, string Code, string T
 
 public record AdminStudentProgressViewModel(string StudentId, string StudentName, string StudentEmail,
     IReadOnlyList<AdminStudentCourseProgressRow> Courses);
+
+public record AdminActivitySubmissionViewModel(int Id, string StudentName, string StudentEmail,
+    string SubjectCode, string LessonTitle, string ActivityTitle, string Response,
+    DateTime CompletedAtUtc, DateTime UpdatedAtUtc, IReadOnlyList<AttachmentViewModel> Attachments);

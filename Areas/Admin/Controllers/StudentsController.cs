@@ -59,7 +59,7 @@ public class StudentsController(UserManager<ApplicationUser> users, ApplicationD
             rows.Add(new AdminStudentCourseProgressRow(subject.Id, subject.Code, subject.Title,
                 state.CompletionPercentage, state.FinalExamUnlocked, state.Lessons.Select((x, index) =>
                     new AdminStudentLessonProgressRow(index + 1, titles[x.LessonId], x.ActivityCompleted, x.QuizPassed,
-                        x.IsCompleted, x.IsUnlocked, x.BestQuizPercentage)).ToList()));
+                        x.IsCompleted, x.IsUnlocked, x.BestQuizPercentage, x.ActivitySubmissionId)).ToList()));
         }
         return View(new AdminStudentProgressViewModel(student.Id, student.FullName, student.Email ?? "", rows));
     }
