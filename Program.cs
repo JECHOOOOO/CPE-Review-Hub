@@ -13,6 +13,8 @@ builder.Services.AddControllersWithViews(options =>
 builder.Services.AddPortalSecurity(builder.Configuration, builder.Environment.IsDevelopment());
 builder.Services.AddScoped<StudentProgressService>();
 builder.Services.AddScoped<ActivityAttachmentService>();
+builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
+builder.Services.AddScoped<IEmailDeliveryService, EmailDeliveryService>();
 builder.Services.AddRateLimiter(options =>
 {
     options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;

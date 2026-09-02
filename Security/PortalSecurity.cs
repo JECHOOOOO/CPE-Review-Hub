@@ -34,7 +34,7 @@ public static class PortalSecurity
             options.Password.RequireNonAlphanumeric = false;
             options.Lockout.MaxFailedAccessAttempts = 5;
             options.Lockout.DefaultLockoutTimeSpan = TimeSpan.FromMinutes(15);
-        }).AddEntityFrameworkStores<ApplicationDbContext>().AddSignInManager();
+        }).AddEntityFrameworkStores<ApplicationDbContext>().AddSignInManager().AddDefaultTokenProviders();
 
         services.AddAuthentication(options =>
         {

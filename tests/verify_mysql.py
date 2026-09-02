@@ -100,6 +100,8 @@ def verify(mysql_bin):
     env = os.environ.copy()
     # Keep disposable antiforgery/data-protection keys inside the disposable test folder.
     env["DataProtection__KeysPath"] = str(work / "keys")
+    env["Email__Mode"] = "Pickup"
+    env["Email__PickupDirectory"] = str(work / "emails")
     env["ASPNETCORE_ENVIRONMENT"] = "Development"
     env["Logging__LogLevel__Default"] = "Warning"
     env["Logging__EventLog__LogLevel__Default"] = "None"
@@ -210,12 +212,24 @@ def verify(mysql_bin):
         for client, email, registration_password in (
             (student, "student@example.test", password),
             (second, "second@example.test", simple_password)):
+            email_files_before = set((work / "emails").glob("*.eml"))
             status, _, _ = client.post("/Student/Account/Register", {"Email": email,
                 "FullName": "Test Student", "Password": registration_password,
                 "ConfirmPassword": registration_password,
                 "AccountType": "Admin", "IsActive": "false"})
             assert status == 302, "Student registration failed"
+            new_email_files = set((work / "emails").glob("*.eml")) - email_files_before
+            assert len(new_email_files) == 1, "Verification email was not generated"
+            email_content = next(iter(new_email_files)).read_text(encoding="utf-8")
+            assert f"To: {email}" in email_content and "Verify your CPE Review Hub account" in email_content
+            confirmation_link = html.unescape(re.search(r'https?://[^\"\s<]+/student/confirm-email\?[^\"\s<]+', email_content).group(0))
+            confirmation_url = urllib.parse.urlparse(confirmation_link)
+            if email == "student@example.test":
+                assert login(client, "student", email, registration_password)[0] == 200
+            confirm_status, confirm_body, _ = client.request(confirmation_url.path + "?" + confirmation_url.query)
+            assert confirm_status == 200 and "Email verified" in confirm_body
         assert sql("SELECT COUNT(*) FROM cpe_integration.AspNetUsers WHERE AccountType='Student' AND IsActive=1;") == "2"
+        assert sql("SELECT COUNT(*) FROM cpe_integration.AspNetUsers WHERE AccountType='Student' AND EmailConfirmed=1;") == "2"
         assert sql("SELECT COUNT(*) FROM cpe_integration.AspNetUsers WHERE PasswordHash IS NOT NULL AND LENGTH(PasswordHash)>60;") == "3"
         duplicate = student.post("/Student/Account/Register", {"Email": "STUDENT@example.test",
             "FullName": "Duplicate", "Password": password, "ConfirmPassword": password})
@@ -297,7 +311,7 @@ def verify(mysql_bin):
         assert admin.post(f"/admin/questions/{added_question_id}/delete", {"assessmentId": first_quiz_id},
             f"/admin/questions/{added_question_id}/delete?assessmentId={first_quiz_id}")[0] == 302
         assert sql(f"SELECT COUNT(*) FROM cpe_integration.AssessmentQuestions WHERE AssessmentId={first_quiz_id};") == "10"
-        print("PASS: Student activity gating, 10-item scoring, result feedback, progress, CSRF, and portal separation.", flush=True)
+        print("PASS: Verified-email registration, activity gating, scoring, feedback, progress, CSRF, and portal separation.", flush=True)
         assert student.request("/admin/subjects")[0] == 302
         assert admin.request("/student/subjects")[0] == 302
         assert admin.post("/admin/subjects/save", {"Code": "TEST 999", "Title": "Temporary Integration Course",

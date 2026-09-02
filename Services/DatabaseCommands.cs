@@ -1,6 +1,8 @@
 using System.ComponentModel.DataAnnotations;
 using System.Diagnostics;
 using System.Text.Json;
+using System.Net;
+using System.Net.Mail;
 using CPE_Review_Hub.Data;
 using CPE_Review_Hub.Models;
 using CPE_Review_Hub.Security;
@@ -19,7 +21,8 @@ public static class DatabaseCommands
         var migrate = args.Contains("--initialize-database");
         var admin = args.Contains("--create-admin");
         var seedCatalog = args.Contains("--seed-course-catalog");
-        if (!configure && !migrate && !admin && !seedCatalog) return false;
+        var configureEmail = args.Contains("--configure-email");
+        if (!configure && !migrate && !admin && !seedCatalog && !configureEmail) return false;
         try
         {
             if (configure)
@@ -27,6 +30,13 @@ public static class DatabaseCommands
                 if (!app.Environment.IsDevelopment())
                     throw new InvalidOperationException("Local credential setup requires the Development environment.");
                 await ConfigureAsync(app.Environment.ContentRootPath);
+                return true;
+            }
+            if (configureEmail)
+            {
+                if (!app.Environment.IsDevelopment())
+                    throw new InvalidOperationException("Local email setup requires the Development environment.");
+                await ConfigureEmailAsync(app.Environment.ContentRootPath);
                 return true;
             }
             await using var scope = app.Services.CreateAsyncScope();
@@ -106,6 +116,49 @@ public static class DatabaseCommands
             if (!int.TryParse(major, out var version) || version < 8)
                 throw new InvalidOperationException("MySQL 8 or newer is required.");
         }
+        await SaveUserSecretsAsync(projectDirectory, new Dictionary<string, string>
+        {
+            ["ConnectionStrings:ReviewHub"] = connection.ConnectionString
+        });
+        Console.WriteLine("MySQL connection verified and saved. Password was not printed or added to Git.");
+    }
+
+    private static async Task ConfigureEmailAsync(string projectDirectory)
+    {
+        Console.WriteLine("Configure Gmail delivery for student verification emails.");
+        Console.WriteLine("Use a Google App Password, never your normal Gmail password.");
+        var sender = Prompt("Gmail sender address");
+        if (sender.Length > 256 || !new EmailAddressAttribute().IsValid(sender))
+            throw new InvalidOperationException("Enter a valid Gmail sender address.");
+        var appPassword = ReadPassword("16-character Google App Password").Replace(" ", "");
+        if (appPassword.Length != 16)
+            throw new InvalidOperationException("Google App Passwords contain 16 characters. Email settings were not changed.");
+
+        using var testMessage = new MailMessage
+        {
+            From = new MailAddress(sender, "CPE Review Hub"), Subject = "CPE Review Hub email test",
+            Body = "Email delivery is configured. Student verification messages can now be sent.", IsBodyHtml = false
+        };
+        testMessage.To.Add(sender);
+        using var client = new SmtpClient("smtp.gmail.com", 587)
+        {
+            EnableSsl = true, Credentials = new NetworkCredential(sender, appPassword), Timeout = 15000
+        };
+        try { await client.SendMailAsync(testMessage); }
+        catch (Exception) { throw new InvalidOperationException("Gmail rejected the test message. Check 2-Step Verification and the App Password. Settings were not saved."); }
+
+        await SaveUserSecretsAsync(projectDirectory, new Dictionary<string, string>
+        {
+            ["Email:Mode"] = "Smtp", ["Email:Host"] = "smtp.gmail.com", ["Email:Port"] = "587",
+            ["Email:EnableSsl"] = "true", ["Email:SenderAddress"] = sender,
+            ["Email:SenderName"] = "CPE Review Hub", ["Email:Username"] = sender,
+            ["Email:AppPassword"] = appPassword
+        });
+        Console.WriteLine("Test email sent and Gmail settings saved in Windows user-secrets. No email password was added to Git.");
+    }
+
+    private static async Task SaveUserSecretsAsync(string projectDirectory, Dictionary<string, string> values)
+    {
         var start = new ProcessStartInfo("dotnet")
         {
             WorkingDirectory = projectDirectory, UseShellExecute = false, RedirectStandardInput = true,
@@ -117,15 +170,11 @@ public static class DatabaseCommands
         // Pass credentials over stdin, not shell arguments or command history.
         var stdout = process.StandardOutput.ReadToEndAsync();
         var stderr = process.StandardError.ReadToEndAsync();
-        await process.StandardInput.WriteAsync(JsonSerializer.Serialize(new Dictionary<string, string>
-        {
-            ["ConnectionStrings:ReviewHub"] = connection.ConnectionString
-        }));
+        await process.StandardInput.WriteAsync(JsonSerializer.Serialize(values));
         process.StandardInput.Close();
         await process.WaitForExitAsync();
         await Task.WhenAll(stdout, stderr);
         if (process.ExitCode != 0) throw new InvalidOperationException("Could not save local user secrets. Check your .NET SDK installation.");
-        Console.WriteLine("MySQL connection verified and saved. Password was not printed or added to Git.");
     }
 
     private static string Prompt(string label, string? fallback = null)

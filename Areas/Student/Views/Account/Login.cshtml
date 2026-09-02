@@ -11,6 +11,6 @@
             <label asp-for="Password"></label><input asp-for="Password" autocomplete="current-password" required />
             <button type="submit" class="button full">Sign in to student portal →</button>
         </form>
-        <p class="form-foot">New here? <a asp-area="Student" asp-controller="Account" asp-action="Register">Create a student account</a></p>
+        <p class="form-foot">New here? <a asp-area="Student" asp-controller="Account" asp-action="Register">Create a student account</a></p><p class="small muted">No verification email? <a asp-area="Student" asp-controller="Account" asp-action="ResendConfirmation">Send it again</a></p>
     </section>
 </div>

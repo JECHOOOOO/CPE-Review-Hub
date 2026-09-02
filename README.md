@@ -45,10 +45,27 @@ together in the repository; create a shortcut instead of moving the launcher.
 The launcher uses Windows PowerShell with an execution-policy override for
 that process only; it does not change the machine's execution-policy settings.
 
+## Configure student verification email (one time)
+
+New student accounts must verify their email address before signing in. To send
+real verification messages through Gmail:
+
+1. Turn on 2-Step Verification for the Gmail sender account.
+2. Create a 16-character Google App Password for **CPE Review Hub**. Do not use
+   the normal Gmail password.
+3. Double-click **Setup Gmail Email.cmd** in this folder.
+4. Enter the Gmail sender address and paste the App Password. Password input is
+   hidden. The setup sends a test message before saving the settings.
+
+The sender address and App Password are stored in Windows .NET user-secrets,
+outside this repository. They are not committed to Git. Existing student
+accounts are preserved and marked verified by the migration; verification is
+required for students who register after the update.
+
 ## Current scope
 
 The MVC app has separate `/student.html` and `/admin.html` login pages,
-MySQL-backed Identity accounts, student registration, protected dashboards,
+MySQL-backed Identity accounts, verified student registration, protected dashboards,
 student profile editing, and admin student search/enable/disable. Authentication
 uses separate protected cookies, layouts, routes and server-verified account
 types. Registering through the student portal can never grant admin access.
