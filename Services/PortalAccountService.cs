@@ -4,6 +4,7 @@ using CPE_Review_Hub.Security;
 using CPE_Review_Hub.ViewModels;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 
 namespace CPE_Review_Hub.Services;
 
@@ -39,7 +40,22 @@ public class PortalAccountService(UserManager<ApplicationUser> users, SignInMana
             University = model.University?.Trim() ?? "", YearLevel = model.YearLevel?.Trim() ?? "",
             AccountType = PortalSecurity.Student, LockoutEnabled = true, EmailConfirmed = false
         };
-        var result = await users.CreateAsync(user, model.Password);
+        IdentityResult result;
+        try
+        {
+            result = await users.CreateAsync(user, model.Password);
+        }
+        catch (DbUpdateException)
+        {
+            // A rapid double-submit can pass Identity's uniqueness check twice before
+            // MySQL accepts the first insert. Treat the unique-index race as a normal
+            // registration failure instead of showing the database outage page.
+            result = IdentityResult.Failed(new IdentityError
+            {
+                Code = "DuplicateEmail",
+                Description = "An account with this email already exists."
+            });
+        }
         return (result, result.Succeeded ? user : null);
     }
 
