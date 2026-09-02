@@ -889,7 +889,6 @@ td {
 .assessment-form { display: grid; gap: 1rem; max-width: 900px; }
 .question-card { margin: 0; }
 .question-card legend { width: 100%; padding: 0 0 1rem; font-weight: 800; line-height: 1.55; }
-.question-card legend span { display: inline-grid; place-items: center; width: 2rem; height: 2rem; margin-right: .45rem; border-radius: 50%; background: var(--accent); color: white; }
 .choice-option { display: flex; gap: .75rem; align-items: flex-start; padding: .8rem .9rem; margin: .5rem 0; border: 1px solid var(--line); border-radius: .7rem; cursor: pointer; }
 .choice-option:hover { border-color: var(--accent); background: #f5faf8; }
 .choice-option input { margin-top: .25rem; flex: 0 0 auto; }
