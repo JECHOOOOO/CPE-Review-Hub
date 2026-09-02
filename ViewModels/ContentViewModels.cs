@@ -8,7 +8,7 @@ public class SubjectFormViewModel
     [Required, StringLength(20), Display(Name = "Subject code")] public string Code { get; set; } = "";
     [Required, StringLength(160)] public string Title { get; set; } = "";
     [StringLength(1000)] public string Description { get; set; } = "";
-    [Range(1, int.MaxValue), Display(Name = "Academic level")] public int AcademicLevelId { get; set; }
+    [Range(1, int.MaxValue), Display(Name = "Academic year")] public int AcademicLevelId { get; set; }
     [Display(Name = "Visible to students")] public bool IsPublished { get; set; }
     public IReadOnlyList<SelectionOption> Levels { get; set; } = [];
 }

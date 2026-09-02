@@ -42,9 +42,9 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         {
             entity.HasKey(x => x.Id);
             entity.HasData(
-                new AcademicLevel { Id = 200, Name = "200 Level" },
-                new AcademicLevel { Id = 300, Name = "300 Level" },
-                new AcademicLevel { Id = 400, Name = "400 Level" });
+                new AcademicLevel { Id = 200, Name = "Sophomore" },
+                new AcademicLevel { Id = 300, Name = "Junior" },
+                new AcademicLevel { Id = 400, Name = "Senior" });
         });
         builder.Entity<Subject>(entity =>
         {

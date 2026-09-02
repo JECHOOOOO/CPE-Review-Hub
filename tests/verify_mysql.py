@@ -209,7 +209,9 @@ def verify(mysql_bin):
             {"ReturnUrl": "https://example.invalid/steal"})
         assert status == 302 and headers["Location"].startswith("/Student")
         assert "httponly" in headers.get("Set-Cookie", "").lower()
-        assert student.request("/Student/Dashboard")[0] == 200
+        dashboard_status, dashboard_body, _ = student.request("/Student/Dashboard")
+        assert dashboard_status == 200
+        assert "Sophomore" in dashboard_body and "Junior" in dashboard_body and "Senior" in dashboard_body
         assert student.request("/Admin/Dashboard")[0] == 302
         assert student.request("/Admin/Students")[0] == 302
         first_lesson_id = sql("SELECT l.Id FROM cpe_integration.Lessons l JOIN cpe_integration.Subjects s ON s.Id=l.SubjectId WHERE s.Code='CPE 211' AND l.SortOrder=1;")
@@ -285,7 +287,7 @@ def verify(mysql_bin):
             f"/admin/materials/create?lessonId={lesson_id}")[0] == 302
         status, subject_body, _ = student.request("/student/subjects")
         assert status == 200 and "CPE 211" in subject_body and "TEST 999" in subject_body
-        assert "200 Level" in subject_body and "300 Level" in subject_body and "400 Level" in subject_body
+        assert "Sophomore" in subject_body and "Junior" in subject_body and "Senior" in subject_body
         assert "Digital Foundations" in student.request(f"/student/subjects/{subject_id}")[1]
         assert "Binary and hexadecimal" in student.request(f"/student/lessons/{lesson_id}")[1]
         assert admin.post("/admin/subjects/save", {"Id": subject_id, "Code": "TEST 999",

@@ -38,7 +38,7 @@ public class SubjectsController(ApplicationDbContext db) : Controller
     {
         var code = model.Code.Trim().ToUpperInvariant();
         if (!await db.AcademicLevels.AnyAsync(x => x.Id == model.AcademicLevelId))
-            ModelState.AddModelError(nameof(model.AcademicLevelId), "Select a valid academic level.");
+            ModelState.AddModelError(nameof(model.AcademicLevelId), "Select a valid academic year.");
         if (await db.Subjects.AnyAsync(x => x.Code == code && x.Id != model.Id))
             ModelState.AddModelError(nameof(model.Code), "This subject code already exists.");
         if (!ModelState.IsValid) return View("Edit", await PopulateAsync(model));

@@ -90,7 +90,7 @@ public class LessonsController(ApplicationDbContext db) : Controller
     private async Task<LessonFormViewModel> PopulateAsync(LessonFormViewModel model)
     {
         model.Subjects = await db.Subjects.AsNoTracking().OrderBy(x => x.AcademicLevelId).ThenBy(x => x.Code)
-            .Select(x => new SelectionOption(x.Id, $"{x.AcademicLevelId} · {x.Code} — {x.Title}"))
+            .Select(x => new SelectionOption(x.Id, $"{x.AcademicLevel.Name} · {x.Code} — {x.Title}"))
             .ToListAsync();
         return model;
     }

@@ -53,8 +53,8 @@ student profile editing, and admin student search/enable/disable. Authentication
 uses separate protected cookies, layouts, routes and server-verified account
 types. Registering through the student portal can never grant admin access.
 
-The catalog contains the requested 34 courses: 11 at 200-Level, 16 at
-300-Level, and 7 at 400-Level. Every course has six published lessons. Every
+The catalog contains the requested 34 courses: 11 Sophomore (ID 200), 16 Junior
+(ID 300), and 7 Senior (ID 400) courses. Every course has six published lessons. Every
 lesson includes a substantial, course-specific editable study guide with
 objectives, explanations, definitions, procedures, examples and takeaways. A
 required activity appears before its published 10-item quiz. Every course also
@@ -62,8 +62,8 @@ has a published 50-item final exam assembled only from concepts taught in its
 six lessons. Course cards and lessons are clickable.
 
 Administrators can create, edit, publish and delete subjects, lessons and plain-
-text review materials. Students can browse published content by the fixed 200,
-300 and 400 academic levels. Draft content is never returned by Student routes.
+text review materials. Students can browse published content by the fixed
+Sophomore, Junior and Senior academic years. Draft content is never returned by Student routes.
 The database stores 2,040 lesson questions with four choices and feedback,
 reusable assessment-question ordering, activity submissions, assessment
 attempts and selected answers. A student must submit the lesson activity before

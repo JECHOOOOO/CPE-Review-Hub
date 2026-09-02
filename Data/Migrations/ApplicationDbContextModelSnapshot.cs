@@ -38,17 +38,17 @@ namespace CPE_Review_Hub.Data.Migrations
                         new
                         {
                             Id = 200,
-                            Name = "200 Level"
+                            Name = "Sophomore"
                         },
                         new
                         {
                             Id = 300,
-                            Name = "300 Level"
+                            Name = "Junior"
                         },
                         new
                         {
                             Id = 400,
-                            Name = "400 Level"
+                            Name = "Senior"
                         });
                 });
 

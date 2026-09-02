@@ -1,7 +1,7 @@
 @model StudentSubjectIndexViewModel
 @{ ViewData["Title"] = "Subjects"; }
-<span class="eyebrow">LEARNING LIBRARY</span><h1>Choose your subjects</h1><p class="lead">Browse published lessons and review materials by academic level.</p>
-<nav class="filter-pills" aria-label="Academic level filter"><a class="@(Model.SelectedLevel is null ? "active" : "")" asp-action="Index">All levels</a>@foreach (var level in Model.Levels) { <a class="@(Model.SelectedLevel == level.Id ? "active" : "")" asp-action="Index" asp-route-level="@level.Id">@level.Label</a> }</nav>
+<span class="eyebrow">LEARNING LIBRARY</span><h1>Choose your subjects</h1><p class="lead">Browse published lessons and review materials by academic year.</p>
+<nav class="filter-pills" aria-label="Academic year filter"><a class="@(Model.SelectedLevel is null ? "active" : "")" asp-action="Index">All years</a>@foreach (var level in Model.Levels) { <a class="@(Model.SelectedLevel == level.Id ? "active" : "")" asp-action="Index" asp-route-level="@level.Id">@level.Label</a> }</nav>
 @if (Model.Subjects.Count == 0) { <section class="panel empty-state"><h2>No published subjects yet</h2><p>Your administrator is still preparing content for this level.</p></section> }
 else {
     @foreach (var level in Model.Levels.Where(x => Model.SelectedLevel is null || x.Id == Model.SelectedLevel)) {
