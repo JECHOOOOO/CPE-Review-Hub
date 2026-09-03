@@ -1192,6 +1192,8 @@ h1 em,h2 em { font-family:'Instrument Serif',serif;font-weight:400 }
 
 .auth-grid { min-height:calc(100vh - 230px) }
 .auth-page { position:relative;overflow-x:hidden;background:#000 }
+.auth-page.login-page { background:#0c191d }
+.auth-page.login-page::after { content:none }
 .auth-page .public-main { position:relative;z-index:1 }
 .auth-moving-bg {
     position:fixed;

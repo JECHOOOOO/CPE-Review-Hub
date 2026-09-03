@@ -120,10 +120,10 @@ grade. A revision check prevents an admin from grading an outdated submission.
 Scores, feedback, reviewer and review time are stored in MySQL alongside the
 existing submission; all review, download and image-preview routes require Admin.
 
-Public navigation uses an 850ms right-to-left reveal for Begin journey and Student
-login in supported browsers. The previous page stays opaque beneath the reveal,
-and the glass navigation moves between its two positions, avoiding a black fade.
-Login panels have a gentle upward entrance as a fallback.
+Public links use normal browser navigation without full-page snapshot transitions,
+which can render black when video and glass layers are captured. Login panels
+have a gentle upward entrance without fading the screen. Student and Admin login
+use a plain dark background, without the extra AI image or moving light layer.
 Reduced-motion preferences disable these animations. No frontend framework or
 additional JavaScript dependency is required.
 

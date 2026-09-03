@@ -1,31 +1,8 @@
-/* Native same-origin navigation keeps links, forms and browser history intact. */
-@view-transition { navigation: auto; }
+/* Use normal document navigation. Full-page snapshots of video/glass layers
+   can render black in some browsers; animate only the visible login content. */
+@view-transition { navigation: none; }
 
-/* Keep the old page fully painted underneath: never fade both pages to black. */
-::view-transition-image-pair(root) { isolation: isolate; }
-::view-transition-old(root), ::view-transition-new(root) {
-    mix-blend-mode: normal;
-    opacity: 1;
-}
-::view-transition-old(root) { animation: none; z-index: 1; }
-::view-transition-new(root) {
-    z-index: 2;
-    animation: journey-reveal 850ms cubic-bezier(.76,0,.24,1) both;
-}
-@keyframes journey-reveal {
-    from { clip-path: inset(0 0 0 100%); }
-    to { clip-path: inset(0); }
-}
-
-/* The glass navigation morphs between its homepage and login positions. */
-.site-header { view-transition-name: journey-header; }
-::view-transition-group(journey-header) {
-    animation-duration: 850ms;
-    animation-timing-function: cubic-bezier(.76,0,.24,1);
-}
-
-/* Animate only the content, never the grid containing a fixed background.
-   Fully opaque panels also remain readable in a captured navigation frame. */
+/* No opacity, clipping, or background animation during page changes. */
 .public-main > .auth-card, .auth-grid > .auth-card {
     animation: journey-panel 850ms cubic-bezier(.2,.75,.25,1) both;
 }
@@ -55,10 +32,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-    @view-transition { navigation: none; }
-    ::view-transition-old(root), ::view-transition-new(root),
     .public-main > .auth-card, .auth-grid > .auth-card, .auth-grid > .auth-intro { animation: none; }
-    .site-header { view-transition-name: none; }
     .hero-journey, .nav-journey, .site-header nav > a, .hero-journey > span { transition: none; }
     .hero-journey:hover, .nav-journey:hover, .hero-journey:active,
     .nav-journey:active, .hero-journey:hover > span { transform: none; }
