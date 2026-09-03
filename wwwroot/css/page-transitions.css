@@ -1,26 +1,44 @@
 /* Native same-origin navigation keeps links, forms and browser history intact. */
 @view-transition { navigation: auto; }
 
-::view-transition-old(root) {
-    animation: journey-depart 220ms ease-in both;
+/* Keep the old page fully painted underneath: never fade both pages to black. */
+::view-transition-image-pair(root) { isolation: isolate; }
+::view-transition-old(root), ::view-transition-new(root) {
+    mix-blend-mode: normal;
+    opacity: 1;
 }
+::view-transition-old(root) { animation: none; z-index: 1; }
 ::view-transition-new(root) {
-    animation: journey-arrive 480ms cubic-bezier(.2,.75,.25,1) both;
+    z-index: 2;
+    animation: journey-reveal 850ms cubic-bezier(.76,0,.24,1) both;
 }
-::view-transition-group(root) { background: #06100e; }
-
-@keyframes journey-depart {
-    to { opacity: 0; transform: translateY(-12px) scale(.992); }
-}
-@keyframes journey-arrive {
-    from { opacity: 0; transform: translateY(22px) scale(1.008); filter: blur(3px); }
-    to { opacity: 1; transform: none; filter: blur(0); }
+@keyframes journey-reveal {
+    from { clip-path: inset(0 0 0 100%); }
+    to { clip-path: inset(0); }
 }
 
-/* Entrance animation also works in browsers without cross-document transitions. */
-.public-main > .auth-card,
-.public-main > .auth-grid {
-    animation: journey-arrive 550ms cubic-bezier(.2,.75,.25,1) both;
+/* The glass navigation morphs between its homepage and login positions. */
+.site-header { view-transition-name: journey-header; }
+::view-transition-group(journey-header) {
+    animation-duration: 850ms;
+    animation-timing-function: cubic-bezier(.76,0,.24,1);
+}
+
+/* Animate only the content, never the grid containing a fixed background.
+   Fully opaque panels also remain readable in a captured navigation frame. */
+.public-main > .auth-card, .auth-grid > .auth-card {
+    animation: journey-panel 850ms cubic-bezier(.2,.75,.25,1) both;
+}
+.auth-grid > .auth-intro {
+    animation: journey-intro 700ms cubic-bezier(.2,.75,.25,1) both;
+}
+@keyframes journey-panel {
+    from { transform: translateY(28px); }
+    to { transform: translateY(0); }
+}
+@keyframes journey-intro {
+    from { transform: translateY(16px); }
+    to { transform: translateY(0); }
 }
 .hero-journey, .nav-journey, .site-header nav > a {
     transition: background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
@@ -39,7 +57,8 @@
 @media (prefers-reduced-motion: reduce) {
     @view-transition { navigation: none; }
     ::view-transition-old(root), ::view-transition-new(root),
-    .public-main > .auth-card, .public-main > .auth-grid { animation: none; }
+    .public-main > .auth-card, .auth-grid > .auth-card, .auth-grid > .auth-intro { animation: none; }
+    .site-header { view-transition-name: none; }
     .hero-journey, .nav-journey, .site-header nav > a, .hero-journey > span { transition: none; }
     .hero-journey:hover, .nav-journey:hover, .hero-journey:active,
     .nav-journey:active, .hero-journey:hover > span { transform: none; }
