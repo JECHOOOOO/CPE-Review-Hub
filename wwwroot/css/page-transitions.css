@@ -9,6 +9,16 @@
 .auth-grid > .auth-intro {
     animation: journey-intro 700ms cubic-bezier(.2,.75,.25,1) both;
 }
+.auth-intro > h1, .auth-card > h1, .auth-card > h2 {
+    animation: journey-text 550ms ease-out both;
+}
+.auth-intro > p, .auth-card > p {
+    animation: journey-text 650ms 80ms ease-out both;
+}
+@keyframes journey-text {
+    from { opacity:.65;transform:translateY(8px); }
+    to { opacity:1;transform:translateY(0); }
+}
 @keyframes journey-panel {
     from { transform: translateY(28px); }
     to { transform: translateY(0); }
@@ -32,6 +42,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
+    .auth-intro > h1, .auth-intro > p, .auth-card > h1, .auth-card > h2, .auth-card > p { animation:none; }
     .public-main > .auth-card, .auth-grid > .auth-card, .auth-grid > .auth-intro { animation: none; }
     .hero-journey, .nav-journey, .site-header nav > a, .hero-journey > span { transition: none; }
     .hero-journey:hover, .nav-journey:hover, .hero-journey:active,

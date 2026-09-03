@@ -1,4 +1,32 @@
 (() => {
+    const backgroundVideo = document.querySelector('.auth-video');
+    const playbackButton = document.querySelector('[data-background-playback]');
+    if (backgroundVideo && playbackButton) {
+        const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+        const updateLabel = () => {
+            playbackButton.textContent = backgroundVideo.paused ? 'Play background' : 'Pause background';
+        };
+        const applyMotionPreference = () => {
+            if (reducedMotion.matches) {
+                backgroundVideo.autoplay = false;
+                backgroundVideo.pause();
+            } else {
+                backgroundVideo.play().catch(updateLabel);
+            }
+            updateLabel();
+        };
+        playbackButton.hidden = false;
+        backgroundVideo.addEventListener('play', updateLabel);
+        backgroundVideo.addEventListener('pause', updateLabel);
+        backgroundVideo.addEventListener('error', () => { playbackButton.hidden = true; });
+        playbackButton.addEventListener('click', () => {
+            if (backgroundVideo.paused) backgroundVideo.play().catch(updateLabel);
+            else backgroundVideo.pause();
+        });
+        reducedMotion.addEventListener('change', applyMotionPreference);
+        applyMotionPreference();
+    }
+
     const video = document.querySelector('[data-crossfade-video]');
     if (video) {
         let frame = 0;

@@ -1,5 +1,5 @@
 @model RegisterViewModel
-@{ Layout = "_SiteLayout"; ViewData["Title"] = "Create student account"; }
+@{ Layout = "_SiteLayout"; ViewData["Title"] = "Create student account"; ViewData["BodyClass"] = "auth-page student-auth-page login-page"; }
 <section class="auth-card register-card">
     <span class="eyebrow">STUDENT REGISTRATION</span><h1>Start your review journey</h1><p>This creates a student account only. A verification link will be sent to your email.</p>
     <form asp-area="Student" asp-controller="Account" asp-action="Register" method="post">

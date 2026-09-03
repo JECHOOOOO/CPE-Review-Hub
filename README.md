@@ -122,8 +122,11 @@ existing submission; all review, download and image-preview routes require Admin
 
 Public links use normal browser navigation without full-page snapshot transitions,
 which can render black when video and glass layers are captured. Login panels
-have a gentle upward entrance without fading the screen. Student and Admin login
-use a plain dark background, without the extra AI image or moving light layer.
+have a gentle upward entrance without fading the screen. Student login, account
+creation, and Admin login share the homepage's looping video through `_JourneyVideo`.
+A light overlay and darker form panel keep text readable. The background can be
+paused, and reduced-motion preferences pause it automatically. No second image
+or moving light layer is added.
 Reduced-motion preferences disable these animations. No frontend framework or
 additional JavaScript dependency is required.
 
