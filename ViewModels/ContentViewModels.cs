@@ -58,7 +58,7 @@ public record StudentSubjectDetailsViewModel(int Id, string Code, string Title, 
 public record StudentMaterialViewModel(string Title, string Content, string ResourceUrl);
 public record StudentActivityViewModel(int Id, string Title, string Instructions, string ExpectedOutput,
     bool IsCompleted, string Response, DateTime? CompletedAtUtc,
-    IReadOnlyList<AttachmentViewModel> Attachments);
+    IReadOnlyList<AttachmentViewModel> Attachments, decimal? Grade, string Feedback, DateTime? GradedAtUtc);
 public record AttachmentViewModel(int Id, string FileName, string ContentType, long FileSize);
 public record StudentLessonDetailsViewModel(int Id, string Title, string Summary, string SubjectCode, int SubjectId,
     IReadOnlyList<StudentMaterialViewModel> Materials, StudentActivityViewModel? Activity,

@@ -61,6 +61,22 @@ namespace CPE_Review_Hub.Data.Migrations
                     b.Property<DateTime>("CompletedAtUtc")
                         .HasColumnType("datetime(6)");
 
+                    b.Property<string>("Feedback")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("varchar(4000)");
+
+                    b.Property<decimal?>("Grade")
+                        .HasPrecision(5, 2)
+                        .HasColumnType("decimal(5,2)");
+
+                    b.Property<DateTime?>("GradedAtUtc")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<string>("GradedById")
+                        .HasMaxLength(128)
+                        .HasColumnType("varchar(128)");
+
                     b.Property<int>("LessonActivityId")
                         .HasColumnType("int");
 
@@ -68,6 +84,10 @@ namespace CPE_Review_Hub.Data.Migrations
                         .IsRequired()
                         .HasMaxLength(10000)
                         .HasColumnType("longtext");
+
+                    b.Property<int>("Revision")
+                        .IsConcurrencyToken()
+                        .HasColumnType("int");
 
                     b.Property<DateTime>("UpdatedAtUtc")
                         .HasColumnType("datetime(6)");
@@ -78,6 +98,8 @@ namespace CPE_Review_Hub.Data.Migrations
                         .HasColumnType("varchar(128)");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("GradedById");
 
                     b.HasIndex("LessonActivityId");
 
@@ -642,6 +664,11 @@ namespace CPE_Review_Hub.Data.Migrations
 
             modelBuilder.Entity("CPE_Review_Hub.Models.ActivitySubmission", b =>
                 {
+                    b.HasOne("CPE_Review_Hub.Models.ApplicationUser", "GradedBy")
+                        .WithMany()
+                        .HasForeignKey("GradedById")
+                        .OnDelete(DeleteBehavior.Restrict);
+
                     b.HasOne("CPE_Review_Hub.Models.LessonActivity", "LessonActivity")
                         .WithMany("Submissions")
                         .HasForeignKey("LessonActivityId")
@@ -653,6 +680,8 @@ namespace CPE_Review_Hub.Data.Migrations
                         .HasForeignKey("UserId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
+
+                    b.Navigation("GradedBy");
 
                     b.Navigation("LessonActivity");
 

@@ -54,9 +54,14 @@ public class ActivitiesController(ApplicationDbContext db, StudentProgressServic
             db.ActivitySubmissions.Add(submission);
         }
         submission.Response = model.Response.Trim();
-        submission.UpdatedAtUtc = DateTime.UtcNow;
+        submission.MarkUpdated();
         foreach (var attachment in attachments) submission.Attachments.Add(attachment);
-        await db.SaveChangesAsync();
+        try { await db.SaveChangesAsync(); }
+        catch (DbUpdateConcurrencyException)
+        {
+            TempData["Error"] = "This activity was just reviewed or updated. Reload the lesson and submit your changes again.";
+            return RedirectToAction("Details", "Lessons", new { area = "Student", id = activity.LessonId });
+        }
         TempData["Success"] = "Activity saved. The 10-item lesson quiz is now unlocked.";
         return RedirectToAction("Details", "Lessons", new { area = "Student", id = activity.LessonId }, "quiz");
     }
@@ -80,7 +85,13 @@ public class ActivitiesController(ApplicationDbContext db, StudentProgressServic
         if (file is null) return NotFound();
         var lessonId = file.ActivitySubmission.LessonActivity.LessonId;
         db.SubmissionAttachments.Remove(file);
-        await db.SaveChangesAsync();
+        file.ActivitySubmission.MarkUpdated();
+        try { await db.SaveChangesAsync(); }
+        catch (DbUpdateConcurrencyException)
+        {
+            TempData["Error"] = "This submission changed during review. Reload the lesson before removing the attachment.";
+            return RedirectToAction("Details", "Lessons", new { area = "Student", id = lessonId });
+        }
         TempData["Success"] = "Attachment removed. Your written activity response remains saved.";
         return RedirectToAction("Details", "Lessons", new { area = "Student", id = lessonId });
     }

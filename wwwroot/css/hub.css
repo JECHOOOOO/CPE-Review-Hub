@@ -1423,6 +1423,16 @@ th { color:rgba(255,255,255,.45) }
 .attachment-row form { margin:0 }
 .attachment-row .danger-link { padding:0;border:0;background:none;cursor:pointer }
 .submission-response { margin:18px 0;padding:20px;border-radius:16px;background:rgba(255,255,255,.035);white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.75 }
+.submission-review-grid { display:grid;grid-template-columns:minmax(0,1.7fr) minmax(280px,1fr);gap:24px;align-items:start }
+.submission-review-grid > .panel { min-width:0;margin:0 }
+.grading-panel { position:sticky;top:20px }
+.grading-panel form { display:grid;gap:12px }
+.submission-image { display:block;max-width:100%;max-height:360px;width:auto;height:auto;object-fit:contain;border-radius:12px;margin-top:16px }
+.submission-file { min-width:0;margin-bottom:20px }
+.submission-search { flex:1;min-width:0 }
+.activity-grade { margin:20px 0;padding:20px;border:1px solid rgba(143,205,185,.35);border-radius:16px;background:rgba(143,205,185,.06) }
+.submission-feedback { white-space:pre-wrap;overflow-wrap:anywhere }
+@media(max-width:1050px) { .submission-review-grid { grid-template-columns:minmax(0,1fr) } .grading-panel { position:static } }
 
 /* Public landing page */
 .landing-hero {

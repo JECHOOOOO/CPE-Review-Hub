@@ -1,0 +1,46 @@
+/* Native same-origin navigation keeps links, forms and browser history intact. */
+@view-transition { navigation: auto; }
+
+::view-transition-old(root) {
+    animation: journey-depart 220ms ease-in both;
+}
+::view-transition-new(root) {
+    animation: journey-arrive 480ms cubic-bezier(.2,.75,.25,1) both;
+}
+::view-transition-group(root) { background: #06100e; }
+
+@keyframes journey-depart {
+    to { opacity: 0; transform: translateY(-12px) scale(.992); }
+}
+@keyframes journey-arrive {
+    from { opacity: 0; transform: translateY(22px) scale(1.008); filter: blur(3px); }
+    to { opacity: 1; transform: none; filter: blur(0); }
+}
+
+/* Entrance animation also works in browsers without cross-document transitions. */
+.public-main > .auth-card,
+.public-main > .auth-grid {
+    animation: journey-arrive 550ms cubic-bezier(.2,.75,.25,1) both;
+}
+.hero-journey, .nav-journey, .site-header nav > a {
+    transition: background-color 180ms ease, box-shadow 180ms ease, transform 180ms ease;
+}
+.hero-journey:hover, .nav-journey:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 28px rgba(143,205,185,.16), inset 0 1px 1px rgba(255,255,255,.15);
+}
+.hero-journey > span { display: inline-block; transition: transform 180ms ease; }
+.hero-journey:hover > span { transform: translateX(4px); }
+.hero-journey:active, .nav-journey:active { transform: translateY(0) scale(.98); }
+.site-header nav > a:focus-visible, .hero-journey:focus-visible {
+    outline: 2px solid #9bd7c3; outline-offset: 5px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    @view-transition { navigation: none; }
+    ::view-transition-old(root), ::view-transition-new(root),
+    .public-main > .auth-card, .public-main > .auth-grid { animation: none; }
+    .hero-journey, .nav-journey, .site-header nav > a, .hero-journey > span { transition: none; }
+    .hero-journey:hover, .nav-journey:hover, .hero-journey:active,
+    .nav-journey:active, .hero-journey:hover > span { transform: none; }
+}

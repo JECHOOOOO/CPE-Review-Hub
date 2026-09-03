@@ -108,6 +108,10 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         });
         builder.Entity<ActivitySubmission>(entity =>
         {
+            entity.Property(x => x.Grade).HasPrecision(5, 2);
+            entity.Property(x => x.Revision).IsConcurrencyToken();
+            entity.HasOne(x => x.GradedBy).WithMany()
+                .HasForeignKey(x => x.GradedById).OnDelete(DeleteBehavior.Restrict);
             entity.Property(x => x.Response).HasColumnType("longtext");
             entity.HasIndex(x => new { x.UserId, x.LessonActivityId }).IsUnique();
             entity.HasOne(x => x.LessonActivity).WithMany(x => x.Submissions)

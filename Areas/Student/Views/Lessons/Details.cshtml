@@ -7,6 +7,19 @@ else { <div class="material-stack">@foreach (var material in Model.Materials) { 
 @if (Model.Activity is not null) {
     <section class="panel activity-card"><span class="eyebrow">REQUIRED BEFORE QUIZ</span><h2>@Model.Activity.Title</h2>
         <div class="material-content">@Model.Activity.Instructions</div><div class="expected-output"><strong>Expected output</strong><p>@Model.Activity.ExpectedOutput</p></div>
+        @if (Model.Activity.IsCompleted)
+        {
+            <div class="activity-grade" role="status">
+                @if (Model.Activity.Grade.HasValue)
+                {
+                    <span class="eyebrow">ADMIN FEEDBACK</span><h3>Activity grade: @Model.Activity.Grade.Value.ToString("0.##") / 100</h3>
+                    <p class="submission-feedback">@Model.Activity.Feedback</p>
+                    <p class="small muted">Graded @Model.Activity.GradedAtUtc?.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</p>
+                }
+                else { <strong>Awaiting admin review</strong><p>Your response and attachments are available to the administrator.</p> }
+                <p class="small muted">Updating your response or removing a file clears the current grade and requests a new review.</p>
+            </div>
+        }
         <form asp-area="Student" asp-controller="Activities" asp-action="Submit" asp-route-id="@Model.Activity.Id" method="post" enctype="multipart/form-data" class="activity-form">
             <label for="Response">Your activity response</label>
             <textarea id="Response" name="Response" rows="10" minlength="50" maxlength="10000" required>@Model.Activity.Response</textarea>

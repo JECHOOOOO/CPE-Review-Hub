@@ -300,6 +300,45 @@ def verify(mysql_bin):
         submission_id = sql("SELECT Id FROM cpe_integration.ActivitySubmissions LIMIT 1;")
         assert admin.request(f"/admin/activity-submissions/{submission_id}")[0] == 200
         assert admin.request(f"/admin/activity-submissions/attachments/{attachment_id}")[0] == 200
+        review_path = f"/admin/activity-submissions/{submission_id}"
+        grade_path = review_path + "/grade"
+        preview_path = f"/admin/activity-submissions/attachments/{attachment_id}/preview"
+        assert admin.request("/admin/activity-submissions")[0] == 200
+        assert "array-trace.png" in admin.request(review_path)[1]
+        assert admin.request(preview_path)[0] == 200
+        assert student.request(preview_path)[0] == 302
+        assert anonymous.request(review_path)[0] == 302
+        assert student.post(grade_path, {"Grade.Score": "100", "Grade.Revision": "1"}, lesson_path)[0] == 302
+        assert admin.request(grade_path, {"Grade.Score": "90"})[0] == 400
+        revision = sql(f"SELECT Revision FROM cpe_integration.ActivitySubmissions WHERE Id={submission_id};")
+        assert admin.post(grade_path, {"Grade.Score": "101", "Grade.Revision": revision}, review_path)[0] == 200
+        assert sql(f"SELECT COUNT(*) FROM cpe_integration.ActivitySubmissions WHERE Id={submission_id} AND Grade IS NULL;") == "1"
+        assert admin.post(grade_path, {"Grade.Score": "88.5", "Grade.Feedback": "Clear tracing; explain the empty-list case more fully.", "Grade.Revision": revision}, review_path)[0] == 302
+        assert sql(f"SELECT COUNT(*) FROM cpe_integration.ActivitySubmissions WHERE Id={submission_id} AND Grade=88.5 AND GradedAtUtc IS NOT NULL AND GradedById IS NOT NULL;") == "1"
+        assert "Activity grade: 88.5 / 100" in student.request(lesson_path)[1]
+        assert "explain the empty-list case" in student.request(lesson_path)[1]
+        assert "Review submission" in admin.request("/admin/activity-submissions?status=graded")[1]
+        assert "No matching submissions" in admin.request("/admin/activity-submissions?status=pending")[1]
+        assert admin.post(grade_path, {"Grade.Score": "99", "Grade.Revision": revision}, review_path)[0] == 200
+        assert sql(f"SELECT COUNT(*) FROM cpe_integration.ActivitySubmissions WHERE Id={submission_id} AND Grade=88.5;") == "1"
+        before_edit = sql(f"SELECT Revision FROM cpe_integration.ActivitySubmissions WHERE Id={submission_id};")
+        assert student.post(f"/student/activities/{first_activity_id}/submit", {
+            "Response": "I updated the linked-list trace and documented the empty head pointer, insertion links, and boundary cases carefully.",
+            "Grade": "100", "GradedById": "forged-admin"
+        }, lesson_path)[0] == 302
+        assert sql(f"SELECT COUNT(*) FROM cpe_integration.ActivitySubmissions WHERE Id={submission_id} AND Grade IS NULL AND GradedById IS NULL AND Feedback='';") == "1"
+        assert "Awaiting admin review" in student.request(lesson_path)[1]
+        assert admin.post(grade_path, {"Grade.Score": "90", "Grade.Revision": before_edit}, review_path)[0] == 200
+        revision = sql(f"SELECT Revision FROM cpe_integration.ActivitySubmissions WHERE Id={submission_id};")
+        assert admin.post(grade_path, {"Grade.Score": "90", "Grade.Revision": revision}, review_path)[0] == 302
+        assert login(second, "student", "second@example.test", simple_password)[0] == 302
+        assert second.request(f"/student/activities/attachments/{attachment_id}")[0] == 404
+        assert second.post(f"/student/activities/attachments/{attachment_id}/delete", {}, "/Student/Profile")[0] == 404
+        assert student.post(f"/student/activities/attachments/{attachment_id}/delete", {}, lesson_path)[0] == 302
+        assert sql(f"SELECT COUNT(*) FROM cpe_integration.ActivitySubmissions WHERE Id={submission_id} AND Grade IS NULL;") == "1"
+        revision = sql(f"SELECT Revision FROM cpe_integration.ActivitySubmissions WHERE Id={submission_id};")
+        assert admin.post(grade_path, {"Grade.Score": "0", "Grade.Revision": revision, "Grade.Feedback": "Please include the required diagram."}, review_path)[0] == 302
+        print("PASS: Admin activity grading, previews, ownership, validation, stale-review protection, and regrading after edits.", flush=True)
         assert admin.post("/admin/questions/save", {"AssessmentId": first_quiz_id,
             "LessonId": first_lesson_id, "Prompt": "Which access pattern is taught for an array?",
             "Explanation": "Arrays support direct indexed access.", "ChoiceA": "Direct indexed access",
@@ -350,6 +389,7 @@ def verify(mysql_bin):
         app_process = start_app()
         wait_app(anonymous)
         assert "Saved Profile" in student.request("/Student/Profile")[1]
+        assert "Activity grade: 0 / 100" in student.request(lesson_path)[1]
         assert "Saved Profile" in admin.request("/Admin/Students")[1]
         student_id = sql("SELECT Id FROM cpe_integration.AspNetUsers WHERE Email='student@example.test';")
         assert admin.request(f"/Admin/Students/Progress?id={student_id}")[0] == 200

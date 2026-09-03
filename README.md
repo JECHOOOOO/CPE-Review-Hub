@@ -105,6 +105,26 @@ dotnet run --launch-profile http
 
 Then open http://localhost:5293 in your browser.
 
+## Review and grade student activities
+
+Sign in at `/admin.html`, then choose **Activity submissions** in the sidebar.
+The list defaults to work awaiting review; search by student or course and switch
+to Graded or All as needed. Open a submission to read the written response and
+activity instructions, preview supported images, and download the original files.
+Enter a score from 0 to 100 and optional feedback, then select **Save grade & feedback**.
+
+Students see the grade and feedback on the same lesson page. Editing a response,
+adding files, or removing a file clears the current grade and requests another
+review. The existing activity/quiz progression rules do not depend on this manual
+grade. A revision check prevents an admin from grading an outdated submission.
+Scores, feedback, reviewer and review time are stored in MySQL alongside the
+existing submission; all review, download and image-preview routes require Admin.
+
+Public navigation uses native page transitions for Begin journey and Student
+login in supported browsers, with a simple entrance animation as a fallback.
+Reduced-motion preferences disable these animations. No frontend framework or
+additional JavaScript dependency is required.
+
 ## Verify
 
 ```powershell
