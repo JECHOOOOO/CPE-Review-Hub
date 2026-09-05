@@ -61,6 +61,7 @@ public static class CourseCatalogSeeder
             .Include(x => x.Assessments).ThenInclude(x => x.AssessmentQuestions)
                 .ThenInclude(x => x.Question).ThenInclude(x => x.Choices)
             .Include(x => x.Lessons).ThenInclude(x => x.ReviewMaterials)
+            .Include(x => x.Lessons).ThenInclude(x => x.Images)
             .Include(x => x.Lessons).ThenInclude(x => x.Activity)
             .Include(x => x.Lessons).ThenInclude(x => x.Assessments)
                 .ThenInclude(x => x.AssessmentQuestions).ThenInclude(x => x.Question).ThenInclude(x => x.Choices)
@@ -143,10 +144,25 @@ public static class CourseCatalogSeeder
                     };
                     addedActivities++;
                 }
-                lesson.Activity.Title = $"Apply: {template.Title}";
-                lesson.Activity.Instructions = CurriculumRenderer.RenderActivity(definition.Code, number, template);
-                lesson.Activity.ExpectedOutput = "Submit a complete response with the required calculation, code, diagram, analysis, or design evidence; include assumptions, checks, and a concise conclusion. The response must contain at least 50 characters before the quiz unlocks.";
+                var activityType = CurriculumRenderer.ActivityType(number, template);
+                lesson.Activity.Title = $"Quick practice: {template.Title}";
+                lesson.Activity.Instructions = CurriculumRenderer.RenderActivity(number, template);
+                lesson.Activity.ResponseType = activityType;
+                lesson.Activity.Options = CurriculumRenderer.ActivityOptions(number, template);
+                lesson.Activity.ExpectedOutput = CurriculumRenderer.ActivityExpectedOutput(activityType);
                 lesson.Activity.IsPublished = true;
+
+                var image = lesson.Images.OrderBy(x => x.DisplayOrder).FirstOrDefault();
+                if (image is null)
+                {
+                    image = new LessonImage { Lesson = lesson, DisplayOrder = 1 };
+                    lesson.Images.Add(image);
+                }
+                var imageCode = NormalizeCode(definition.Code).ToLowerInvariant();
+                image.ImagePath = $"/images/lessons/{imageCode}/lesson-{number}.svg";
+                image.AltText = $"Educational diagram for {definition.Code} lesson {number}, {template.Title}";
+                image.Caption = $"Figure 1. {template.Title}: a visual summary of {template.Focus}.";
+                image.IsPublished = true;
 
                 var quiz = lesson.Assessments.FirstOrDefault(x => x.Type == AssessmentType.LessonQuiz);
                 if (quiz is null)

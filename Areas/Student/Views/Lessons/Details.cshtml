@@ -3,17 +3,39 @@
 <nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-area="Student" asp-controller="Subjects" asp-action="Index">Subjects</a><span>/</span><a asp-area="Student" asp-controller="Subjects" asp-action="Details" asp-route-id="@Model.SubjectId">@Model.SubjectCode</a><span>/</span><span>@Model.Title</span></nav>
 <span class="eyebrow">@Model.SubjectCode · LESSON</span><h1>@Model.Title</h1><p class="lead">@Model.Summary</p>
 @if (Model.Materials.Count == 0) { <section class="panel empty-state"><h2>No published materials yet</h2><p>The lesson outline is available, but its review material is still being prepared.</p></section> }
-else { <div class="material-stack">@foreach (var material in Model.Materials) { <article class="panel material-card"><h2>@material.Title</h2><div class="material-content">@material.Content</div>@if (!string.IsNullOrWhiteSpace(material.ResourceUrl)) { <p><a class="button secondary" href="@material.ResourceUrl" target="_blank" rel="noopener noreferrer">Open supporting resource ↗</a></p> }</article> }</div> }
+else { var lessonImageIndex = 0; <div class="material-stack">@foreach (var material in Model.Materials) {
+    var sections = material.Content.Replace("\r\n", "\n").Split("\n\n", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+    <article class="panel material-card"><h2>@material.Title</h2>
+        @for (var sectionIndex = 0; sectionIndex < sections.Length; sectionIndex++) {
+            <div class="material-content lesson-section">@sections[sectionIndex]</div>
+            @if (sectionIndex >= 2 && lessonImageIndex < Model.Images.Count) {
+                var lessonImage = Model.Images[lessonImageIndex++];
+                <figure class="lesson-figure"><img src="@lessonImage.ImagePath" alt="@lessonImage.AltText" loading="lazy" onerror="this.closest('figure').hidden=true" />
+                    @if (!string.IsNullOrWhiteSpace(lessonImage.Caption)) { <figcaption>@lessonImage.Caption</figcaption> }
+                </figure>
+            }
+        }
+        @if (material == Model.Materials.Last()) { @while (lessonImageIndex < Model.Images.Count) { var lessonImage = Model.Images[lessonImageIndex++]; <figure class="lesson-figure"><img src="@lessonImage.ImagePath" alt="@lessonImage.AltText" loading="lazy" onerror="this.closest('figure').hidden=true" />@if (!string.IsNullOrWhiteSpace(lessonImage.Caption)) { <figcaption>@lessonImage.Caption</figcaption> }</figure> } }
+        @if (!string.IsNullOrWhiteSpace(material.ResourceUrl)) { <p><a class="button secondary" href="@material.ResourceUrl" target="_blank" rel="noopener noreferrer">Open supporting resource ↗</a></p> }
+    </article> }</div> }
 @if (Model.Activity is not null) {
     <section class="panel activity-card"><span class="eyebrow">REQUIRED BEFORE QUIZ</span><h2>@Model.Activity.Title</h2>
-        <div class="material-content">@Model.Activity.Instructions</div><div class="expected-output"><strong>Expected output</strong><p>@Model.Activity.ExpectedOutput</p></div>
+        <div class="material-content">@Model.Activity.Instructions</div>
         @if (Model.Activity.IsCompleted)
         {
-            <div class="activity-grade" role="status"><strong>Activity completed</strong><p>This is an ungraded practice activity. Your submitted response is available to the administrator for participation monitoring.</p></div>
+            <div class="activity-grade" role="status"><strong>Activity completed.</strong></div>
         }
         <form asp-area="Student" asp-controller="Activities" asp-action="Submit" asp-route-id="@Model.Activity.Id" method="post" enctype="multipart/form-data" class="activity-form">
-            <label for="Response">Your activity response</label>
-            <textarea id="Response" name="Response" rows="10" minlength="50" maxlength="10000" required>@Model.Activity.Response</textarea>
+            @if (Model.Activity.ResponseType == ActivityResponseType.MultipleChoice) {
+                <fieldset class="activity-options"><legend>Select your answer</legend>@foreach (var option in Model.Activity.Options) { <label class="activity-option"><input type="radio" name="Response" value="@option" checked="@(Model.Activity.Response == option)" required /> <span>@option</span></label> }</fieldset>
+            } else if (Model.Activity.ResponseType == ActivityResponseType.Matching) {
+                <div class="matching-grid"><p class="muted">Choose a description for every term.</p>@for (var matchIndex = 0; matchIndex < Model.Activity.Matches.Count; matchIndex++) { var match = Model.Activity.Matches[matchIndex]; <label><strong>@match.Term</strong><select name="MatchingResponses[@matchIndex]" required><option value="">Select description</option>@foreach (var choice in Model.Activity.Matches.Select(x => x.Definition)) { <option value="@choice" selected="@(Model.Activity.Response.Contains($"{match.Term} → {choice}", StringComparison.Ordinal))">@choice</option> }</select></label> }</div>
+            } else if (Model.Activity.ResponseType is ActivityResponseType.Calculation or ActivityResponseType.Identification) {
+                <label for="Response">Your answer</label><input id="Response" name="Response" value="@Model.Activity.Response" maxlength="10000" required />
+            } else {
+                <label for="Response">@(Model.Activity.ResponseType == ActivityResponseType.Coding ? "Your code or explanation" : "Your response")</label>
+                <textarea id="Response" name="Response" rows="@(Model.Activity.ResponseType == ActivityResponseType.Coding ? 12 : 6)" maxlength="10000">@Model.Activity.Response</textarea>
+            }
             <div class="attachment-picker"><label for="Attachments">Attach files or images <span class="muted">(optional)</span></label><input id="Attachments" name="Attachments" type="file" multiple accept=".png,.jpg,.jpeg,.webp,.pdf,.docx,.txt" /><p class="small muted">Up to 3 files · 5 MB each · 10 MB total. PNG, JPG, WEBP, PDF, DOCX, or TXT.</p></div>
             <div class="form-actions"><button class="button" type="submit">@(Model.Activity.IsCompleted ? "Update activity" : "Submit activity and unlock quiz")</button>
                 @if (Model.Activity.IsCompleted) { <span class="status-complete">Completed @Model.Activity.CompletedAtUtc?.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</span> }

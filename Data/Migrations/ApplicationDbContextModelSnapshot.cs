@@ -394,6 +394,14 @@ namespace CPE_Review_Hub.Data.Migrations
                     b.Property<int>("LessonId")
                         .HasColumnType("int");
 
+                    b.Property<string>("Options")
+                        .IsRequired()
+                        .HasMaxLength(4000)
+                        .HasColumnType("varchar(4000)");
+
+                    b.Property<int>("ResponseType")
+                        .HasColumnType("int");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(200)
@@ -405,6 +413,43 @@ namespace CPE_Review_Hub.Data.Migrations
                         .IsUnique();
 
                     b.ToTable("LessonActivities");
+                });
+
+            modelBuilder.Entity("CPE_Review_Hub.Models.LessonImage", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int");
+
+                    b.Property<string>("AltText")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<string>("Caption")
+                        .IsRequired()
+                        .HasMaxLength(1000)
+                        .HasColumnType("varchar(1000)");
+
+                    b.Property<int>("DisplayOrder")
+                        .HasColumnType("int");
+
+                    b.Property<string>("ImagePath")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
+
+                    b.Property<bool>("IsPublished")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<int>("LessonId")
+                        .HasColumnType("int");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("LessonId", "DisplayOrder");
+
+                    b.ToTable("LessonImages");
                 });
 
             modelBuilder.Entity("CPE_Review_Hub.Models.Question", b =>
@@ -775,6 +820,17 @@ namespace CPE_Review_Hub.Data.Migrations
                     b.Navigation("Lesson");
                 });
 
+            modelBuilder.Entity("CPE_Review_Hub.Models.LessonImage", b =>
+                {
+                    b.HasOne("CPE_Review_Hub.Models.Lesson", "Lesson")
+                        .WithMany("Images")
+                        .HasForeignKey("LessonId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Lesson");
+                });
+
             modelBuilder.Entity("CPE_Review_Hub.Models.Question", b =>
                 {
                     b.HasOne("CPE_Review_Hub.Models.Lesson", "Lesson")
@@ -892,6 +948,8 @@ namespace CPE_Review_Hub.Data.Migrations
                     b.Navigation("Activity");
 
                     b.Navigation("Assessments");
+
+                    b.Navigation("Images");
 
                     b.Navigation("Questions");
 

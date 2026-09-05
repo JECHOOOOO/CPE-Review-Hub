@@ -12,6 +12,7 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     public DbSet<Subject> Subjects => Set<Subject>();
     public DbSet<Lesson> Lessons => Set<Lesson>();
     public DbSet<ReviewMaterial> ReviewMaterials => Set<ReviewMaterial>();
+    public DbSet<LessonImage> LessonImages => Set<LessonImage>();
     public DbSet<LessonActivity> LessonActivities => Set<LessonActivity>();
     public DbSet<Assessment> Assessments => Set<Assessment>();
     public DbSet<Question> Questions => Set<Question>();
@@ -65,6 +66,12 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
             entity.Property(x => x.Content).HasColumnType("longtext");
             entity.HasIndex(x => new { x.LessonId, x.SortOrder });
             entity.HasOne(x => x.Lesson).WithMany(x => x.ReviewMaterials)
+                .HasForeignKey(x => x.LessonId).OnDelete(DeleteBehavior.Cascade);
+        });
+        builder.Entity<LessonImage>(entity =>
+        {
+            entity.HasIndex(x => new { x.LessonId, x.DisplayOrder });
+            entity.HasOne(x => x.Lesson).WithMany(x => x.Images)
                 .HasForeignKey(x => x.LessonId).OnDelete(DeleteBehavior.Cascade);
         });
         builder.Entity<LessonActivity>(entity =>

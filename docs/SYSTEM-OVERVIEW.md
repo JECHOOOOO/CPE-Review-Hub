@@ -8,10 +8,10 @@
 - **Connection:** `ConnectionStrings:ReviewHub` is stored in Windows .NET user-secrets, outside Git.
 - **Schema:** EF Core migrations in `Data/Migrations`; setup applies pending migrations without recreating the database.
 
-The schema has 18 tables:
+The schema has 19 tables:
 
 - Identity: `AspNetUsers`, `AspNetUserClaims`, `AspNetUserLogins`, `AspNetUserTokens`
-- Content: `AcademicLevels`, `Subjects`, `Lessons`, `ReviewMaterials`, `LessonActivities`
+- Content: `AcademicLevels`, `Subjects`, `Lessons`, `ReviewMaterials`, `LessonActivities`, `LessonImages`
 - Assessments: `Questions`, `Choices`, `Assessments`, `AssessmentQuestions`
 - Student records: `ActivitySubmissions`, `SubmissionAttachments`, `AssessmentAttempts`, `AttemptAnswers`
 - Schema history: `__EFMigrationsHistory`
@@ -29,6 +29,7 @@ AspNetUsers (Student/Admin)
                                   └──< AssessmentQuestions >── Questions ──< Choices
 
 Lessons ──< ReviewMaterials
+Lessons ──< LessonImages (local path, alt text, caption, display order)
 Lessons ──0..1 LessonActivities
 Subjects ──< Assessments (lesson quizzes and final exams)
 ```
@@ -52,8 +53,10 @@ Read lesson
   → final exam unlocks and is automatically scored
 ```
 
-Admin can edit an icebreaker's title, instructions, expected output, and published
-status in the existing lesson editor. Student activity monitoring is read-only,
+Each activity records a response type and optional choices/matches. Empty responses
+are rejected, but there is no minimum-character rule. Admin can edit an icebreaker's
+title, instructions, expected output, response type, options, and published status
+in the existing lesson editor. Student activity monitoring is read-only,
 with Student, Course, Lesson, and date filters plus response/file viewing.
 Statistics keep activity participation separate from quiz and exam scores.
 
@@ -69,6 +72,8 @@ Statistics keep activity participation separate from quiz and exam scores.
 8. `ActivitySubmissionGrading` — historical grading fields.
 9. `RemoveActivityGrading` — removes unused grading fields after confirming the
    live database has zero graded submissions; responses and files remain intact.
+10. `LessonImagesAndActivityTypes` — adds lesson-image metadata plus typed activity
+    controls and options; existing submissions remain intact.
 
 ## GitHub versus MySQL
 

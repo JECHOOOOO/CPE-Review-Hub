@@ -19,6 +19,7 @@
             <a class="nav-item @(controller == "Subjects" ? "active" : "")" asp-area="Admin" asp-controller="Subjects" asp-action="Index">Manage subjects</a>
             <a class="nav-item @(controller == "Lessons" ? "active" : "")" asp-area="Admin" asp-controller="Lessons" asp-action="Index">Manage lessons</a>
             <a class="nav-item @(controller == "Materials" ? "active" : "")" asp-area="Admin" asp-controller="Materials" asp-action="Index">Review materials</a>
+            <a class="nav-item @(controller == "LessonImages" ? "active" : "")" asp-area="Admin" asp-controller="LessonImages" asp-action="Index">Lesson images</a>
             <a class="nav-item @(controller is "Assessments" or "Questions" && Context.Request.Query["type"] != "FinalExam" ? "active" : "")" asp-area="Admin" asp-controller="Assessments" asp-action="Index" asp-route-type="LessonQuiz">Questions &amp; quizzes</a>
             <a class="nav-item @(controller == "Assessments" && Context.Request.Query["type"] == "FinalExam" ? "active" : "")" asp-area="Admin" asp-controller="Assessments" asp-action="Index" asp-route-type="FinalExam">Final exams</a>
             <a class="nav-item @(controller == "Results" ? "active" : "")" asp-area="Admin" asp-controller="Results" asp-action="Index">Student results</a>

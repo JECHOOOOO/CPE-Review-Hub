@@ -14,6 +14,7 @@ public class Lesson
     public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;
     public Subject Subject { get; set; } = null!;
     public ICollection<ReviewMaterial> ReviewMaterials { get; set; } = [];
+    public ICollection<LessonImage> Images { get; set; } = [];
     public LessonActivity? Activity { get; set; }
     public ICollection<Assessment> Assessments { get; set; } = [];
     public ICollection<Question> Questions { get; set; } = [];

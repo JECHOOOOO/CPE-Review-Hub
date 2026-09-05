@@ -37,6 +37,8 @@ public class LessonsController(ApplicationDbContext db) : Controller
             Summary = lesson.Summary, SortOrder = lesson.SortOrder, IsPublished = lesson.IsPublished,
             ActivityTitle = lesson.Activity?.Title ?? "", ActivityInstructions = lesson.Activity?.Instructions ?? "",
             ActivityExpectedOutput = lesson.Activity?.ExpectedOutput ?? "",
+            ActivityResponseType = lesson.Activity?.ResponseType ?? ActivityResponseType.ShortAnswer,
+            ActivityOptions = lesson.Activity?.Options ?? "",
             ActivityIsPublished = lesson.Activity?.IsPublished ?? false
         }));
     }
@@ -46,6 +48,11 @@ public class LessonsController(ApplicationDbContext db) : Controller
     {
         if (!await db.Subjects.AnyAsync(x => x.Id == model.SubjectId))
             ModelState.AddModelError(nameof(model.SubjectId), "Select a valid subject.");
+        if (!Enum.IsDefined(model.ActivityResponseType))
+            ModelState.AddModelError(nameof(model.ActivityResponseType), "Select a valid activity response type.");
+        if (model.ActivityResponseType is ActivityResponseType.MultipleChoice or ActivityResponseType.Matching &&
+            string.IsNullOrWhiteSpace(model.ActivityOptions))
+            ModelState.AddModelError(nameof(model.ActivityOptions), "Add choices or term|description matches for this response type.");
         if (!ModelState.IsValid) return View("Edit", await PopulateAsync(model));
 
         Lesson lesson;
@@ -78,6 +85,8 @@ public class LessonsController(ApplicationDbContext db) : Controller
             lesson.Activity.Title = model.ActivityTitle.Trim();
             lesson.Activity.Instructions = model.ActivityInstructions.Trim();
             lesson.Activity.ExpectedOutput = model.ActivityExpectedOutput.Trim();
+            lesson.Activity.ResponseType = model.ActivityResponseType;
+            lesson.Activity.Options = model.ActivityOptions.Trim();
             lesson.Activity.IsPublished = model.ActivityIsPublished;
         }
         await db.SaveChangesAsync();

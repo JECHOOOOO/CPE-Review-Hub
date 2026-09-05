@@ -19,6 +19,7 @@ public class LessonsController(ApplicationDbContext db, StudentProgressService p
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
         var lesson = await db.Lessons.AsNoTracking().Include(x => x.Subject)
             .Include(x => x.ReviewMaterials).Include(x => x.Activity)
+            .Include(x => x.Images)
             .Include(x => x.Assessments).ThenInclude(x => x.AssessmentQuestions)
             .SingleOrDefaultAsync(x => x.Id == id && x.IsPublished && x.Subject.IsPublished);
         if (lesson is null) return NotFound();
@@ -37,9 +38,18 @@ public class LessonsController(ApplicationDbContext db, StudentProgressService p
             lesson.Subject.Code, lesson.SubjectId, lesson.ReviewMaterials.Where(x => x.IsPublished)
                 .OrderBy(x => x.SortOrder).ThenBy(x => x.Title)
                 .Select(x => new StudentMaterialViewModel(x.Title, x.Content, x.ResourceUrl)).ToList(),
+            lesson.Images.Where(x => x.IsPublished).OrderBy(x => x.DisplayOrder)
+                .Select(x => new StudentLessonImageViewModel(x.ImagePath, x.AltText, x.Caption, x.DisplayOrder)).ToList(),
             lesson.Activity is { IsPublished: true } activity
                 ? new StudentActivityViewModel(activity.Id, activity.Title, activity.Instructions,
-                    activity.ExpectedOutput, submission is not null, submission?.Response ?? "",
+                    activity.ExpectedOutput, activity.ResponseType,
+                    activity.ResponseType == ActivityResponseType.MultipleChoice
+                        ? activity.Options.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries) : [],
+                    activity.ResponseType == ActivityResponseType.Matching
+                        ? activity.Options.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+                            .Select(x => x.Split('|', 2, StringSplitOptions.TrimEntries))
+                            .Where(x => x.Length == 2).Select(x => new ActivityMatchViewModel(x[0], x[1])).ToList() : [],
+                    submission is not null, submission?.Response ?? "",
                     submission?.CompletedAtUtc, submission?.Attachments.OrderBy(x => x.UploadedAtUtc)
                         .Select(x => new AttachmentViewModel(x.Id, x.FileName, x.ContentType, x.FileSize)).ToList() ?? []) : null,
             quiz is null ? null : new StudentAssessmentStatusViewModel(quiz.Id, quiz.Title,

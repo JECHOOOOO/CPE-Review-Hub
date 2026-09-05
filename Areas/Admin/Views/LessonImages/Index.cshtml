@@ -1,0 +1,7 @@
+@model IReadOnlyList<LessonImageAdminRow>
+@{ ViewData["Title"] = "Lesson images"; }
+<div class="page-heading"><div><span class="eyebrow">CONTENT MANAGEMENT</span><h1>Lesson images</h1><p class="lead">Educational visuals shown inside lesson content.</p></div><a class="button" asp-action="Create" asp-route-lessonId="@ViewData["LessonId"]">Add image</a></div>
+<section class="panel table-wrap"><table><thead><tr><th>Preview</th><th>Course / lesson</th><th>Alt text</th><th>Order</th><th>Status</th><th>Actions</th></tr></thead><tbody>
+@foreach (var item in Model) { <tr><td><img class="admin-image-thumb" src="@item.ImagePath" alt="" /></td><td><strong>@item.SubjectCode</strong><br />@item.LessonTitle</td><td>@item.AltText</td><td>@item.DisplayOrder</td><td>@(item.IsPublished ? "Published" : "Hidden")</td><td><a asp-action="Edit" asp-route-id="@item.Id">Edit</a> · <a asp-action="Delete" asp-route-id="@item.Id">Remove</a></td></tr> }
+@if (Model.Count == 0) { <tr><td colspan="6">No lesson images found.</td></tr> }
+</tbody></table></section>

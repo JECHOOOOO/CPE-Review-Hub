@@ -78,12 +78,14 @@ The catalog contains the requested 34 courses: 11 Sophomore (ID 200), 16 Junior
 (ID 300), and 7 Senior (ID 400) courses. Every course has six published lessons. Every
 lesson includes a substantial, course-specific editable study guide with
 objectives, explanations, definitions, procedures, examples and takeaways. A
-icebreaker activity appears before its published 10-item quiz. Every course also
+short, topic-specific icebreaker activity appears before its published 10-item quiz. Activities use
+identification, calculation, coding, multiple-choice, matching, or short-answer controls as appropriate;
+there is no arbitrary minimum character count. Every course also
 has a published 50-item final exam assembled only from concepts taught in its
 six lessons. Course cards and lessons are clickable.
 
 Administrators can create, edit, publish and delete subjects, lessons, their
-icebreaker activities, and plain-text review materials. Students can browse published content by the fixed
+icebreaker activities, plain-text review materials, and lesson images. Students can browse published content by the fixed
 Sophomore, Junior and Senior academic years. Draft content is never returned by Student routes.
 The database stores 2,040 lesson questions with four choices and feedback,
 reusable assessment-question ordering, activity submissions, assessment
@@ -94,6 +96,12 @@ progress are available from the Student portal. Admin question/choice editing
 screens remain a future management feature; the normalized database structure
 already supports them. No demo accounts, scores or hard-coded passwords are
 seeded.
+
+All 204 seeded lessons include a repository-owned educational SVG under
+`wwwroot/images/lessons/{course}/`. Each `LessonImages` row stores the local URL,
+alt text, caption, order, publication status, and lesson relationship. The Student
+lesson view places responsive figures between content sections. Admins can add,
+edit, reorder, hide, upload, or remove lesson-image records from **Lesson images**.
 
 ## Start manually
 
@@ -141,5 +149,6 @@ It does not connect to your MySQL80 service or use your database credentials.
 It checks migrations, persistence, passwords, CSRF, account types, portal
 isolation, profile ownership, account disabling, content CRUD, draft filtering,
 the exact grouped 34-course catalog, six-lesson structure, long study guides,
-activities, question and choice counts, activity gating, 10-item quiz scoring,
+course-specific typed activities, all 204 lesson-image records and a served SVG,
+question and choice counts, activity gating, 10-item quiz scoring,
 answer feedback, progress, Student content browsing, lockouts, logout and outages.

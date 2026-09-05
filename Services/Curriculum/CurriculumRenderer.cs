@@ -46,16 +46,37 @@ public static class CurriculumRenderer
         return text.ToString();
     }
 
-    public static string RenderActivity(string courseCode, int lessonNumber, CurriculumLesson lesson) => $"""
-        Apply Lesson {lessonNumber} of {courseCode}: {lesson.Title}.
+    public static string RenderActivity(int lessonNumber, CurriculumLesson lesson) => lessonNumber switch
+    {
+        2 => $"Match each {lesson.Title.ToLowerInvariant()} term with its correct description.",
+        4 => $"Choose the term that best matches this definition: {lesson.Concepts[0].Definition}",
+        _ => lesson.Activity
+    };
 
-        {lesson.Activity}
+    public static Models.ActivityResponseType ActivityType(int lessonNumber, CurriculumLesson lesson)
+    {
+        if (lessonNumber == 2) return Models.ActivityResponseType.Matching;
+        if (lessonNumber == 4) return Models.ActivityResponseType.MultipleChoice;
+        var text = $"{lesson.Activity} {lesson.Focus}".ToLowerInvariant();
+        if (new[] { "implement", "code", "program", "algorithm" }.Any(text.Contains)) return Models.ActivityResponseType.Coding;
+        if (new[] { "calculate", "compute", "solve", "equation", "current", "voltage", "cost" }.Any(text.Contains)) return Models.ActivityResponseType.Calculation;
+        return lessonNumber == 1 ? Models.ActivityResponseType.Identification : Models.ActivityResponseType.ShortAnswer;
+    }
 
-        Required process:
-        1. Restate the task and list the given information, assumptions, and required output.
-        2. Use at least three lesson concepts by name and apply this rule correctly: {lesson.KeyRule}
-        3. Show the main steps, calculations, diagram, code, table, or decision evidence as appropriate.
-        4. Check the result and explain one likely error, limitation, safety issue, or design tradeoff.
-        5. End with a short conclusion that directly answers the task.
-        """;
+    public static string ActivityOptions(int lessonNumber, CurriculumLesson lesson) => lessonNumber switch
+    {
+        2 => string.Join('\n', lesson.Concepts.Take(4).Select(x => $"{x.Term}|{x.Definition}")),
+        4 => string.Join('\n', lesson.Concepts.Take(4).Select(x => x.Term)),
+        _ => ""
+    };
+
+    public static string ActivityExpectedOutput(Models.ActivityResponseType type) => type switch
+    {
+        Models.ActivityResponseType.Matching => "Complete every match.",
+        Models.ActivityResponseType.MultipleChoice => "Select one answer.",
+        Models.ActivityResponseType.Calculation => "Enter your calculation and final answer.",
+        Models.ActivityResponseType.Coding => "Enter your code or attach the source file.",
+        Models.ActivityResponseType.Identification => "Enter the requested term or identification.",
+        _ => "Enter a concise response to the task."
+    };
 }

@@ -26,9 +26,10 @@ public class ActivitiesController(ApplicationDbContext db, StudentProgressServic
             TempData["Error"] = "Complete and pass the previous lesson before submitting this activity.";
             return RedirectToAction("Details", "Subjects", new { area = "Student", id = activity.Lesson.SubjectId });
         }
-        if (!ModelState.IsValid)
+        var response = BuildResponse(activity, model);
+        if (!ModelState.IsValid || (string.IsNullOrWhiteSpace(response) && model.Attachments.Count == 0))
         {
-            TempData["Error"] = "Write at least 50 characters and complete the required activity before taking the quiz.";
+            TempData["Error"] = "Complete the activity response or attach the requested work before taking the quiz.";
             return RedirectToAction("Details", "Lessons", new { area = "Student", id = activity.LessonId });
         }
         var submission = await db.ActivitySubmissions.Include(x => x.Attachments).SingleOrDefaultAsync(x =>
@@ -53,12 +54,33 @@ public class ActivitiesController(ApplicationDbContext db, StudentProgressServic
             };
             db.ActivitySubmissions.Add(submission);
         }
-        submission.Response = model.Response.Trim();
+        submission.Response = response;
         submission.UpdatedAtUtc = DateTime.UtcNow;
         foreach (var attachment in attachments) submission.Attachments.Add(attachment);
         await db.SaveChangesAsync();
-        TempData["Success"] = "Activity saved. The 10-item lesson quiz is now unlocked.";
+        TempData["Success"] = "Your response has been saved. The lesson quiz is now available.";
         return RedirectToAction("Details", "Lessons", new { area = "Student", id = activity.LessonId }, "quiz");
+    }
+
+    private static string BuildResponse(LessonActivity activity, ActivitySubmissionViewModel model)
+    {
+        if (activity.ResponseType == ActivityResponseType.Matching)
+        {
+            var pairs = activity.Options.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries)
+                .Select(x => x.Split('|', 2, StringSplitOptions.TrimEntries)).Where(x => x.Length == 2).ToList();
+            if (pairs.Count == 0 || model.MatchingResponses.Count != pairs.Count ||
+                model.MatchingResponses.Any(string.IsNullOrWhiteSpace)) return "";
+            var allowed = pairs.Select(x => x[1]).ToHashSet(StringComparer.Ordinal);
+            if (model.MatchingResponses.Any(x => !allowed.Contains(x))) return "";
+            return string.Join('\n', pairs.Select((x, index) => $"{x[0]} → {model.MatchingResponses[index]}"));
+        }
+        var response = model.Response?.Trim() ?? "";
+        if (activity.ResponseType == ActivityResponseType.MultipleChoice)
+        {
+            var allowed = activity.Options.Split('\n', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+            return allowed.Contains(response, StringComparer.Ordinal) ? response : "";
+        }
+        return response;
     }
 
     [HttpGet("attachments/{id:int}")]

@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using CPE_Review_Hub.Models;
 
 namespace CPE_Review_Hub.ViewModels;
 
@@ -24,6 +25,8 @@ public class LessonFormViewModel
     [StringLength(200), Display(Name = "Activity title")] public string ActivityTitle { get; set; } = "";
     [StringLength(6000), Display(Name = "Activity instructions")] public string ActivityInstructions { get; set; } = "";
     [StringLength(2000), Display(Name = "Expected output")] public string ActivityExpectedOutput { get; set; } = "";
+    [Display(Name = "Response type")] public ActivityResponseType ActivityResponseType { get; set; } = ActivityResponseType.ShortAnswer;
+    [StringLength(4000), Display(Name = "Choices or matches")] public string ActivityOptions { get; set; } = "";
     [Display(Name = "Publish this icebreaker activity")] public bool ActivityIsPublished { get; set; }
     public IReadOnlyList<SelectionOption> Subjects { get; set; } = [];
 }
@@ -40,10 +43,25 @@ public class MaterialFormViewModel
     public IReadOnlyList<SelectionOption> Lessons { get; set; } = [];
 }
 
+public class LessonImageFormViewModel
+{
+    public int Id { get; set; }
+    [Range(1, int.MaxValue)] public int LessonId { get; set; }
+    [StringLength(500), Display(Name = "Existing image path")] public string ImagePath { get; set; } = "";
+    [Display(Name = "Upload image")] public IFormFile? ImageFile { get; set; }
+    [Required, StringLength(500), Display(Name = "Alternative text")] public string AltText { get; set; } = "";
+    [StringLength(1000)] public string Caption { get; set; } = "";
+    [Range(0, 10000), Display(Name = "Display order")] public int DisplayOrder { get; set; }
+    [Display(Name = "Visible to students")] public bool IsPublished { get; set; } = true;
+    public IReadOnlyList<SelectionOption> Lessons { get; set; } = [];
+}
+
 public record SelectionOption(int Id, string Label);
 public record SubjectAdminRow(int Id, string Code, string Title, string Level, int LessonCount, bool IsPublished);
 public record LessonAdminRow(int Id, string Title, string SubjectCode, int SortOrder, int MaterialCount, bool IsPublished);
 public record MaterialAdminRow(int Id, string Title, string LessonTitle, string SubjectCode, int SortOrder, bool IsPublished);
+public record LessonImageAdminRow(int Id, string ImagePath, string AltText, string LessonTitle,
+    string SubjectCode, int DisplayOrder, bool IsPublished);
 public record AdminDashboardViewModel(string FullName, string Email, int StudentCount, int SubjectCount, int LessonCount, int MaterialCount);
 public record StudentLevelCard(int Id, string Name, int SubjectCount);
 public record StudentDashboardViewModel(string FullName, string Email, IReadOnlyList<StudentLevelCard> Levels);
@@ -60,17 +78,22 @@ public record StudentAssessmentStatusViewModel(int Id, string Title, int Require
 public record StudentSubjectDetailsViewModel(int Id, string Code, string Title, string Description, string Level,
     IReadOnlyList<StudentLessonRow> Lessons, StudentAssessmentStatusViewModel? FinalExam, int ProgressPercentage);
 public record StudentMaterialViewModel(string Title, string Content, string ResourceUrl);
+public record StudentLessonImageViewModel(string ImagePath, string AltText, string Caption, int DisplayOrder);
 public record StudentActivityViewModel(int Id, string Title, string Instructions, string ExpectedOutput,
+    ActivityResponseType ResponseType, IReadOnlyList<string> Options, IReadOnlyList<ActivityMatchViewModel> Matches,
     bool IsCompleted, string Response, DateTime? CompletedAtUtc,
     IReadOnlyList<AttachmentViewModel> Attachments);
+public record ActivityMatchViewModel(string Term, string Definition);
 public record AttachmentViewModel(int Id, string FileName, string ContentType, long FileSize);
 public record StudentLessonDetailsViewModel(int Id, string Title, string Summary, string SubjectCode, int SubjectId,
-    IReadOnlyList<StudentMaterialViewModel> Materials, StudentActivityViewModel? Activity,
+    IReadOnlyList<StudentMaterialViewModel> Materials, IReadOnlyList<StudentLessonImageViewModel> Images,
+    StudentActivityViewModel? Activity,
     StudentAssessmentStatusViewModel? Quiz);
 
 public class ActivitySubmissionViewModel
 {
-    [Required, StringLength(10000, MinimumLength = 50)] public string Response { get; set; } = "";
+    [StringLength(10000)] public string Response { get; set; } = "";
+    public List<string> MatchingResponses { get; set; } = [];
     [Display(Name = "Attach files or images")] public List<IFormFile> Attachments { get; set; } = [];
 }
 

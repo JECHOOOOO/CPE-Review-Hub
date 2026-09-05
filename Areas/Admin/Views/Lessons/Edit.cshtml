@@ -14,6 +14,9 @@
     <label asp-for="ActivityTitle"></label><input asp-for="ActivityTitle" />
     <label asp-for="ActivityInstructions"></label><textarea asp-for="ActivityInstructions" rows="8"></textarea>
     <label asp-for="ActivityExpectedOutput"></label><textarea asp-for="ActivityExpectedOutput" rows="4"></textarea>
+    <label asp-for="ActivityResponseType"></label><select asp-for="ActivityResponseType" asp-items="Html.GetEnumSelectList<ActivityResponseType>()"></select>
+    <label asp-for="ActivityOptions"></label><textarea asp-for="ActivityOptions" rows="6"></textarea>
+    <p class="small muted">Multiple choice: one choice per line. Matching: one <strong>term|description</strong> pair per line. Leave blank for open responses.</p>
     <label class="check-row"><input asp-for="ActivityIsPublished" /> <span>Publish this icebreaker activity to students</span></label>
     <div class="form-actions"><button class="button" type="submit">Save lesson</button><a class="button secondary" asp-action="Index">Cancel</a></div>
 </form></section>
