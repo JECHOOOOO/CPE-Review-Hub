@@ -22,7 +22,7 @@ import urllib.parse
 import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
-DLL = ROOT / "bin/Release/net10.0/CPE-Review-Hub.dll"
+DLL = ROOT / "bin/Debug/net10.0/CPE-Review-Hub.dll"
 HIDDEN = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
 
 
@@ -183,7 +183,8 @@ def verify(mysql_bin):
             "FROM (SELECT AcademicLevelId, COUNT(*) CourseCount FROM cpe_integration.Subjects GROUP BY AcademicLevelId) levels;") == "200:11,300:16,400:7"
         assert sql("SELECT COUNT(*) FROM cpe_integration.Lessons;") == "204"
         assert sql("SELECT COUNT(*) FROM cpe_integration.ReviewMaterials WHERE CHAR_LENGTH(Content) > 1500;") == "204"
-        assert sql("SELECT COUNT(*) FROM cpe_integration.LessonImages WHERE ImagePath LIKE '/images/lessons/%' AND AltText<>'';") == "204"
+        assert sql("SELECT COUNT(*) FROM cpe_integration.LessonImages WHERE ImagePath LIKE '/images/lessons/%' AND AltText<>'';") == "148"
+        assert sql("SELECT COUNT(DISTINCT ImagePath) FROM cpe_integration.LessonImages WHERE ImagePath LIKE '/images/lessons/%';") == "148"
         assert sql("SELECT COUNT(*) FROM cpe_integration.LessonActivities WHERE Instructions LIKE '%Required process:%' OR ExpectedOutput LIKE '%50 characters%';") == "0"
         assert sql("SELECT COUNT(*) FROM cpe_integration.LessonActivities;") == "204"
         assert sql("SELECT COUNT(*) FROM cpe_integration.Assessments WHERE Type=1 AND RequiredQuestionCount=10;") == "204"
@@ -258,12 +259,15 @@ def verify(mysql_bin):
         assert "Arrays and Linked Lists" in lesson_body and "Array access by index is O(1)" in lesson_body
         assert "/images/lessons/cpe211/lesson-1.svg" in lesson_body and "<figcaption>" in lesson_body
         assert "minlength=\"50\"" not in lesson_body and "Required process:" not in lesson_body
-        for course_code, image_code in (("CPE 213", "cpe213"), ("CPE 312", "cpe312"), ("CPE 323", "cpe323"), ("CPE 416", "cpe416")):
+        for course_code, image_code in (("CPE 212", "cpe212"), ("CPE 213", "cpe213"),
+                ("MT 211", "mt211"), ("CPE 312", "cpe312"), ("CPE 322", "cpe322"),
+                ("CPE 323", "cpe323"), ("CPE 416", "cpe416")):
             lesson_id_for_image = sql("SELECT l.Id FROM cpe_integration.Lessons l JOIN cpe_integration.Subjects s ON s.Id=l.SubjectId "
                 f"WHERE s.Code='{course_code}' AND l.SortOrder=1;")
             page = student.request(f"/student/lessons/{lesson_id_for_image}")[1]
             assert f"/images/lessons/{image_code}/lesson-1.svg" in page and "<figcaption>" in page
         assert anonymous.request("/images/lessons/cpe211/lesson-1.svg")[0] == 200
+        assert anonymous.request("/images/lessons/cpe312/lesson-2.svg")[0] == 200
         assert student.request(f"/student/lessons/{second_lesson_id}")[0] == 302
         sample_png = base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=")
         assert student.multipart_post(f"/student/activities/{first_activity_id}/submit", {

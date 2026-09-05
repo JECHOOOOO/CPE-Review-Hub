@@ -97,8 +97,9 @@ screens remain a future management feature; the normalized database structure
 already supports them. No demo accounts, scores or hard-coded passwords are
 seeded.
 
-All 204 seeded lessons include a repository-owned educational SVG under
-`wwwroot/images/lessons/{course}/`. Each `LessonImages` row stores the local URL,
+The visual audit keeps 148 repository-owned educational SVGs under
+`wwwroot/images/lessons/{course}/`; 56 lessons intentionally have no seeded image
+because a generic diagram would not improve the topic. Each `LessonImages` row stores the local URL,
 alt text, caption, order, publication status, and lesson relationship. The Student
 lesson view places responsive figures between content sections. Admins can add,
 edit, reorder, hide, upload, or remove lesson-image records from **Lesson images**.
@@ -149,6 +150,6 @@ It does not connect to your MySQL80 service or use your database credentials.
 It checks migrations, persistence, passwords, CSRF, account types, portal
 isolation, profile ownership, account disabling, content CRUD, draft filtering,
 the exact grouped 34-course catalog, six-lesson structure, long study guides,
-course-specific typed activities, all 204 lesson-image records and a served SVG,
+course-specific typed activities, all audited lesson-image records and served SVGs,
 question and choice counts, activity gating, 10-item quiz scoring,
 answer feedback, progress, Student content browsing, lockouts, logout and outages.

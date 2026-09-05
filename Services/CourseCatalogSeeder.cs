@@ -152,17 +152,29 @@ public static class CourseCatalogSeeder
                 lesson.Activity.ExpectedOutput = CurriculumRenderer.ActivityExpectedOutput(activityType);
                 lesson.Activity.IsPublished = true;
 
-                var image = lesson.Images.OrderBy(x => x.DisplayOrder).FirstOrDefault();
-                if (image is null)
-                {
-                    image = new LessonImage { Lesson = lesson, DisplayOrder = 1 };
-                    lesson.Images.Add(image);
-                }
                 var imageCode = NormalizeCode(definition.Code).ToLowerInvariant();
-                image.ImagePath = $"/images/lessons/{imageCode}/lesson-{number}.svg";
-                image.AltText = $"Educational diagram for {definition.Code} lesson {number}, {template.Title}";
-                image.Caption = $"Figure 1. {template.Title}: a visual summary of {template.Focus}.";
-                image.IsPublished = true;
+                var seededPathPrefix = $"/images/lessons/{imageCode}/lesson-";
+                var oldSeededImages = lesson.Images.Where(x =>
+                    x.ImagePath.StartsWith(seededPathPrefix, StringComparison.OrdinalIgnoreCase)).ToList();
+                if (LessonVisualManifest.TryGet(definition.Code, template.Title, out var visual))
+                {
+                    var image = oldSeededImages.FirstOrDefault(x =>
+                        x.ImagePath.Equals(visual.ImagePath, StringComparison.OrdinalIgnoreCase));
+                    if (image is null)
+                    {
+                        image = new LessonImage { Lesson = lesson, DisplayOrder = 1 };
+                        lesson.Images.Add(image);
+                    }
+                    image.ImagePath = visual.ImagePath;
+                    image.AltText = visual.AltText;
+                    image.Caption = visual.Caption;
+                    image.IsPublished = true;
+                    foreach (var stale in oldSeededImages.Where(x => x != image)) db.LessonImages.Remove(stale);
+                }
+                else
+                {
+                    foreach (var stale in oldSeededImages) db.LessonImages.Remove(stale);
+                }
 
                 var quiz = lesson.Assessments.FirstOrDefault(x => x.Type == AssessmentType.LessonQuiz);
                 if (quiz is null)

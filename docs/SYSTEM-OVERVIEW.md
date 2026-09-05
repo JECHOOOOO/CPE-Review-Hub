@@ -60,6 +60,11 @@ in the existing lesson editor. Student activity monitoring is read-only,
 with Student, Course, Lesson, and date filters plus response/file viewing.
 Statistics keep activity participation separate from quiz and exam scores.
 
+Seeded lesson visuals are selected by stable course code and lesson title through
+`LessonVisualManifest`, never by database ID. The current audit retains 148
+topic-specific diagrams and intentionally leaves 56 lessons without a seeded
+image. Custom Admin uploads remain separate and are not deleted by catalog reseeding.
+
 ## Migration history
 
 1. `InitialAccounts` — Identity users and account fields.
