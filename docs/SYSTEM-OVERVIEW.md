@@ -16,6 +16,81 @@ The schema has 19 tables:
 - Student records: `ActivitySubmissions`, `SubmissionAttachments`, `AssessmentAttempts`, `AttemptAnswers`
 - Schema history: `__EFMigrationsHistory`
 
+## How MySQL runs in the system
+
+MySQL and the ASP.NET Core application are two separate processes. The local
+`MySQL80` Windows service listens on `127.0.0.1:3306` and owns the
+`cpe_review_hub` database. `dotnet run --launch-profile http` starts the web
+application on `http://localhost:5293`. The application then connects to MySQL
+with the dedicated `cpe_review_hub` database user.
+
+```text
+Browser
+  → ASP.NET Core / Kestrel on localhost:5293
+  → Controller and service rules
+  → ApplicationDbContext
+  → MySql.EntityFrameworkCore
+  → MySQL80 on 127.0.0.1:3306
+  → cpe_review_hub tables
+  → Razor View returned to the browser
+```
+
+`ApplicationDbContext` is created for a web request and exposes C# entity sets
+such as `Subjects`, `Lessons`, `ActivitySubmissions`, and `AssessmentAttempts`.
+Entity Framework Core converts LINQ reads into parameterized MySQL `SELECT`
+statements. `Add`, property changes, and `Remove`, followed by
+`SaveChangesAsync`, become `INSERT`, `UPDATE`, and `DELETE` statements. Returned
+rows are mapped back into C# models before a Razor View generates the HTML.
+
+### Common data flows
+
+- **Student registration:** Identity checks normalized email uniqueness, hashes
+  the password, and inserts an unconfirmed Student in `AspNetUsers`. The plain
+  password is never stored. Gmail sends the confirmation link, and successful
+  confirmation updates `EmailConfirmed`.
+- **Login:** Identity selects the account by email and verifies the submitted
+  password against `PasswordHash` in application code. A valid account receives
+  the separate Student or Admin authentication cookie. Failed-attempt and lockout
+  information is persisted in `AspNetUsers`.
+- **Lesson display:** the Student controller reads the Lesson together with its
+  Subject, Review Materials, published Lesson Images, Activity, and Assessment.
+  Image metadata is in MySQL; repository-owned SVG files are served from
+  `wwwroot/images/lessons`.
+- **Activity submission:** the first response inserts an `ActivitySubmissions`
+  row; a later response updates that same row. The unique
+  `(UserId, LessonActivityId)` index prevents duplicate completion records.
+  Uploaded evidence is stored in `SubmissionAttachments`; its file bytes use a
+  MySQL `longblob` column.
+- **Quiz or exam:** MySQL supplies the Assessment, mapped Questions, and Choices.
+  Submission creates an `AssessmentAttempt` and `AttemptAnswers`; the server
+  calculates and stores the score, percentage, and pass result. Admin does not
+  manually edit these results.
+- **Progress:** `StudentProgressService` derives lesson and course progress from
+  completed activity submissions and passed assessment attempts, so the system
+  does not need a second conflicting progress record.
+
+### Setup, migrations, and normal startup
+
+`Setup CPE Review Hub.cmd` verifies the service and credentials, stores the
+connection string in Windows .NET user-secrets, and applies pending EF Core
+migrations. Migration names already recorded in `__EFMigrationsHistory` are not
+applied again. Normal `dotnet run` uses the existing schema and does not recreate
+or reset the database on every startup.
+
+The MySQL connection string and Gmail App Password are outside the repository.
+They persist in Windows user-secrets, so they do not need to be pasted for every
+run. The application uses a dedicated database account instead of MySQL `root`.
+
+If MySQL80 is stopped, authentication and content queries cannot reach the
+database. `DatabaseErrorMiddleware` converts supported database failures into a
+safe service-unavailable page without exposing credentials. Starting MySQL80 and
+refreshing the request restores access; rebuilding the application is normally
+unnecessary.
+
+MySQL Workbench and phpMyAdmin are optional management interfaces. They do not
+host the database and do not need to remain open. XAMPP is also unnecessary when
+the application uses the standalone MySQL80 service.
+
 ## Relationship diagram
 
 ```text
