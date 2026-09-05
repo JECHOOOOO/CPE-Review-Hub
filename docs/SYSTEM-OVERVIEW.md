@@ -60,6 +60,71 @@ in the existing lesson editor. Student activity monitoring is read-only,
 with Student, Course, Lesson, and date filters plus response/file viewing.
 Statistics keep activity participation separate from quiz and exam scores.
 
+## CRUD operations
+
+CRUD means Create, Read, Update, and Delete. The application does not issue
+database commands directly from a Razor page. A form or link reaches an MVC
+controller, the controller validates a dedicated ViewModel, and Entity Framework
+Core translates the approved operation into a MySQL `INSERT`, `SELECT`, `UPDATE`,
+or `DELETE` statement.
+
+```text
+Browser form or link
+  → MVC controller
+  → authorization and anti-forgery checks
+  → ViewModel validation
+  → ApplicationDbContext / Entity Framework Core
+  → MySQL
+  → redirect or rendered Razor View
+```
+
+### Admin content operations
+
+| Module | Create | Read | Update | Delete |
+|---|:---:|:---:|:---:|:---:|
+| Subjects | Yes | Yes | Yes | Yes |
+| Lessons and icebreaker definitions | Yes | Yes | Yes | Yes |
+| Review materials | Yes | Yes | Yes | Yes |
+| Lesson images and metadata | Yes | Yes | Yes | Yes |
+| Quiz/exam questions and choices | Yes | Yes | Yes | Yes |
+| Quiz and final-exam settings | Seeded | Yes | Yes | No public delete action |
+| Students | Student registration | Yes | Activate/deactivate | No destructive delete action |
+| Activity submissions | No | Read-only | No | No |
+| Quiz and exam results | No | Read-only | No | No |
+| Statistics | No | Read-only | No | No |
+
+The full content CRUD controllers are `SubjectsController`, `LessonsController`,
+`MaterialsController`, `LessonImagesController`, and `QuestionsController` in the
+Admin area. Create and edit forms use GET requests, while Save and confirmed Delete
+operations use POST requests. Global automatic anti-forgery validation protects
+these modifying requests. Every Admin controller is protected by the Admin policy.
+
+Deleting a parent content record follows the relationships configured in
+`ApplicationDbContext`. Dependent lesson content can cascade with its parent,
+while an Academic Level referenced by Subjects uses restricted deletion. Question
+deletion also checks assessment mappings so shared or still-used questions are not
+carelessly removed.
+
+### Student-owned operations
+
+Students have intentionally limited data operations:
+
+- Registration creates a Student account; Profile reads and updates only the
+  signed-in student's information.
+- An activity submission is created on its first submission and updated on later
+  submissions. The unique `(UserId, LessonActivityId)` index prevents duplicate
+  completion rows.
+- A Student may upload, read, and remove only attachments belonging to that
+  Student's activity submission.
+- Starting and submitting a quiz or exam creates an `AssessmentAttempt` and its
+  `AttemptAnswers`. The server calculates the score and students cannot rewrite or
+  delete a submitted academic result.
+
+Activity responses and results do not expose general Admin CRUD. Admin activity
+access is participation monitoring only, and quiz/exam results remain automatically
+calculated. Account deactivation is used instead of destructive Student deletion so
+progress, attempts, responses, and attachments are not accidentally lost.
+
 Seeded lesson visuals are selected by stable course code and lesson title through
 `LessonVisualManifest`, never by database ID. The current audit retains 148
 topic-specific diagrams and intentionally leaves 56 lessons without a seeded
