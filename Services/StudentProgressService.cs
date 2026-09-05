@@ -60,7 +60,8 @@ public sealed class StudentProgressService(ApplicationDbContext db)
                 x.AssessmentId == lesson.Quiz.Id).ToList();
             var activityCompleted = lesson.ActivityId is null || submissions.ContainsKey(lesson.ActivityId.Value);
             var quizPassed = quizAttempts.Any(x => x.IsPassed);
-            var completed = activityCompleted && lesson.Quiz != null && quizPassed;
+            // The activity unlocks the quiz; only the automatically scored quiz completes the lesson.
+            var completed = lesson.Quiz != null && quizPassed;
             states.Add(new LessonProgressState(
                 lesson.Id, lesson.SortOrder, lesson.ActivityId, lesson.Quiz?.Id,
                 lesson.Quiz?.PassingPercentage ?? 70, activityCompleted, quizPassed,

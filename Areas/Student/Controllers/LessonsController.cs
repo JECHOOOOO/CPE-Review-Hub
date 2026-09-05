@@ -41,8 +41,7 @@ public class LessonsController(ApplicationDbContext db, StudentProgressService p
                 ? new StudentActivityViewModel(activity.Id, activity.Title, activity.Instructions,
                     activity.ExpectedOutput, submission is not null, submission?.Response ?? "",
                     submission?.CompletedAtUtc, submission?.Attachments.OrderBy(x => x.UploadedAtUtc)
-                        .Select(x => new AttachmentViewModel(x.Id, x.FileName, x.ContentType, x.FileSize)).ToList() ?? [],
-                    submission?.Grade, submission?.Feedback ?? "", submission?.GradedAtUtc) : null,
+                        .Select(x => new AttachmentViewModel(x.Id, x.FileName, x.ContentType, x.FileSize)).ToList() ?? []) : null,
             quiz is null ? null : new StudentAssessmentStatusViewModel(quiz.Id, quiz.Title,
                 quiz.RequiredQuestionCount, quiz.AssessmentQuestions.Count, quiz.IsPublished,
                 submission is not null, quizAttempts.Count == 0 ? null : quizAttempts.Max(x => x.Percentage),

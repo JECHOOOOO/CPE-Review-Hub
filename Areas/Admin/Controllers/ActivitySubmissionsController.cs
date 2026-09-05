@@ -4,7 +4,6 @@ using CPE_Review_Hub.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using System.Security.Claims;
 
 namespace CPE_Review_Hub.Areas.Admin.Controllers;
 
@@ -12,24 +11,34 @@ namespace CPE_Review_Hub.Areas.Admin.Controllers;
 public class ActivitySubmissionsController(ApplicationDbContext db) : Controller
 {
     [HttpGet("")]
-    public async Task<IActionResult> Index(string? search, string status = "pending", int page = 1)
+    public async Task<IActionResult> Index(string? student, int? courseId, int? lessonId,
+        DateTime? fromDate, DateTime? toDate, int page = 1)
     {
         page = Math.Clamp(page, 1, 100000);
-        status = status is "pending" or "graded" ? status : "all";
-        search = search?.Trim();
-        if (search?.Length > 120) search = search[..120];
+        student = student?.Trim();
+        if (student?.Length > 120) student = student[..120];
+        if (fromDate.HasValue && toDate.HasValue && fromDate.Value.Date > toDate.Value.Date)
+            ModelState.AddModelError("", "The From date must be before or equal to the To date.");
         var query = db.ActivitySubmissions.AsNoTracking();
-        if (status == "pending") query = query.Where(x => x.Grade == null);
-        if (status == "graded") query = query.Where(x => x.Grade != null);
-        if (!string.IsNullOrWhiteSpace(search))
-            query = query.Where(x => x.User.FullName.Contains(search) || x.User.Email!.Contains(search) ||
-                x.LessonActivity.Lesson.Subject.Code.Contains(search));
-        var rows = await query.OrderByDescending(x => x.UpdatedAtUtc).ThenByDescending(x => x.Id)
+        if (!string.IsNullOrWhiteSpace(student))
+            query = query.Where(x => x.User.FullName.Contains(student) || x.User.Email!.Contains(student));
+        if (courseId.HasValue) query = query.Where(x => x.LessonActivity.Lesson.SubjectId == courseId);
+        if (lessonId.HasValue) query = query.Where(x => x.LessonActivity.LessonId == lessonId);
+        if (fromDate.HasValue) query = query.Where(x => x.CompletedAtUtc >= fromDate.Value.Date);
+        if (toDate.HasValue) query = query.Where(x => x.CompletedAtUtc < toDate.Value.Date.AddDays(1));
+        var rows = await query.OrderByDescending(x => x.CompletedAtUtc).ThenByDescending(x => x.Id)
             .Skip((page - 1) * 30).Take(31)
             .Select(x => new ActivitySubmissionAdminRow(x.Id, x.User.FullName, x.User.Email ?? "",
                 x.LessonActivity.Lesson.Subject.Code, x.LessonActivity.Lesson.Title,
-                x.UpdatedAtUtc, x.Attachments.Count, x.Grade)).ToListAsync();
-        return View(new ActivitySubmissionIndexViewModel(search, status, page, rows.Count > 30, rows.Take(30).ToList()));
+                x.LessonActivity.Title, x.CompletedAtUtc, x.Attachments.Count)).ToListAsync();
+        var courses = await db.Subjects.AsNoTracking().OrderBy(x => x.Code)
+            .Select(x => new ActivityFilterOption(x.Id, x.Code + " — " + x.Title)).ToListAsync();
+        var lessons = await db.Lessons.AsNoTracking()
+            .Where(x => !courseId.HasValue || x.SubjectId == courseId)
+            .OrderBy(x => x.Subject.Code).ThenBy(x => x.SortOrder)
+            .Select(x => new ActivityFilterOption(x.Id, x.Subject.Code + " — " + x.Title)).ToListAsync();
+        return View(new ActivitySubmissionIndexViewModel(student, courseId, lessonId, fromDate, toDate,
+            page, rows.Count > 30, courses, lessons, rows.Take(30).ToList()));
     }
 
     [HttpGet("{id:int}")]
@@ -39,44 +48,13 @@ public class ActivitySubmissionsController(ApplicationDbContext db) : Controller
         return model is null ? NotFound() : View(model);
     }
 
-    [HttpPost("{id:int}/grade")]
-    public async Task<IActionResult> Grade(int id, [Bind(Prefix = "Grade")] ActivityGradeViewModel model)
-    {
-        var submission = await db.ActivitySubmissions.SingleOrDefaultAsync(x => x.Id == id);
-        if (submission is null) return NotFound();
-        if (ModelState.IsValid && submission.Revision != model.Revision)
-            ModelState.AddModelError("", "This submission changed since you opened it. Reload and review the latest answer before grading.");
-        if (ModelState.IsValid)
-        {
-            submission.Grade = decimal.Round(model.Score!.Value, 2);
-            submission.Feedback = model.Feedback?.Trim() ?? "";
-            submission.GradedAtUtc = DateTime.UtcNow;
-            submission.GradedById = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-            submission.Revision++;
-            try
-            {
-                await db.SaveChangesAsync();
-                TempData["Success"] = "Grade and feedback saved. The student can now see them on the lesson page.";
-                return RedirectToAction(nameof(Details), new { id });
-            }
-            catch (DbUpdateConcurrencyException)
-            {
-                ModelState.AddModelError("", "This submission changed during grading. Reload and review the latest answer before saving.");
-            }
-        }
-        var details = await LoadDetailsAsync(id);
-        return details is null ? NotFound() : View("Details", details with { Grade = model });
-    }
-
     private Task<AdminActivitySubmissionViewModel?> LoadDetailsAsync(int id) =>
         db.ActivitySubmissions.AsNoTracking().Where(x => x.Id == id)
             .Select(x => new AdminActivitySubmissionViewModel(x.Id, x.User.FullName, x.User.Email ?? "",
                 x.LessonActivity.Lesson.Subject.Code, x.LessonActivity.Lesson.Title, x.LessonActivity.Title,
                 x.Response, x.CompletedAtUtc, x.UpdatedAtUtc, x.Attachments.OrderBy(a => a.UploadedAtUtc)
                     .Select(a => new AttachmentViewModel(a.Id, a.FileName, a.ContentType, a.FileSize)).ToList(),
-                x.LessonActivity.Instructions, x.LessonActivity.ExpectedOutput, x.GradedAtUtc,
-                x.GradedBy == null ? null : x.GradedBy.FullName,
-                new ActivityGradeViewModel { Score = x.Grade, Feedback = x.Feedback, Revision = x.Revision }))
+                x.LessonActivity.Instructions, x.LessonActivity.ExpectedOutput))
             .SingleOrDefaultAsync();
 
     [HttpGet("attachments/{id:int}/preview")]

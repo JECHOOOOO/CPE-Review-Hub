@@ -9,16 +9,7 @@ else { <div class="material-stack">@foreach (var material in Model.Materials) { 
         <div class="material-content">@Model.Activity.Instructions</div><div class="expected-output"><strong>Expected output</strong><p>@Model.Activity.ExpectedOutput</p></div>
         @if (Model.Activity.IsCompleted)
         {
-            <div class="activity-grade" role="status">
-                @if (Model.Activity.Grade.HasValue)
-                {
-                    <span class="eyebrow">ADMIN FEEDBACK</span><h3>Activity grade: @Model.Activity.Grade.Value.ToString("0.##") / 100</h3>
-                    <p class="submission-feedback">@Model.Activity.Feedback</p>
-                    <p class="small muted">Graded @Model.Activity.GradedAtUtc?.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</p>
-                }
-                else { <strong>Awaiting admin review</strong><p>Your response and attachments are available to the administrator.</p> }
-                <p class="small muted">Updating your response or removing a file clears the current grade and requests a new review.</p>
-            </div>
+            <div class="activity-grade" role="status"><strong>Activity completed</strong><p>This is an ungraded practice activity. Your submitted response is available to the administrator for participation monitoring.</p></div>
         }
         <form asp-area="Student" asp-controller="Activities" asp-action="Submit" asp-route-id="@Model.Activity.Id" method="post" enctype="multipart/form-data" class="activity-form">
             <label for="Response">Your activity response</label>

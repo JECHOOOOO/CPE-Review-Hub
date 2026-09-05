@@ -1,23 +1,47 @@
 @model CPE_Review_Hub.ViewModels.ActivitySubmissionIndexViewModel
-@{ ViewData["Title"] = "Activity submissions"; }
-<span class="eyebrow">STUDENT WORK</span><h1>Activity submissions</h1><p class="lead">Review written answers, open attachments, and give students grades and useful feedback.</p>
-<form method="get" class="filter-row">
-    <label class="submission-search">Search students or courses<input name="search" value="@Model.Search" maxlength="120" placeholder="Student name, email, or course code" /></label>
-    <label>Status<select name="status"><option value="pending" selected="@(Model.Status == "pending")">Awaiting review</option><option value="graded" selected="@(Model.Status == "graded")">Graded</option><option value="all" selected="@(Model.Status == "all")">All submissions</option></select></label>
-    <button class="button" type="submit">Apply filters</button>
+@{ ViewData["Title"] = "Activity participation"; }
+<span class="eyebrow">PARTICIPATION MONITORING</span>
+<h1>Student activities</h1>
+<p class="lead">View completed icebreaker activities and student responses. Activities are practice work and are never graded.</p>
+<form method="get" class="panel activity-filters">
+    <div asp-validation-summary="All" class="validation" role="alert"></div>
+    <div class="activity-filter-grid">
+        <label>Student<input name="student" value="@Model.Student" maxlength="120" placeholder="Name or email" /></label>
+        <label>Course<select name="courseId"><option value="">All courses</option>@foreach (var option in Model.Courses) { <option value="@option.Id" selected="@(Model.CourseId == option.Id)">@option.Label</option> }</select></label>
+        <label>Lesson<select name="lessonId"><option value="">All lessons</option>@foreach (var option in Model.Lessons) { <option value="@option.Id" selected="@(Model.LessonId == option.Id)">@option.Label</option> }</select></label>
+        <label>From date<input name="fromDate" type="date" value="@Model.FromDate?.ToString("yyyy-MM-dd")" /></label>
+        <label>To date<input name="toDate" type="date" value="@Model.ToDate?.ToString("yyyy-MM-dd")" /></label>
+    </div>
+    <div class="button-row"><button class="button" type="submit">Apply filters</button><a class="button secondary" asp-action="Index">Clear</a></div>
 </form>
-@if (Model.Submissions.Count == 0) { <section class="panel empty-state"><h2>No matching submissions</h2><p>Student activities will appear here after submission.</p></section> }
+@if (Model.Submissions.Count == 0)
+{
+    <section class="panel empty-state"><h2>No matching activity completions</h2><p>Submitted student activities will appear here.</p></section>
+}
 else
 {
-    <section class="panel table-scroll"><table><thead><tr><th>Student</th><th>Course / lesson</th><th>Updated</th><th>Files</th><th>Grade</th><th>Review</th></tr></thead><tbody>
-    @foreach (var submission in Model.Submissions)
-    {
-        <tr><td><strong>@submission.StudentName</strong><br /><span class="small muted">@submission.StudentEmail</span></td><td><strong>@submission.SubjectCode</strong><br />@submission.LessonTitle</td><td>@submission.UpdatedAtUtc.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</td><td>@submission.AttachmentCount</td><td>@(submission.Grade.HasValue ? submission.Grade.Value.ToString("0.##") + " / 100" : "Awaiting review")</td><td><a asp-action="Details" asp-route-id="@submission.Id">Review submission →</a></td></tr>
-    }
-    </tbody></table></section>
+    <section class="panel table-scroll">
+        <table>
+            <thead><tr><th>Student</th><th>Course</th><th>Lesson</th><th>Activity</th><th>Status</th><th>Completed at</th><th>Action</th></tr></thead>
+            <tbody>
+            @foreach (var submission in Model.Submissions)
+            {
+                <tr>
+                    <td><strong>@submission.StudentName</strong><br /><span class="small muted">@submission.StudentEmail</span></td>
+                    <td><strong>@submission.SubjectCode</strong></td>
+                    <td>@submission.LessonTitle</td>
+                    <td>@submission.ActivityTitle@if (submission.AttachmentCount > 0) { <br /><span class="small muted">@submission.AttachmentCount file(s)</span> }</td>
+                    <td><span class="status-complete">Completed</span></td>
+                    <td>@submission.CompletedAtUtc.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</td>
+                    <td><a asp-action="Details" asp-route-id="@submission.Id">View →</a></td>
+                </tr>
+            }
+            </tbody>
+        </table>
+    </section>
 }
 <nav class="button-row" aria-label="Submission pages">
-    @if (Model.Page > 1) { <a class="button secondary" asp-action="Index" asp-route-page="@(Model.Page - 1)" asp-route-status="@Model.Status" asp-route-search="@Model.Search">Previous</a> }
+    @if (Model.Page > 1) { <a class="button secondary" asp-action="Index" asp-route-page="@(Model.Page - 1)" asp-route-student="@Model.Student" asp-route-courseId="@Model.CourseId" asp-route-lessonId="@Model.LessonId" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")">Previous</a> }
     <span>Page @Model.Page</span>
-    @if (Model.HasNextPage) { <a class="button secondary" asp-action="Index" asp-route-page="@(Model.Page + 1)" asp-route-status="@Model.Status" asp-route-search="@Model.Search">Next</a> }
+    @if (Model.HasNextPage) { <a class="button secondary" asp-action="Index" asp-route-page="@(Model.Page + 1)" asp-route-student="@Model.Student" asp-route-courseId="@Model.CourseId" asp-route-lessonId="@Model.LessonId" asp-route-fromDate="@Model.FromDate?.ToString("yyyy-MM-dd")" asp-route-toDate="@Model.ToDate?.ToString("yyyy-MM-dd")">Next</a> }
 </nav>

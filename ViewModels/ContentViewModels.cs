@@ -21,6 +21,10 @@ public class LessonFormViewModel
     [StringLength(1000)] public string Summary { get; set; } = "";
     [Range(0, 10000), Display(Name = "Display order")] public int SortOrder { get; set; }
     [Display(Name = "Visible to students")] public bool IsPublished { get; set; }
+    [StringLength(200), Display(Name = "Activity title")] public string ActivityTitle { get; set; } = "";
+    [StringLength(6000), Display(Name = "Activity instructions")] public string ActivityInstructions { get; set; } = "";
+    [StringLength(2000), Display(Name = "Expected output")] public string ActivityExpectedOutput { get; set; } = "";
+    [Display(Name = "Publish this icebreaker activity")] public bool ActivityIsPublished { get; set; }
     public IReadOnlyList<SelectionOption> Subjects { get; set; } = [];
 }
 
@@ -58,7 +62,7 @@ public record StudentSubjectDetailsViewModel(int Id, string Code, string Title, 
 public record StudentMaterialViewModel(string Title, string Content, string ResourceUrl);
 public record StudentActivityViewModel(int Id, string Title, string Instructions, string ExpectedOutput,
     bool IsCompleted, string Response, DateTime? CompletedAtUtc,
-    IReadOnlyList<AttachmentViewModel> Attachments, decimal? Grade, string Feedback, DateTime? GradedAtUtc);
+    IReadOnlyList<AttachmentViewModel> Attachments);
 public record AttachmentViewModel(int Id, string FileName, string ContentType, long FileSize);
 public record StudentLessonDetailsViewModel(int Id, string Title, string Summary, string SubjectCode, int SubjectId,
     IReadOnlyList<StudentMaterialViewModel> Materials, StudentActivityViewModel? Activity,

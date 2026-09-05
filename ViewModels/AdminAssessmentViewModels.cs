@@ -61,7 +61,8 @@ public record CourseStatisticsRow(int SubjectId, string Code, string Title, int 
 
 public record AdminStatisticsViewModel(int StudentCount, int QuizAttempts, int ExamAttempts,
     decimal AverageQuizScore, decimal AverageExamScore, int PassedAttempts, int FailedAttempts,
-    decimal LessonCompletionRate, IReadOnlyList<CourseStatisticsRow> Courses);
+    decimal LessonCompletionRate, int ActivityCompletions, int ParticipatingStudents,
+    decimal ActivityCompletionRate, IReadOnlyList<CourseStatisticsRow> Courses);
 
 public record AdminStudentLessonProgressRow(int Number, string Title, bool ActivityCompleted,
     bool QuizPassed, bool IsCompleted, bool IsUnlocked, decimal? BestScore, int? ActivitySubmissionId);
@@ -76,20 +77,13 @@ public record AdminStudentProgressViewModel(string StudentId, string StudentName
 public record AdminActivitySubmissionViewModel(int Id, string StudentName, string StudentEmail,
     string SubjectCode, string LessonTitle, string ActivityTitle, string Response,
     DateTime CompletedAtUtc, DateTime UpdatedAtUtc, IReadOnlyList<AttachmentViewModel> Attachments,
-    string Instructions, string ExpectedOutput, DateTime? GradedAtUtc, string? GraderName,
-    ActivityGradeViewModel Grade);
-
-public class ActivityGradeViewModel
-{
-    [Required, Range(typeof(decimal), "0", "100"), Display(Name = "Score out of 100")]
-    public decimal? Score { get; set; }
-    [StringLength(4000), Display(Name = "Feedback for the student")]
-    public string? Feedback { get; set; }
-    [Required, Range(0, int.MaxValue)] public int? Revision { get; set; }
-}
+    string Instructions, string ExpectedOutput);
 
 public record ActivitySubmissionAdminRow(int Id, string StudentName, string StudentEmail,
-    string SubjectCode, string LessonTitle, DateTime UpdatedAtUtc, int AttachmentCount, decimal? Grade);
+    string SubjectCode, string LessonTitle, string ActivityTitle, DateTime CompletedAtUtc, int AttachmentCount);
 
-public record ActivitySubmissionIndexViewModel(string? Search, string Status, int Page,
-    bool HasNextPage, IReadOnlyList<ActivitySubmissionAdminRow> Submissions);
+public record ActivityFilterOption(int Id, string Label);
+public record ActivitySubmissionIndexViewModel(string? Student, int? CourseId, int? LessonId,
+    DateTime? FromDate, DateTime? ToDate, int Page, bool HasNextPage,
+    IReadOnlyList<ActivityFilterOption> Courses, IReadOnlyList<ActivityFilterOption> Lessons,
+    IReadOnlyList<ActivitySubmissionAdminRow> Submissions);

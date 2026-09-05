@@ -78,18 +78,18 @@ The catalog contains the requested 34 courses: 11 Sophomore (ID 200), 16 Junior
 (ID 300), and 7 Senior (ID 400) courses. Every course has six published lessons. Every
 lesson includes a substantial, course-specific editable study guide with
 objectives, explanations, definitions, procedures, examples and takeaways. A
-required activity appears before its published 10-item quiz. Every course also
+icebreaker activity appears before its published 10-item quiz. Every course also
 has a published 50-item final exam assembled only from concepts taught in its
 six lessons. Course cards and lessons are clickable.
 
-Administrators can create, edit, publish and delete subjects, lessons and plain-
-text review materials. Students can browse published content by the fixed
+Administrators can create, edit, publish and delete subjects, lessons, their
+icebreaker activities, and plain-text review materials. Students can browse published content by the fixed
 Sophomore, Junior and Senior academic years. Draft content is never returned by Student routes.
 The database stores 2,040 lesson questions with four choices and feedback,
 reusable assessment-question ordering, activity submissions, assessment
-attempts and selected answers. A student must submit the lesson activity before
-its quiz unlocks. The final exam unlocks after all six activities and lesson
-quizzes are completed. Quiz and exam scores, answer review, history and course
+attempts and selected answers. A student must submit the ungraded lesson activity before
+its quiz unlocks. Passing the automatically scored quiz completes the lesson and
+unlocks the next one. The final exam unlocks after all six lesson quizzes are passed. Quiz and exam scores, answer review, history and course
 progress are available from the Student portal. Admin question/choice editing
 screens remain a future management feature; the normalized database structure
 already supports them. No demo accounts, scores or hard-coded passwords are
@@ -105,20 +105,17 @@ dotnet run --launch-profile http
 
 Then open http://localhost:5293 in your browser.
 
-## Review and grade student activities
+## Monitor student activities
 
 Sign in at `/admin.html`, then choose **Activity submissions** in the sidebar.
-The list defaults to work awaiting review; search by student or course and switch
-to Graded or All as needed. Open a submission to read the written response and
-activity instructions, preview supported images, and download the original files.
-Enter a score from 0 to 100 and optional feedback, then select **Save grade & feedback**.
+Filter participation by Student, Course, Lesson, or completed date. Open a record
+to read the response, review the activity instructions, preview supported images,
+and download files. The page is read-only: there is no activity grade, manual
+score, feedback, pass/fail, approval, rejection, or manual unlock action. All
+view, download, and image-preview routes require Admin authorization.
 
-Students see the grade and feedback on the same lesson page. Editing a response,
-adding files, or removing a file clears the current grade and requests another
-review. The existing activity/quiz progression rules do not depend on this manual
-grade. A revision check prevents an admin from grading an outdated submission.
-Scores, feedback, reviewer and review time are stored in MySQL alongside the
-existing submission; all review, download and image-preview routes require Admin.
+See [System overview](docs/SYSTEM-OVERVIEW.md) for the provider, connection model,
+tables, relationships, migration history, learning flow, and GitHub/MySQL boundary.
 
 Public links use normal browser navigation without full-page snapshot transitions,
 which can render black when video and glass layers are captured. Login panels

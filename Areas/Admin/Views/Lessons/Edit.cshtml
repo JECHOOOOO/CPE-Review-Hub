@@ -8,5 +8,12 @@
     <label asp-for="Summary"></label><textarea asp-for="Summary" rows="5"></textarea>
     <label asp-for="SortOrder"></label><input asp-for="SortOrder" type="number" min="0" />
     <label class="check-row"><input asp-for="IsPublished" /> <span>Publish this lesson to students</span></label>
+    <hr />
+    <span class="eyebrow">ICEBREAKER / PRACTICE</span><h2>Lesson activity</h2>
+    <p class="muted">This activity unlocks the quiz and records participation. It has no grade, score, pass/fail result, or approval.</p>
+    <label asp-for="ActivityTitle"></label><input asp-for="ActivityTitle" />
+    <label asp-for="ActivityInstructions"></label><textarea asp-for="ActivityInstructions" rows="8"></textarea>
+    <label asp-for="ActivityExpectedOutput"></label><textarea asp-for="ActivityExpectedOutput" rows="4"></textarea>
+    <label class="check-row"><input asp-for="ActivityIsPublished" /> <span>Publish this icebreaker activity to students</span></label>
     <div class="form-actions"><button class="button" type="submit">Save lesson</button><a class="button secondary" asp-action="Index">Cancel</a></div>
 </form></section>

@@ -247,6 +247,7 @@ def verify(mysql_bin):
         assert student.request("/Admin/Dashboard")[0] == 302
         assert student.request("/Admin/Students")[0] == 302
         first_lesson_id = sql("SELECT l.Id FROM cpe_integration.Lessons l JOIN cpe_integration.Subjects s ON s.Id=l.SubjectId WHERE s.Code='CPE 211' AND l.SortOrder=1;")
+        first_subject_id = sql("SELECT Id FROM cpe_integration.Subjects WHERE Code='CPE 211';")
         second_lesson_id = sql("SELECT l.Id FROM cpe_integration.Lessons l JOIN cpe_integration.Subjects s ON s.Id=l.SubjectId WHERE s.Code='CPE 211' AND l.SortOrder=2;")
         first_activity_id = sql("SELECT la.Id FROM cpe_integration.LessonActivities la WHERE la.LessonId=" + first_lesson_id + ";")
         first_quiz_id = sql("SELECT a.Id FROM cpe_integration.Assessments a WHERE a.LessonId=" + first_lesson_id + " AND a.Type=1;")
@@ -271,21 +272,37 @@ def verify(mysql_bin):
         take_body = student.request(take_path)[1]
         assert take_body.count('question-card') == 10
         assert "Question 1 of 10" in take_body and "choice-letter" in take_body and "0 of 10 answered" in take_body
-        correct_rows = sql("SELECT aq.QuestionId,c.Id FROM cpe_integration.AssessmentQuestions aq "
-            "JOIN cpe_integration.Choices c ON c.QuestionId=aq.QuestionId AND c.IsCorrect=1 "
-            f"WHERE aq.AssessmentId={first_quiz_id} ORDER BY aq.SortOrder;").splitlines()
-        answer_data = {f"Answers[{row.split(chr(9))[0]}]": row.split(chr(9))[1] for row in correct_rows}
-        answer_data["AttemptId"] = attempt_id
-        status, _, headers = student.post(f"{take_path}/submit", answer_data, take_path)
+        choice_rows = sql("SELECT aq.QuestionId,MAX(CASE WHEN c.IsCorrect=1 THEN c.Id END),"
+            "MIN(CASE WHEN c.IsCorrect=0 THEN c.Id END) FROM cpe_integration.AssessmentQuestions aq "
+            "JOIN cpe_integration.Choices c ON c.QuestionId=aq.QuestionId "
+            f"WHERE aq.AssessmentId={first_quiz_id} GROUP BY aq.QuestionId,aq.SortOrder ORDER BY aq.SortOrder;").splitlines()
+        failed_answers = {}
+        for index, row in enumerate(choice_rows):
+            question, correct, incorrect = row.split(chr(9))
+            failed_answers[f"Answers[{question}]"] = correct if index < 6 else incorrect
+        failed_answers["AttemptId"] = attempt_id
+        status, _, headers = student.post(f"{take_path}/submit", failed_answers, take_path)
         assert status == 302 and headers["Location"].endswith("/result")
         result_body = student.request(urllib.parse.urlparse(headers["Location"]).path)[1]
+        assert "6 / 10" in result_body and "60%" in result_body and "Try again" in result_body
+        assert sql("SELECT COUNT(*) FROM cpe_integration.ActivitySubmissions;") == "1"
+        assert student.request(f"/student/lessons/{second_lesson_id}")[0] == 302
+        status, _, headers = student.post(f"/student/assessments/{first_quiz_id}/start", {}, lesson_path)
+        assert status == 302 and "/student/assessments/attempts/" in headers["Location"]
+        take_path = urllib.parse.urlparse(headers["Location"]).path
+        attempt_id = take_path.rsplit("/", 1)[-1]
+        answer_data = {f"Answers[{row.split(chr(9))[0]}]": row.split(chr(9))[1] for row in choice_rows}
+        answer_data["AttemptId"] = attempt_id
+        status, _, headers = student.post(f"{take_path}/submit", answer_data, take_path)
+        result_body = student.request(urllib.parse.urlparse(headers["Location"]).path)[1]
         assert "10 / 10" in result_body and "100%" in result_body and "Correct" in result_body
-        assert ">Attempt<" in result_body and ">#1<" in result_body
+        assert ">Attempt<" in result_body and ">#2<" in result_body
         assert student.request(f"/student/lessons/{second_lesson_id}")[0] == 200
         assert "Data Structures And Algorithms" in student.request("/student/progress")[1]
         assert sql("SELECT COUNT(*) FROM cpe_integration.ActivitySubmissions;") == "1"
         assert sql("SELECT COUNT(*) FROM cpe_integration.SubmissionAttachments WHERE FileName='array-trace.png' AND FileSize>0;") == "1"
         assert sql("SELECT COUNT(*) FROM cpe_integration.AssessmentAttempts WHERE Score=10 AND IsPassed=1;") == "1"
+        assert sql("SELECT COUNT(*) FROM cpe_integration.AssessmentAttempts WHERE Score=6 AND IsPassed=0;") == "1"
         assert login(admin, "admin", "admin@example.test", admin_password)[0] == 302
         assert admin.request("/Admin/Dashboard")[0] == 200
         assert admin.request("/Student/Dashboard")[0] == 302
@@ -303,42 +320,31 @@ def verify(mysql_bin):
         review_path = f"/admin/activity-submissions/{submission_id}"
         grade_path = review_path + "/grade"
         preview_path = f"/admin/activity-submissions/attachments/{attachment_id}/preview"
-        assert admin.request("/admin/activity-submissions")[0] == 200
-        assert "array-trace.png" in admin.request(review_path)[1]
+        activity_list = admin.request("/admin/activity-submissions")[1]
+        assert "Completed" in activity_list and "View" in activity_list and "Grade" not in activity_list
+        filtered_activities = admin.request(f"/admin/activity-submissions?student=student%40example.test&courseId={first_subject_id}&lessonId={first_lesson_id}")[1]
+        assert "array-trace.png" in filtered_activities or "Arrays and Linked Lists" in filtered_activities
+        review_body = admin.request(review_path)[1]
+        assert "array-trace.png" in review_body and "READ-ONLY PARTICIPATION RECORD" in review_body
+        assert "Grade this activity" not in review_body and "Save grade" not in review_body
         assert admin.request(preview_path)[0] == 200
         assert student.request(preview_path)[0] == 302
         assert anonymous.request(review_path)[0] == 302
-        assert student.post(grade_path, {"Grade.Score": "100", "Grade.Revision": "1"}, lesson_path)[0] == 302
-        assert admin.request(grade_path, {"Grade.Score": "90"})[0] == 400
-        revision = sql(f"SELECT Revision FROM cpe_integration.ActivitySubmissions WHERE Id={submission_id};")
-        assert admin.post(grade_path, {"Grade.Score": "101", "Grade.Revision": revision}, review_path)[0] == 200
-        assert sql(f"SELECT COUNT(*) FROM cpe_integration.ActivitySubmissions WHERE Id={submission_id} AND Grade IS NULL;") == "1"
-        assert admin.post(grade_path, {"Grade.Score": "88.5", "Grade.Feedback": "Clear tracing; explain the empty-list case more fully.", "Grade.Revision": revision}, review_path)[0] == 302
-        assert sql(f"SELECT COUNT(*) FROM cpe_integration.ActivitySubmissions WHERE Id={submission_id} AND Grade=88.5 AND GradedAtUtc IS NOT NULL AND GradedById IS NOT NULL;") == "1"
-        assert "Activity grade: 88.5 / 100" in student.request(lesson_path)[1]
-        assert "explain the empty-list case" in student.request(lesson_path)[1]
-        assert "Review submission" in admin.request("/admin/activity-submissions?status=graded")[1]
-        assert "No matching submissions" in admin.request("/admin/activity-submissions?status=pending")[1]
-        assert admin.post(grade_path, {"Grade.Score": "99", "Grade.Revision": revision}, review_path)[0] == 200
-        assert sql(f"SELECT COUNT(*) FROM cpe_integration.ActivitySubmissions WHERE Id={submission_id} AND Grade=88.5;") == "1"
-        before_edit = sql(f"SELECT Revision FROM cpe_integration.ActivitySubmissions WHERE Id={submission_id};")
+        rejected_grade_status = admin.post(grade_path, {"Grade.Score": "90"}, review_path)[0]
+        assert rejected_grade_status in (400, 404, 405), rejected_grade_status
+        columns = sql("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='cpe_integration' "
+            "AND table_name='ActivitySubmissions' AND column_name IN ('Grade','Feedback','GradedAtUtc','GradedById','Revision');")
+        assert columns == "0"
         assert student.post(f"/student/activities/{first_activity_id}/submit", {
-            "Response": "I updated the linked-list trace and documented the empty head pointer, insertion links, and boundary cases carefully.",
-            "Grade": "100", "GradedById": "forged-admin"
+            "Response": "I updated the linked-list trace and documented the empty head pointer, insertion links, and boundary cases carefully."
         }, lesson_path)[0] == 302
-        assert sql(f"SELECT COUNT(*) FROM cpe_integration.ActivitySubmissions WHERE Id={submission_id} AND Grade IS NULL AND GradedById IS NULL AND Feedback='';") == "1"
-        assert "Awaiting admin review" in student.request(lesson_path)[1]
-        assert admin.post(grade_path, {"Grade.Score": "90", "Grade.Revision": before_edit}, review_path)[0] == 200
-        revision = sql(f"SELECT Revision FROM cpe_integration.ActivitySubmissions WHERE Id={submission_id};")
-        assert admin.post(grade_path, {"Grade.Score": "90", "Grade.Revision": revision}, review_path)[0] == 302
+        assert "Activity completed" in student.request(lesson_path)[1]
         assert login(second, "student", "second@example.test", simple_password)[0] == 302
         assert second.request(f"/student/activities/attachments/{attachment_id}")[0] == 404
         assert second.post(f"/student/activities/attachments/{attachment_id}/delete", {}, "/Student/Profile")[0] == 404
         assert student.post(f"/student/activities/attachments/{attachment_id}/delete", {}, lesson_path)[0] == 302
-        assert sql(f"SELECT COUNT(*) FROM cpe_integration.ActivitySubmissions WHERE Id={submission_id} AND Grade IS NULL;") == "1"
-        revision = sql(f"SELECT Revision FROM cpe_integration.ActivitySubmissions WHERE Id={submission_id};")
-        assert admin.post(grade_path, {"Grade.Score": "0", "Grade.Revision": revision, "Grade.Feedback": "Please include the required diagram."}, review_path)[0] == 302
-        print("PASS: Admin activity grading, previews, ownership, validation, stale-review protection, and regrading after edits.", flush=True)
+        assert "Activity participation" in admin.request("/admin/statistics")[1]
+        print("PASS: Admin activity monitoring is read-only with filters, attachments, ownership, and participation-only statistics.", flush=True)
         assert admin.post("/admin/questions/save", {"AssessmentId": first_quiz_id,
             "LessonId": first_lesson_id, "Prompt": "Which access pattern is taught for an array?",
             "Explanation": "Arrays support direct indexed access.", "ChoiceA": "Direct indexed access",
@@ -350,7 +356,7 @@ def verify(mysql_bin):
         assert admin.post(f"/admin/questions/{added_question_id}/delete", {"assessmentId": first_quiz_id},
             f"/admin/questions/{added_question_id}/delete?assessmentId={first_quiz_id}")[0] == 302
         assert sql(f"SELECT COUNT(*) FROM cpe_integration.AssessmentQuestions WHERE AssessmentId={first_quiz_id};") == "10"
-        print("PASS: Verified-email registration, activity gating, scoring, feedback, progress, CSRF, and portal separation.", flush=True)
+        print("PASS: Verified-email registration, activity gating, automatic quiz scoring, progress, CSRF, and portal separation.", flush=True)
         assert student.request("/admin/subjects")[0] == 302
         assert admin.request("/student/subjects")[0] == 302
         assert admin.post("/admin/subjects/save", {"Code": "TEST 999", "Title": "Temporary Integration Course",
@@ -361,9 +367,12 @@ def verify(mysql_bin):
             "Title": "Updated Temporary Integration Course", "Description": "Published integration subject",
             "AcademicLevelId": "200", "IsPublished": "true"}, f"/admin/subjects/{subject_id}/edit")[0] == 302
         assert admin.post("/admin/lessons/save", {"SubjectId": subject_id, "Title": "Digital Foundations",
-            "Summary": "Start with digital systems.", "SortOrder": "1", "IsPublished": "true"},
+            "Summary": "Start with digital systems.", "SortOrder": "1", "IsPublished": "true",
+            "ActivityTitle": "Binary icebreaker", "ActivityInstructions": "Compare binary and hexadecimal representations in a short worked response.",
+            "ActivityExpectedOutput": "A conversion table with a concise explanation.", "ActivityIsPublished": "true"},
             f"/admin/lessons/create?subjectId={subject_id}")[0] == 302
         lesson_id = sql("SELECT Id FROM cpe_integration.Lessons WHERE SubjectId=" + subject_id + ";")
+        assert sql("SELECT COUNT(*) FROM cpe_integration.LessonActivities WHERE LessonId=" + lesson_id + " AND Title='Binary icebreaker' AND IsPublished=1;") == "1"
         assert admin.post("/admin/materials/save", {"LessonId": lesson_id, "Title": "Number Systems",
             "Content": "Binary and hexadecimal review material.", "SortOrder": "1", "IsPublished": "true"},
             f"/admin/materials/create?lessonId={lesson_id}")[0] == 302
@@ -389,7 +398,7 @@ def verify(mysql_bin):
         app_process = start_app()
         wait_app(anonymous)
         assert "Saved Profile" in student.request("/Student/Profile")[1]
-        assert "Activity grade: 0 / 100" in student.request(lesson_path)[1]
+        assert "Activity completed" in student.request(lesson_path)[1]
         assert "Saved Profile" in admin.request("/Admin/Students")[1]
         student_id = sql("SELECT Id FROM cpe_integration.AspNetUsers WHERE Email='student@example.test';")
         assert admin.request(f"/Admin/Students/Progress?id={student_id}")[0] == 200

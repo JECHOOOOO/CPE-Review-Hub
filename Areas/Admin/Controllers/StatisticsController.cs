@@ -26,6 +26,11 @@ public class StatisticsController(ApplicationDbContext db) : Controller
         var attempts = await db.AssessmentAttempts.AsNoTracking().Where(x => x.SubmittedAtUtc != null)
             .Select(x => new { x.UserId, x.AssessmentId, x.Percentage, x.IsPassed, x.Assessment.SubjectId, x.Assessment.Type }).ToListAsync();
         var submissions = await db.ActivitySubmissions.AsNoTracking().Select(x => new { x.UserId, x.LessonActivityId }).ToListAsync();
+        var publishedActivityCount = lessons.Count(x => x.ActivityId.HasValue);
+        var validActivityIds = lessons.Where(x => x.ActivityId.HasValue).Select(x => x.ActivityId!.Value).ToHashSet();
+        var studentIds = students.ToHashSet();
+        var participation = submissions.Where(x => studentIds.Contains(x.UserId) && validActivityIds.Contains(x.LessonActivityId)).ToList();
+        var possibleActivityCompletions = (long)students.Count * publishedActivityCount;
         var rows = new List<CourseStatisticsRow>();
         long completedPairs = 0, possiblePairs = 0;
         foreach (var subject in subjects)
@@ -38,9 +43,8 @@ public class StatisticsController(ApplicationDbContext db) : Controller
                 var completed = 0;
                 foreach (var lesson in subjectLessons)
                 {
-                    var activityOkay = !lesson.ActivityId.HasValue || submissions.Any(x => x.UserId == student && x.LessonActivityId == lesson.ActivityId);
                     var quizOkay = lesson.QuizId.HasValue && subjectAttempts.Any(x => x.UserId == student && x.AssessmentId == lesson.QuizId && x.IsPassed);
-                    if (activityOkay && quizOkay) completed++;
+                    if (quizOkay) completed++;
                 }
                 completedPairs += completed; possiblePairs += subjectLessons.Count;
                 if (subjectLessons.Count == 6 && completed == 6) completedStudents++;
@@ -55,6 +59,8 @@ public class StatisticsController(ApplicationDbContext db) : Controller
         return View(new AdminStatisticsViewModel(students.Count, quizzes.Count, exams.Count,
             quizzes.Count == 0 ? 0 : Math.Round(quizzes.Average(x => x.Percentage), 1),
             exams.Count == 0 ? 0 : Math.Round(exams.Average(x => x.Percentage), 1), attempts.Count(x => x.IsPassed),
-            attempts.Count(x => !x.IsPassed), possiblePairs == 0 ? 0 : Math.Round(100m * completedPairs / possiblePairs, 1), rows));
+            attempts.Count(x => !x.IsPassed), possiblePairs == 0 ? 0 : Math.Round(100m * completedPairs / possiblePairs, 1),
+            participation.Count, participation.Select(x => x.UserId).Distinct().Count(),
+            possibleActivityCompletions == 0 ? 0 : Math.Round(100m * participation.Count / possibleActivityCompletions, 1), rows));
     }
 }

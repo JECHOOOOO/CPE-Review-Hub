@@ -29,12 +29,15 @@ public class LessonsController(ApplicationDbContext db) : Controller
     [HttpGet("{id:int}/edit")]
     public async Task<IActionResult> Edit(int id)
     {
-        var lesson = await db.Lessons.AsNoTracking().SingleOrDefaultAsync(x => x.Id == id);
+        var lesson = await db.Lessons.AsNoTracking().Include(x => x.Activity).SingleOrDefaultAsync(x => x.Id == id);
         if (lesson is null) return NotFound();
         return View(await PopulateAsync(new LessonFormViewModel
         {
             Id = lesson.Id, SubjectId = lesson.SubjectId, Title = lesson.Title,
-            Summary = lesson.Summary, SortOrder = lesson.SortOrder, IsPublished = lesson.IsPublished
+            Summary = lesson.Summary, SortOrder = lesson.SortOrder, IsPublished = lesson.IsPublished,
+            ActivityTitle = lesson.Activity?.Title ?? "", ActivityInstructions = lesson.Activity?.Instructions ?? "",
+            ActivityExpectedOutput = lesson.Activity?.ExpectedOutput ?? "",
+            ActivityIsPublished = lesson.Activity?.IsPublished ?? false
         }));
     }
 
@@ -53,7 +56,7 @@ public class LessonsController(ApplicationDbContext db) : Controller
         }
         else
         {
-            lesson = await db.Lessons.SingleOrDefaultAsync(x => x.Id == model.Id) ?? null!;
+            lesson = await db.Lessons.Include(x => x.Activity).SingleOrDefaultAsync(x => x.Id == model.Id) ?? null!;
             if (lesson is null) return NotFound();
         }
         lesson.SubjectId = model.SubjectId;
@@ -62,6 +65,21 @@ public class LessonsController(ApplicationDbContext db) : Controller
         lesson.SortOrder = model.SortOrder;
         lesson.IsPublished = model.IsPublished;
         lesson.UpdatedAtUtc = DateTime.UtcNow;
+        if (lesson.Activity is not null || model.ActivityIsPublished || !string.IsNullOrWhiteSpace(model.ActivityTitle) ||
+            !string.IsNullOrWhiteSpace(model.ActivityInstructions) || !string.IsNullOrWhiteSpace(model.ActivityExpectedOutput))
+        {
+            if (string.IsNullOrWhiteSpace(model.ActivityTitle) || string.IsNullOrWhiteSpace(model.ActivityInstructions) ||
+                string.IsNullOrWhiteSpace(model.ActivityExpectedOutput))
+            {
+                ModelState.AddModelError("", "Complete the activity title, instructions, and expected output together.");
+                return View("Edit", await PopulateAsync(model));
+            }
+            lesson.Activity ??= new LessonActivity();
+            lesson.Activity.Title = model.ActivityTitle.Trim();
+            lesson.Activity.Instructions = model.ActivityInstructions.Trim();
+            lesson.Activity.ExpectedOutput = model.ActivityExpectedOutput.Trim();
+            lesson.Activity.IsPublished = model.ActivityIsPublished;
+        }
         await db.SaveChangesAsync();
         TempData["Success"] = model.Id == 0 ? "Lesson created." : "Lesson updated.";
         return RedirectToAction(nameof(Index), new { subjectId = model.SubjectId });
