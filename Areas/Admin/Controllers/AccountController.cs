@@ -10,10 +10,10 @@ namespace CPE_Review_Hub.Areas.Admin.Controllers;
 [Area("Admin")]
 public class AccountController : Controller
 {
-    [AllowAnonymous, HttpGet("/admin.html")]
+    [AllowAnonymous, HttpGet("/admin.html"), HttpGet("/admin/login")]
     public IActionResult Login(string? returnUrl = null) => View(new LoginViewModel { ReturnUrl = returnUrl });
 
-    [AllowAnonymous, HttpPost("/admin.html"), EnableRateLimiting("account")]
+    [AllowAnonymous, HttpPost("/admin.html"), HttpPost("/admin/login"), EnableRateLimiting("account")]
     public async Task<IActionResult> Login(LoginViewModel model, [FromServices] PortalAccountService accounts)
     {
         if (!ModelState.IsValid) return View(model);

@@ -151,7 +151,7 @@ public static class Level300CurriculumD
                 "Define service and security requirements > create standard image/configuration > automate provisioning > validate, inventory, and monitor drift",
                 "A web server baseline defines packages, firewall, service account, log settings, time sync, patch channel, and health checks.",
                 "A replacement server can be rebuilt consistently because configuration is documented and automated.",
-                "Design a server baseline and idempotent provisioning plan for a Review Hub application environment.",
+                "Design a server baseline and idempotent provisioning plan for a COLMS application environment.",
                 "Server role|A defined set of services and responsibilities assigned to a host.",
                 "Baseline|An approved starting configuration used for deployment and compliance comparison.",
                 "Configuration drift|Unplanned divergence between actual and approved configuration.",

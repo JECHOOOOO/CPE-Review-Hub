@@ -209,9 +209,21 @@ def verify(mysql_bin):
             assert "/admin.html" not in anonymous.request(path)[1], f"Admin link exposed on {path}"
         for area in ("Student", "Admin"):
             status, _, headers = anonymous.request(f"/{area}/Dashboard")
-            assert status == 302 and f"/{area.lower()}.html" in headers["Location"]
+            assert status == 302 and f"/{area.lower()}/login" in headers["Location"]
         assert anonymous.request("/Student/Account/Register", {"Email": "csrf@example.test"})[0] == 400
         assert anonymous.request("/admin.html", {"Email": "csrf@example.test"})[0] == 400
+        # Force delivery to fail after the insert, then retry the same address.
+        # A file at the pickup-directory path makes email writing fail reliably.
+        pickup = work / "emails"
+        pickup.write_text("force delivery failure", encoding="utf-8")
+        for _ in range(2):
+            status, body, _ = anonymous.post("/Student/Account/Register", {
+                "Email": "rollback@example.test", "FullName": "Rollback Student",
+                "Password": password, "ConfirmPassword": password})
+            assert status == 200 and "We could not send the account email" in body
+            assert sql("SELECT COUNT(*) FROM cpe_integration.AspNetUsers WHERE Email='rollback@example.test';") == "0"
+        pickup.unlink()
+        print("PASS: Repeated email failures roll back registration without leaving duplicate accounts.", flush=True)
         for client, email, registration_password in (
             (student, "student@example.test", password),
             (second, "second@example.test", simple_password)):
@@ -222,21 +234,22 @@ def verify(mysql_bin):
                 "AccountType": "Admin", "IsActive": "false"})
             assert status == 302, "Student registration failed"
             new_email_files = set((work / "emails").glob("*.eml")) - email_files_before
-            assert len(new_email_files) == 1, "Verification email was not generated"
+            assert len(new_email_files) == 1, "Account confirmation email was not generated"
             email_content = next(iter(new_email_files)).read_text(encoding="utf-8")
-            assert f"To: {email}" in email_content and "Verify your CPE Review Hub account" in email_content
-            confirmation_link = html.unescape(re.search(r'https?://[^\"\s<]+/student/confirm-email\?[^\"\s<]+', email_content).group(0))
-            confirmation_url = urllib.parse.urlparse(confirmation_link)
-            if email == "student@example.test":
-                assert login(client, "student", email, registration_password)[0] == 200
-            confirm_status, confirm_body, _ = client.request(confirmation_url.path + "?" + confirmation_url.query)
-            assert confirm_status == 200 and "Email verified" in confirm_body
+            assert f"To: {email}" in email_content and "Welcome to COLMS – Your Account Is Ready" in email_content
+            assert "Welcome to COLMS, Test!" in email_content and email in email_content
+            assert "Use the password you created during registration." in email_content
+            assert registration_password not in email_content, "Plain-text password leaked into welcome email"
+            assert "/student/login" in email_content and "SIGN IN TO COLMS" in email_content
+            assert "No confirmation link or additional action is required" not in email_content
+            assert login(client, "student", email, registration_password)[0] == 302
+            assert client.post("/Student/Account/Logout", {}, "/Student/Dashboard")[0] == 302
         assert sql("SELECT COUNT(*) FROM cpe_integration.AspNetUsers WHERE AccountType='Student' AND IsActive=1;") == "2"
         assert sql("SELECT COUNT(*) FROM cpe_integration.AspNetUsers WHERE AccountType='Student' AND EmailConfirmed=1;") == "2"
         assert sql("SELECT COUNT(*) FROM cpe_integration.AspNetUsers WHERE PasswordHash IS NOT NULL AND LENGTH(PasswordHash)>60;") == "3"
         duplicate = student.post("/Student/Account/Register", {"Email": "STUDENT@example.test",
             "FullName": "Duplicate", "Password": password, "ConfirmPassword": password})
-        assert duplicate[0] == 200 and "Unable to register" in duplicate[1]
+        assert duplicate[0] == 200 and duplicate[1].count("An account already uses this email.") == 1
         assert login(student, "student", "student@example.test", "Wrong!" + secrets.token_hex(12))[0] == 200
         assert login(student, "admin", "student@example.test", password)[0] == 200
         assert login(admin, "student", "admin@example.test", admin_password)[0] == 200
@@ -327,6 +340,21 @@ def verify(mysql_bin):
         assert admin.request("/admin/assessments?type=FinalExam")[0] == 200
         assert admin.request("/admin/results")[0] == 200
         assert admin.request("/admin/statistics")[0] == 200
+        image_form = {"LessonId": first_lesson_id, "AltText": "Test upload", "Caption": "Test only", "DisplayOrder": "99", "IsPublished": "false"}
+        assert admin.multipart_post("/admin/lesson-images/save", image_form,
+            [("ImageFile", "test.png", "image/png", sample_png)], "/admin/lesson-images/create")[0] == 302
+        stored_id = sql("SELECT Id FROM cpe_integration.LessonImages WHERE ImageData IS NOT NULL LIMIT 1;")
+        stored_path = f"/images/lessons/stored/{stored_id}"
+        assert sql(f"SELECT OCTET_LENGTH(ImageData) FROM cpe_integration.LessonImages WHERE Id={stored_id};") == str(len(sample_png))
+        assert admin.request(stored_path)[0] == 200
+        assert student.request(stored_path)[0] == 404
+        assert anonymous.request(stored_path)[0] == 302
+        assert admin.multipart_post("/admin/lesson-images/save", image_form,
+            [("ImageFile", "fake.png", "image/png", b"not an image")], "/admin/lesson-images/create")[0] == 200
+        assert sql("SELECT COUNT(*) FROM cpe_integration.LessonImages WHERE ImageData IS NOT NULL;") == "1"
+        assert admin.post(f"/admin/lesson-images/{stored_id}/delete", {}, f"/admin/lesson-images/{stored_id}/delete")[0] == 302
+        assert admin.request(stored_path)[0] == 404
+        print("PASS: Persistent lesson-image upload, signature validation, draft protection and deletion.", flush=True)
         assert admin.request(f"/admin/assessments/{first_quiz_id}")[0] == 200
         assert admin.request(f"/admin/questions/create?assessmentId={first_quiz_id}")[0] == 200
         assert admin.request(f"/admin/results/{attempt_id}")[0] == 200
@@ -372,7 +400,7 @@ def verify(mysql_bin):
         assert admin.post(f"/admin/questions/{added_question_id}/delete", {"assessmentId": first_quiz_id},
             f"/admin/questions/{added_question_id}/delete?assessmentId={first_quiz_id}")[0] == 302
         assert sql(f"SELECT COUNT(*) FROM cpe_integration.AssessmentQuestions WHERE AssessmentId={first_quiz_id};") == "10"
-        print("PASS: Verified-email registration, activity gating, automatic quiz scoring, progress, CSRF, and portal separation.", flush=True)
+        print("PASS: Automatic email confirmation without a link, activity gating, automatic quiz scoring, progress, CSRF, and portal separation.", flush=True)
         assert student.request("/admin/subjects")[0] == 302
         assert admin.request("/student/subjects")[0] == 302
         assert admin.post("/admin/subjects/save", {"Code": "TEST 999", "Title": "Temporary Integration Course",

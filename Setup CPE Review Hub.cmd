@@ -1,6 +1,6 @@
 @echo off
 setlocal
-title CPE Review Hub - MySQL Setup
+title COLMS: CentOs Learning Management System - MySQL Setup
 cd /d "%~dp0"
 set "ASPNETCORE_ENVIRONMENT=Development"
 dotnet run --no-launch-profile -- --configure-mysql

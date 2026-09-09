@@ -1,0 +1,15 @@
+FROM mcr.microsoft.com/dotnet/sdk:10.0 AS build
+WORKDIR /src
+COPY CPE-Review-Hub.csproj ./
+RUN dotnet restore CPE-Review-Hub.csproj
+COPY . .
+RUN dotnet publish CPE-Review-Hub.csproj -c Release --no-restore -o /out /p:UseAppHost=false
+
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
+WORKDIR /app
+COPY --from=build /out .
+ENV ASPNETCORE_ENVIRONMENT=Production
+ENV PORT=8080
+EXPOSE 8080
+USER $APP_UID
+ENTRYPOINT ["sh", "-c", "exec dotnet CPE-Review-Hub.dll --urls http://0.0.0.0:${PORT:-8080}"]

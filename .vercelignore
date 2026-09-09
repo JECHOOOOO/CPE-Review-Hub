@@ -1,0 +1,8 @@
+.private-deployment/
+.env*
+bin/
+obj/
+.git/
+**/*.sql.dump
+**/*.pfx
+**/*.key

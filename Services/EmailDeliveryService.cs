@@ -11,7 +11,7 @@ public sealed class EmailOptions
     public int Port { get; set; } = 587;
     public bool EnableSsl { get; set; } = true;
     public string SenderAddress { get; set; } = "";
-    public string SenderName { get; set; } = "CPE Review Hub";
+    public string SenderName { get; set; } = "COLMS: CentOs Learning Management System";
     public string Username { get; set; } = "";
     public string AppPassword { get; set; } = "";
     public string PickupDirectory { get; set; } = "";
@@ -69,7 +69,9 @@ public sealed class EmailDeliveryService(IOptions<EmailOptions> options, IWebHos
         try { await client.SendMailAsync(message, cancellationToken); }
         catch (Exception exception) when (exception is SmtpException or InvalidOperationException)
         {
-            logger.LogWarning("Email delivery failed ({ErrorType}).", exception.GetType().Name);
+            // A restricted Windows Event Log must never prevent registration cleanup.
+            try { logger.LogWarning("Email delivery failed ({ErrorType}).", exception.GetType().Name); }
+            catch (Exception) { /* SMTP failure remains the error returned to the caller. */ }
             throw new InvalidOperationException("Email delivery failed.", exception);
         }
     }

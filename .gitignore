@@ -490,3 +490,7 @@ appsettings.Secrets.json
 *.sql.gz
 secrets.json
 .vscode/
+
+.vercel
+.private-deployment/
+.env*

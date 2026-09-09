@@ -20,11 +20,6 @@ public class RegisterViewModel
     public string ConfirmPassword { get; set; } = "";
 }
 
-public class ResendConfirmationViewModel
-{
-    [Required, EmailAddress, StringLength(256)] public string Email { get; set; } = "";
-}
-
 public class ProfileViewModel
 {
     [Required, StringLength(120), Display(Name = "Full name")] public string FullName { get; set; } = "";

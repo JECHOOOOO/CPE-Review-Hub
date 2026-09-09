@@ -26,13 +26,13 @@ try {
     $listeners = [System.Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties().GetActiveTcpListeners()
     if ($listeners | Where-Object { $_.Port -eq $address.Port }) {
         Write-Host "Port $($address.Port) is already in use." -ForegroundColor Yellow
-        Write-Host "If CPE Review Hub is already running, open $url in your browser."
+        Write-Host "If COLMS: CentOs Learning Management System is already running, open $url in your browser."
         Write-Host 'Otherwise, stop the application using that port and try again.'
         exit 1
     }
 
     Set-Location -LiteralPath $projectDirectory
-    Write-Host 'Starting CPE Review Hub...' -ForegroundColor Cyan
+    Write-Host 'Starting COLMS: CentOs Learning Management System...' -ForegroundColor Cyan
     Write-Host 'The browser will open when the server is ready.'
     Write-Host 'Keep this window open while using the system. Press Ctrl+C to stop.'
     Write-Host ''

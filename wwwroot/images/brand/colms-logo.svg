@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 390" role="img" aria-labelledby="title desc">
+  <title id="title">COLMS logo</title>
+  <desc id="desc">A blue laptop crossed by a violet orbital swoosh.</desc>
+  <defs>
+    <linearGradient id="screen" x1="115" y1="55" x2="370" y2="270" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#164BEF"/><stop offset="1" stop-color="#06C9D5"/>
+    </linearGradient>
+    <linearGradient id="orbit" x1="54" y1="95" x2="455" y2="285" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#4941CF"/><stop offset="1" stop-color="#3125A8"/>
+    </linearGradient>
+  </defs>
+  <g fill="none" stroke="url(#screen)" stroke-linejoin="round">
+    <path d="M137 72h248v177H137z" stroke-width="12"/>
+    <path d="M137 249 73 310h367l-55-61" stroke-width="12"/>
+    <path d="m151 271-22 21h254l-20-21z" stroke-width="8"/>
+    <path d="m260 77-83 126M311 77l-86 130M362 77l-88 132" stroke="#1769ED" stroke-width="13"/>
+  </g>
+  <path d="M56 79c33-18 74-16 111-7-33 2-57 9-66 23-20 31 52 91 151 137 100 47 184 58 202 28 8-13 3-33-13-56 40 36 59 71 46 93-24 41-138 18-254-38C116 203 31 121 56 79Z" fill="url(#orbit)"/>
+  <g fill="#1367EF">
+    <circle cx="390" cy="33" r="11"/><circle cx="426" cy="55" r="10"/><circle cx="389" cy="77" r="13"/>
+  </g>
+  <rect x="357" y="61" width="25" height="25" rx="6" fill="#0BBFDC"/>
+</svg>

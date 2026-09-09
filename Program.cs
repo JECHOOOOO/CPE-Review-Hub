@@ -5,8 +5,20 @@ using Microsoft.AspNetCore.DataProtection;
 using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
+if (builder.Environment.IsDevelopment() && OperatingSystem.IsWindows())
+    builder.Logging.AddFilter<Microsoft.Extensions.Logging.EventLog.EventLogLoggerProvider>((_, _) => false);
 var dataProtectionPath = builder.Configuration["DataProtection:KeysPath"];
-if (!string.IsNullOrWhiteSpace(dataProtectionPath))
+if (builder.Configuration.GetValue<bool>("DataProtection:PersistToDatabase"))
+{
+    var certificate = builder.Configuration["DataProtection:CertificateBase64"]
+        ?? throw new InvalidOperationException("Production key encryption certificate is required.");
+    builder.Services.AddDataProtection().SetApplicationName("COLMS")
+        .PersistKeysToDbContext<CPE_Review_Hub.Data.ApplicationDbContext>()
+        .ProtectKeysWithCertificate(System.Security.Cryptography.X509Certificates.X509CertificateLoader.LoadPkcs12(
+            Convert.FromBase64String(certificate), null,
+            System.Security.Cryptography.X509Certificates.X509KeyStorageFlags.EphemeralKeySet));
+}
+else if (!string.IsNullOrWhiteSpace(dataProtectionPath))
     builder.Services.AddDataProtection().PersistKeysToFileSystem(new DirectoryInfo(dataProtectionPath));
 builder.Services.AddControllersWithViews(options =>
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute()));
@@ -26,6 +38,13 @@ builder.Services.AddRateLimiter(options =>
 });
 var app = builder.Build();
 if (await DatabaseCommands.TryRunAsync(app, args)) return;
+// Only the local reverse proxy can supply the external HTTPS scheme.
+if (builder.Configuration.GetValue<bool>("Hosting:LocalProxy"))
+    app.UseForwardedHeaders(new Microsoft.AspNetCore.Builder.ForwardedHeadersOptions
+    {
+        ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto,
+        ForwardLimit = 1
+    });
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");

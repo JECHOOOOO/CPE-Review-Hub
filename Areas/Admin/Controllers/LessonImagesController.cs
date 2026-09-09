@@ -45,6 +45,8 @@ public class LessonImagesController(ApplicationDbContext db, IWebHostEnvironment
         if (!await db.Lessons.AnyAsync(x => x.Id == model.LessonId, cancellationToken))
             ModelState.AddModelError(nameof(model.LessonId), "Select a valid lesson.");
         var imagePath = model.ImagePath.Trim();
+        byte[]? imageData = null;
+        string? contentType = null;
         if (model.ImageFile is { Length: > 0 } upload)
         {
             var extension = Path.GetExtension(upload.FileName).ToLowerInvariant();
@@ -52,15 +54,23 @@ public class LessonImagesController(ApplicationDbContext db, IWebHostEnvironment
                 ModelState.AddModelError(nameof(model.ImageFile), "Upload a PNG, JPG, or WEBP image no larger than 5 MB.");
             else
             {
-                var folder = Path.Combine(environment.WebRootPath, "images", "lessons", "uploads");
-                Directory.CreateDirectory(folder);
-                var fileName = $"{Guid.NewGuid():N}{extension}";
-                await using var stream = System.IO.File.Create(Path.Combine(folder, fileName));
+                await using var stream = new MemoryStream();
                 await upload.CopyToAsync(stream, cancellationToken);
-                imagePath = $"/images/lessons/uploads/{fileName}";
+                imageData = stream.ToArray();
+                contentType = extension == ".png" ? "image/png" : extension == ".webp" ? "image/webp" : "image/jpeg";
+                var valid = contentType switch
+                {
+                    "image/png" => imageData.AsSpan().StartsWith(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }),
+                    "image/jpeg" => imageData.AsSpan().StartsWith(new byte[] { 255, 216, 255 }),
+                    _ => imageData.Length >= 12 && System.Text.Encoding.ASCII.GetString(imageData, 0, 4) == "RIFF"
+                        && System.Text.Encoding.ASCII.GetString(imageData, 8, 4) == "WEBP"
+                };
+                if (!valid) ModelState.AddModelError(nameof(model.ImageFile), "The file contents do not match a supported image.");
             }
         }
-        if (!IsExistingLocalImage(imagePath))
+        var retainedUpload = model.Id > 0 && imagePath == $"/images/lessons/stored/{model.Id}" &&
+            await db.LessonImages.AnyAsync(x => x.Id == model.Id && x.ImageData != null, cancellationToken);
+        if (imageData is null && !retainedUpload && !IsExistingLocalImage(imagePath))
             ModelState.AddModelError(nameof(model.ImagePath), "Choose an upload or enter an existing /images/... path.");
         if (!ModelState.IsValid) return View("Edit", await PopulateAsync(model));
 
@@ -70,7 +80,16 @@ public class LessonImagesController(ApplicationDbContext db, IWebHostEnvironment
         if (model.Id == 0) db.LessonImages.Add(image);
         image.LessonId = model.LessonId; image.ImagePath = imagePath; image.AltText = model.AltText.Trim();
         image.Caption = model.Caption.Trim(); image.DisplayOrder = model.DisplayOrder; image.IsPublished = model.IsPublished;
+        if (imageData is not null) { image.ImageData = imageData; image.ContentType = contentType; }
+        else if (!retainedUpload) { image.ImageData = null; image.ContentType = null; }
+        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
         await db.SaveChangesAsync(cancellationToken);
+        if (imageData is not null)
+        {
+            image.ImagePath = $"/images/lessons/stored/{image.Id}";
+            await db.SaveChangesAsync(cancellationToken);
+        }
+        await transaction.CommitAsync(cancellationToken);
         TempData["Success"] = model.Id == 0 ? "Lesson image added." : "Lesson image updated.";
         return RedirectToAction(nameof(Index), new { lessonId = model.LessonId });
     }

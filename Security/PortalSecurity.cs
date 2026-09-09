@@ -66,7 +66,7 @@ public static class PortalSecurity
         options.Cookie.HttpOnly = true;
         options.Cookie.SameSite = SameSiteMode.Lax;
         options.Cookie.SecurePolicy = development ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
-        options.LoginPath = portal == Admin ? "/admin.html" : "/student.html";
+        options.LoginPath = portal == Admin ? "/admin/login" : "/student/login";
         options.AccessDeniedPath = "/Home/AccessDenied";
         options.ExpireTimeSpan = TimeSpan.FromHours(2);
         options.SlidingExpiration = false;

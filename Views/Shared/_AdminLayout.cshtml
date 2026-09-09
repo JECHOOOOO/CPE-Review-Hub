@@ -5,13 +5,14 @@
 <html lang="en">
 <head>
     <meta charset="utf-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>@ViewData["Title"] · Admin · CPE Review Hub</title>
+    <title>@ViewData["Title"] · Admin · COLMS: CentOs Learning Management System</title>
+    <link rel="icon" type="image/png" href="~/images/brand/colms-emblem.png" />
     <link rel="stylesheet" href="~/css/hub.css" asp-append-version="true" />
 </head>
 <body class="portal-body admin-theme admin-portal">
     <a class="skip-link" href="#main">Skip to content</a>
     <aside class="sidebar liquid-glass">
-        <a class="brand" asp-area="Admin" asp-controller="Dashboard" asp-action="Index"><span class="brand-mark">CPE</span><span>Review Hub<small>ADMIN PORTAL</small></span></a>
+        <a class="brand" asp-area="Admin" asp-controller="Dashboard" asp-action="Index" aria-label="COLMS Admin portal"><img class="brand-logo portal-brand-logo" src="~/images/brand/colms-emblem.png" alt="" /><span>COLMS<small>CentOs Learning Management System</small><small class="portal-label">ADMIN PORTAL</small></span></a>
         <p class="nav-caption">ADMINISTRATION</p>
         <nav aria-label="Admin navigation">
             <a class="nav-item @(controller == "Dashboard" ? "active" : "")" asp-area="Admin" asp-controller="Dashboard" asp-action="Index">Dashboard</a>
@@ -37,7 +38,7 @@
             @if (TempData["Error"] is string error) { <div class="notice" role="alert">@error</div> }
             @RenderBody()
         </main>
-        <footer class="site-footer">CPE Review Hub · Administration.</footer>
+        <footer class="site-footer">COLMS: CentOs Learning Management System · Administration.</footer>
     </div>
 </body>
 </html>

@@ -587,7 +587,7 @@ public static class Level200Curriculum
                 "Identify the varying behavior > select a pattern whose intent fits > assign participant roles > test extension and failure cases",
                 "A quiz scoring service selects a scoring strategy through an interface, allowing standard, negative-marking, or weighted strategies without editing the quiz class.",
                 "The Strategy pattern isolates the changing algorithm and keeps the context stable.",
-                "Model and implement either Strategy, Observer, Factory Method, or Adapter for a Review Hub scenario, and justify why it fits better than a direct conditional.",
+                "Model and implement either Strategy, Observer, Factory Method, or Adapter for a COLMS scenario, and justify why it fits better than a direct conditional.",
                 "Design pattern|A named reusable arrangement addressing a recurring design problem in context.",
                 "Strategy|A pattern that encapsulates interchangeable algorithms behind one interface.",
                 "Observer|A pattern that notifies dependent objects when a subject changes.",

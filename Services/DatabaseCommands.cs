@@ -22,7 +22,9 @@ public static class DatabaseCommands
         var admin = args.Contains("--create-admin");
         var seedCatalog = args.Contains("--seed-course-catalog");
         var configureEmail = args.Contains("--configure-email");
-        if (!configure && !migrate && !admin && !seedCatalog && !configureEmail) return false;
+        var testEmail = args.Contains("--test-email");
+        var checkDatabase = args.Contains("--check-database");
+        if (!configure && !migrate && !admin && !seedCatalog && !configureEmail && !testEmail && !checkDatabase) return false;
         try
         {
             if (configure)
@@ -41,6 +43,25 @@ public static class DatabaseCommands
             }
             await using var scope = app.Services.CreateAsyncScope();
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            if (checkDatabase)
+            {
+                await db.Database.OpenConnectionAsync();
+                await using var command = db.Database.GetDbConnection().CreateCommand();
+                command.CommandText = "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema=DATABASE()";
+                Console.WriteLine($"Database connection verified. Existing tables: {await command.ExecuteScalarAsync()}");
+                await db.Database.CloseConnectionAsync();
+                Console.WriteLine($"Model queries verified: {await db.Users.CountAsync()} accounts, {await db.Lessons.CountAsync()} lessons.");
+            }
+            if (testEmail)
+            {
+                var email = scope.ServiceProvider.GetRequiredService<IEmailDeliveryService>();
+                var recipient = app.Configuration["Email:SenderAddress"];
+                if (!email.IsConfigured || string.IsNullOrWhiteSpace(recipient))
+                    throw new InvalidOperationException("Gmail delivery is not configured.");
+                await email.SendAsync(recipient, "COLMS email delivery test",
+                    "<p>COLMS Gmail delivery is working. Student account emails can now be sent.</p>");
+                Console.WriteLine("Gmail test email sent successfully to the configured sender address.");
+            }
             if (migrate)
             {
                 await db.Database.MigrateAsync();
@@ -84,6 +105,21 @@ public static class DatabaseCommands
         catch (Exception exception)
         {
             Environment.ExitCode = 1;
+            if (exception is MySqlException mysqlException)
+            {
+                Console.Error.WriteLine($"MySQL operation failed (code {mysqlException.Number}). No credentials were printed.");
+                for (Exception? cause = mysqlException; cause is not null; cause = cause.InnerException)
+                {
+                    Console.Error.WriteLine($"Failure type: {cause.GetType().Name}");
+                    if (cause is FileNotFoundException missing)
+                        Console.Error.WriteLine($"Missing file: {Path.GetFileName(missing.FileName)}");
+                    if (cause.Message.Contains("certificate", StringComparison.OrdinalIgnoreCase))
+                        Console.Error.WriteLine("Certificate validation or certificate loading failed.");
+                    if (cause.Message.Contains("Access denied", StringComparison.OrdinalIgnoreCase))
+                        Console.Error.WriteLine("The server rejected database authentication.");
+                }
+                return true;
+            }
             // MySQL messages can contain account/host information. Keep console failures generic.
             Console.Error.WriteLine(exception is InvalidOperationException ? exception.Message :
                 $"MySQL setup failed ({exception.GetType().Name}). Check the service, credentials, database permissions and migrations. No reset was performed.");
@@ -109,6 +145,7 @@ public static class DatabaseCommands
             Server = host, Port = port, Database = database, UserID = username, Password = password,
             // Traffic never leaves the PC for loopback. Remote databases must still use TLS.
             SslMode = loopback ? MySqlSslMode.Disabled : MySqlSslMode.Required,
+            AllowPublicKeyRetrieval = loopback,
             ConnectionTimeout = 5, PersistSecurityInfo = false
         };
         await using (var testConnection = new MySqlConnection(connection.ConnectionString))
@@ -131,7 +168,7 @@ public static class DatabaseCommands
 
     private static async Task ConfigureEmailAsync(string projectDirectory)
     {
-        Console.WriteLine("Configure Gmail delivery for student verification emails.");
+        Console.WriteLine("Configure Gmail delivery for student account emails.");
         Console.WriteLine("Use a Google App Password, never your normal Gmail password.");
         var sender = Prompt("Gmail sender address");
         if (sender.Length > 256 || !new EmailAddressAttribute().IsValid(sender))
@@ -142,8 +179,8 @@ public static class DatabaseCommands
 
         using var testMessage = new MailMessage
         {
-            From = new MailAddress(sender, "CPE Review Hub"), Subject = "CPE Review Hub email test",
-            Body = "Email delivery is configured. Student verification messages can now be sent.", IsBodyHtml = false
+            From = new MailAddress(sender, "COLMS: CentOs Learning Management System"), Subject = "COLMS: CentOs Learning Management System email test",
+            Body = "Email delivery is configured. Student account messages can now be sent.", IsBodyHtml = false
         };
         testMessage.To.Add(sender);
         using var client = new SmtpClient("smtp.gmail.com", 587)
@@ -157,7 +194,7 @@ public static class DatabaseCommands
         {
             ["Email:Mode"] = "Smtp", ["Email:Host"] = "smtp.gmail.com", ["Email:Port"] = "587",
             ["Email:EnableSsl"] = "true", ["Email:SenderAddress"] = sender,
-            ["Email:SenderName"] = "CPE Review Hub", ["Email:Username"] = sender,
+            ["Email:SenderName"] = "COLMS: CentOs Learning Management System", ["Email:Username"] = sender,
             ["Email:AppPassword"] = appPassword
         });
         Console.WriteLine("Test email sent and Gmail settings saved in Windows user-secrets. No email password was added to Git.");

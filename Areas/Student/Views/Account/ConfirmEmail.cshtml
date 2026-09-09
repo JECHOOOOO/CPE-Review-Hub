@@ -1,3 +1,0 @@
-@model bool
-@{ Layout = "_SiteLayout"; ViewData["Title"] = "Email verification"; }
-<section class="auth-card standalone"><span class="eyebrow">STUDENT ACCOUNT</span>@if (Model) { <h1>Email verified</h1><p>Your student account is active. You may now sign in.</p><a class="button" href="/student.html">Continue to student login</a> } else { <h1>Verification link unavailable</h1><p>This link is invalid, expired, or has already been used.</p><a class="button" asp-area="Student" asp-controller="Account" asp-action="ResendConfirmation">Request a new link</a> }</section>

@@ -14,7 +14,6 @@ public class PortalAccountService(UserManager<ApplicationUser> users, SignInMana
     {
         var user = await users.FindByEmailAsync(model.Email.Trim());
         if (user is null || !user.IsActive || user.AccountType != portal) return false;
-        if (portal == PortalSecurity.Student && !user.EmailConfirmed) return false;
         var result = await signIn.CheckPasswordSignInAsync(user, model.Password, lockoutOnFailure: true);
         if (!result.Succeeded) return false;
 
@@ -38,14 +37,14 @@ public class PortalAccountService(UserManager<ApplicationUser> users, SignInMana
         {
             UserName = model.Email.Trim(), Email = model.Email.Trim(), FullName = model.FullName.Trim(),
             University = model.University?.Trim() ?? "", YearLevel = model.YearLevel?.Trim() ?? "",
-            AccountType = PortalSecurity.Student, LockoutEnabled = true, EmailConfirmed = false
+            AccountType = PortalSecurity.Student, LockoutEnabled = true, EmailConfirmed = true
         };
         IdentityResult result;
         try
         {
             result = await users.CreateAsync(user, model.Password);
         }
-        catch (DbUpdateException)
+        catch (DbUpdateException exception) when (exception.InnerException is MySql.Data.MySqlClient.MySqlException { Number: 1062 })
         {
             // A rapid double-submit can pass Identity's uniqueness check twice before
             // MySQL accepts the first insert. Treat the unique-index race as a normal
@@ -57,22 +56,6 @@ public class PortalAccountService(UserManager<ApplicationUser> users, SignInMana
             });
         }
         return (result, result.Succeeded ? user : null);
-    }
-
-    public Task<string> GenerateEmailConfirmationTokenAsync(ApplicationUser user) =>
-        users.GenerateEmailConfirmationTokenAsync(user);
-
-    public async Task<IdentityResult> ConfirmEmailAsync(string userId, string token)
-    {
-        var user = await users.FindByIdAsync(userId);
-        return user is null || user.AccountType != PortalSecurity.Student
-            ? IdentityResult.Failed(new IdentityError()) : await users.ConfirmEmailAsync(user, token);
-    }
-
-    public async Task<ApplicationUser?> FindUnconfirmedStudentAsync(string email)
-    {
-        var user = await users.FindByEmailAsync(email.Trim());
-        return user is { AccountType: PortalSecurity.Student, IsActive: true, EmailConfirmed: false } ? user : null;
     }
 
     public Task<IdentityResult> DeleteAsync(ApplicationUser user) => users.DeleteAsync(user);

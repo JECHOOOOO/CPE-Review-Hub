@@ -2,12 +2,14 @@ using CPE_Review_Hub.Models;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.DataProtection.EntityFrameworkCore;
 
 namespace CPE_Review_Hub.Data;
 
 public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options)
-    : IdentityUserContext<ApplicationUser>(options)
+    : IdentityUserContext<ApplicationUser>(options), IDataProtectionKeyContext
 {
+    public DbSet<DataProtectionKey> DataProtectionKeys => Set<DataProtectionKey>();
     public DbSet<AcademicLevel> AcademicLevels => Set<AcademicLevel>();
     public DbSet<Subject> Subjects => Set<Subject>();
     public DbSet<Lesson> Lessons => Set<Lesson>();

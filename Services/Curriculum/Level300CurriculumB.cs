@@ -126,7 +126,7 @@ public static class Level300CurriculumB
                 "Identify assets and threats > authenticate principals > protect data in transit and at rest > authorize least privilege > log and review events",
                 "TLS uses authenticated key establishment to create session keys, then efficient symmetric cryptography protects application traffic.",
                 "A certificate helps the client verify the server identity before trusting the encrypted channel.",
-                "Design authentication, role permissions, and transport protection for a Review Hub deployment, including key and certificate handling.",
+                "Design authentication, role permissions, and transport protection for a COLMS deployment, including key and certificate handling.",
                 "Confidentiality|Prevention of unauthorized disclosure.",
                 "Integrity|Protection against unauthorized or undetected modification.",
                 "Authentication|Verification of a claimed identity.",

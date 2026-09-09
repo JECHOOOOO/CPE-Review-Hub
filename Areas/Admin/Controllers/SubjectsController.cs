@@ -11,7 +11,7 @@ namespace CPE_Review_Hub.Areas.Admin.Controllers;
 [Area("Admin"), Authorize(Policy = PortalSecurity.Admin), Route("admin/subjects")]
 public class SubjectsController(ApplicationDbContext db) : Controller
 {
-    [HttpGet("")]
+    [HttpGet(""), HttpGet("/admin/courses")]
     public async Task<IActionResult> Index() => View(await db.Subjects.AsNoTracking()
         .OrderBy(x => x.AcademicLevelId).ThenBy(x => x.Code)
         .Select(x => new SubjectAdminRow(x.Id, x.Code, x.Title, x.AcademicLevel.Name,

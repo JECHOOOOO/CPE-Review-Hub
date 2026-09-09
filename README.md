@@ -1,4 +1,4 @@
-# CPE Review Hub
+# COLMS: CentOs Learning Management System
 
 Existing ASP.NET Core MVC application targeting .NET 10.
 
@@ -37,7 +37,7 @@ stop the server. Press **Ctrl+C** in the server window to stop it. Start the
 launcher again after stopping the server or restarting your PC.
 
 If the port is already in use, the launcher will not start another server. If
-the existing server is CPE Review Hub, open the URL above yourself; otherwise,
+the existing server is COLMS: CentOs Learning Management System, open the URL above yourself; otherwise,
 stop the conflicting application first. Build/startup errors appear in the
 console, which stays open so they can be read. An initial build may require
 internet access for package restore.
@@ -55,7 +55,7 @@ New student accounts must verify their email address before signing in. To send
 real verification messages through Gmail:
 
 1. Turn on 2-Step Verification for the Gmail sender account.
-2. Create a 16-character Google App Password for **CPE Review Hub**. Do not use
+2. Create a 16-character Google App Password for **COLMS: CentOs Learning Management System**. Do not use
    the normal Gmail password.
 3. Double-click **Setup Gmail Email.cmd** in this folder.
 4. Enter the Gmail sender address and paste the App Password. Password input is

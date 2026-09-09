@@ -13,7 +13,7 @@ namespace CPE_Review_Hub.Areas.Student.Controllers;
 [Area("Student"), Authorize(Policy = PortalSecurity.Student), Route("student/subjects")]
 public class SubjectsController(ApplicationDbContext db, StudentProgressService progressService) : Controller
 {
-    [HttpGet("")]
+    [HttpGet(""), HttpGet("/student/courses")]
     public async Task<IActionResult> Index(int? level)
     {
         if (level.HasValue && !await db.AcademicLevels.AnyAsync(x => x.Id == level)) return NotFound();

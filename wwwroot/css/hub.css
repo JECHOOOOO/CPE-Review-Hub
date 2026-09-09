@@ -131,6 +131,24 @@ p {
     color:var(--muted)
 }
 
+.brand-logo {
+    display:block;
+    width:64px;
+    height:64px;
+    object-fit:contain;
+    flex:0 0 auto
+}
+
+.portal-brand-logo {
+    width:72px;
+    height:72px
+}
+
+.brand .portal-label {
+    color:var(--accent);
+    margin-top:3px
+}
+
 .brand-mark {
     background:var(--accent);
     color:white;
@@ -1134,7 +1152,7 @@ td {
     }
 }
 
-/* CPE Review Hub dark glass theme */
+/* COLMS: CentOs Learning Management System dark glass theme */
 :root {
     --ink:#f7f7f7;
     --muted:rgba(255,255,255,.62);

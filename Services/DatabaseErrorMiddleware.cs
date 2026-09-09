@@ -22,8 +22,8 @@ public class DatabaseErrorMiddleware(RequestDelegate next, ILogger<DatabaseError
             await context.Response.WriteAsync("""
                 <!doctype html><html lang="en"><head><meta charset="utf-8">
                 <meta name="viewport" content="width=device-width, initial-scale=1">
-                <title>Database unavailable | CPE Review Hub</title><link rel="stylesheet" href="/css/hub.css"></head>
-                <body><main class="auth-card standalone"><span class="eyebrow">CPE REVIEW HUB</span>
+                <title>Database unavailable | COLMS: CentOs Learning Management System</title><link rel="stylesheet" href="/css/hub.css"></head>
+                <body><main class="auth-card standalone"><span class="eyebrow">COLMS: CentOs Learning Management System</span>
                 <h1>Database connection needed</h1><p>Accounts are temporarily unavailable. Ask the system administrator
                 to check MySQL, connection settings, and database migrations.</p>
                 <p>For local setup, run <strong>Setup CPE Review Hub.cmd</strong> in the project folder.</p>

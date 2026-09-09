@@ -1,4 +1,79 @@
-# CPE Review Hub system overview
+# COLMS: CentOs Learning Management System system overview
+
+## End-to-end system flow
+
+The standalone presentation image is available as
+[`CPE-REVIEW-HUB-SYSTEM-FLOW.png`](CPE-REVIEW-HUB-SYSTEM-FLOW.png).
+
+```mermaid
+flowchart TD
+    U[Browser user] --> ENTRY{Separate entry point}
+
+    subgraph STUDENT[Student area]
+        ENTRY -->|student.html| SL[Student login or registration]
+        SL -->|Register| REG[Create Student account]
+        REG --> IDENTITY[ASP.NET Core Identity]
+        IDENTITY --> USERS[(AspNetUsers)]
+        IDENTITY --> MAIL[Gmail SMTP verification]
+        MAIL --> CONFIRM[Student confirms email]
+        CONFIRM --> SL
+        SL -->|Valid confirmed Student| SAUTH[Student cookie and Student policy]
+        SL -->|Admin account or invalid Student role| DENIED[Access denied or correct portal login]
+        SAUTH --> SD[Student dashboard]
+        SD --> SLOGOUT[Student logout clears both portal cookies]
+        SLOGOUT --> SL
+        SD --> LEVEL[Choose Sophomore, Junior, or Senior]
+        LEVEL --> COURSE[Open course]
+        COURSE --> LESSON[Read unlocked lesson and visuals]
+        LESSON --> ACT[Complete icebreaker activity]
+        ACT --> ASAVE[Save response and optional attachment]
+        ASAVE --> QUIZ[Take 10-item lesson quiz]
+        QUIZ --> SCORE[Automatic scoring]
+        SCORE --> PASS{Passing percentage reached?}
+        PASS -->|No| REVIEW[Review lesson and retry quiz]
+        REVIEW --> QUIZ
+        PASS -->|Yes| COMPLETE[Mark lesson completed and unlock next lesson]
+        COMPLETE --> MORE{All six lessons passed?}
+        MORE -->|No| LESSON
+        MORE -->|Yes| EXAM[Take final exam]
+        EXAM --> EXAMSCORE[Automatic exam score and history]
+    end
+
+    subgraph ADMIN[Admin area]
+        ENTRY -->|admin.html| AL[Admin login]
+        AL -->|Valid Admin| AAUTH[Admin cookie and Admin policy]
+        AL -->|Student account or invalid Admin role| DENIED
+        AAUTH --> AD[Admin dashboard]
+        AD --> ALOGOUT[Admin logout clears both portal cookies]
+        ALOGOUT --> AL
+        AD --> CRUD[Manage subjects, lessons, materials, images, questions, and assessments]
+        AD --> MONITOR[View students, activity participation, progress, scores, and statistics]
+        CRUD --> CONTENT[(Content tables)]
+        MONITOR --> RECORDS[(Student record tables)]
+        MONITOR --> READONLY[Activity responses are read-only; quiz and exam scores stay automatic]
+    end
+
+    subgraph BACKEND[Shared ASP.NET Core backend]
+        MVC[MVC Controllers and Razor Views]
+        SERVICES[Account, progress, attachment, email, and catalog services]
+        EF[ApplicationDbContext and Entity Framework Core]
+    end
+
+    SD --> MVC
+    AD --> MVC
+    MVC --> SERVICES
+    SERVICES --> EF
+    EF --> DB[(MySQL cpe_review_hub)]
+    USERS --- DB
+    CONTENT --- DB
+    RECORDS --- DB
+```
+
+The Student and Admin interfaces share the MVC application and database, but
+their authentication cookies, authorization policies, routes, navigation, and
+permitted operations remain separate. Every database read or change passes
+through a protected controller/service and `ApplicationDbContext`; a hidden link
+or manually typed URL cannot bypass server-side authorization.
 
 ## Database architecture
 

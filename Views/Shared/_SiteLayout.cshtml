@@ -3,7 +3,8 @@
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>@ViewData["Title"] · CPE Review Hub</title>
+    <title>@ViewData["Title"] · COLMS: CentOs Learning Management System</title>
+    <link rel="icon" type="image/png" href="~/images/brand/colms-emblem.png" />
     <link rel="stylesheet" href="~/css/hub.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/page-transitions.css" asp-append-version="true" />
 </head>
@@ -14,7 +15,7 @@
     }
     <a class="skip-link" href="#main">Skip to content</a>
     <header class="site-header liquid-glass">
-        <a class="brand" asp-area="" asp-controller="Home" asp-action="Index"><span class="brand-mark">CPE</span><span>Review Hub<small>COMPUTER ENGINEERING</small></span></a>
+        <a class="brand" asp-area="" asp-controller="Home" asp-action="Index" aria-label="COLMS home"><img class="brand-logo" src="~/images/brand/colms-emblem.png" alt="" /><span>COLMS<small>CentOs Learning Management System</small></span></a>
         <nav aria-label="Student navigation">@if (ViewData["BodyClass"]?.ToString() == "landing-page") { <span class="landing-nav-links"><a href="/">Home</a><a href="#about">About</a><a href="#learning">Learning</a></span> }<a href="/student.html">Student login</a><a class="nav-journey liquid-glass" asp-area="Student" asp-controller="Account" asp-action="Register">Begin journey</a></nav>
     </header>
     <main id="main" class="public-main">
@@ -22,7 +23,7 @@
         @RenderBody()
     </main>
     <footer class="site-footer">
-        <span>© @DateTime.UtcNow.Year CPE Review Hub</span><a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+        <span>© @DateTime.UtcNow.Year COLMS: CentOs Learning Management System</span><a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
         @if (ViewData["BodyClass"]?.ToString()?.Split(' ').Contains("auth-page") == true)
         {
             <button type="button" class="background-playback" data-background-playback hidden>Pause background</button>
