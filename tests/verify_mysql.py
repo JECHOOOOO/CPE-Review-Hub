@@ -466,7 +466,7 @@ def verify(mysql_bin):
         db_process.wait(timeout=15)
         database_ready = False
         status, body, _ = login(student, "student", "student@example.test", password)
-        assert status == 503 and "Database connection needed" in body and app_password not in body, f"Outage response: {status}"
+        assert status == 503 and "Service temporarily unavailable" in body and app_password not in body, f"Outage response: {status}"
         print("PASS: MySQL outage returns a safe 503 page, without exposing credentials.", flush=True)
     finally:
         if database_ready:
