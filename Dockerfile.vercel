@@ -9,6 +9,7 @@ FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS runtime
 WORKDIR /app
 COPY --from=build /out .
 ENV ASPNETCORE_ENVIRONMENT=Production
+ENV Hosting__VercelProxy=true
 ENV PORT=8080
 EXPOSE 8080
 USER $APP_UID

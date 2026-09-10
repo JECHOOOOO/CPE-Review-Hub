@@ -41,13 +41,25 @@ builder.Services.AddRateLimiter(options =>
 });
 var app = builder.Build();
 if (await DatabaseCommands.TryRunAsync(app, args)) return;
-// Only the local reverse proxy can supply the external HTTPS scheme.
-if (builder.Configuration.GetValue<bool>("Hosting:LocalProxy"))
-    app.UseForwardedHeaders(new Microsoft.AspNetCore.Builder.ForwardedHeadersOptions
+// Only explicitly configured reverse-proxy deployments may supply the external
+// HTTPS scheme. Vercel terminates TLS before forwarding to the container.
+if (builder.Configuration.GetValue<bool>("Hosting:LocalProxy") ||
+    builder.Configuration.GetValue<bool>("Hosting:VercelProxy"))
+{
+    var forwardedOptions = new Microsoft.AspNetCore.Builder.ForwardedHeadersOptions
     {
         ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto,
         ForwardLimit = 1
-    });
+    };
+    if (builder.Configuration.GetValue<bool>("Hosting:VercelProxy"))
+    {
+        // The container is reachable through Vercel's managed gateway. Its
+        // address is dynamic, so a static KnownProxies allowlist is unavailable.
+        forwardedOptions.KnownIPNetworks.Clear();
+        forwardedOptions.KnownProxies.Clear();
+    }
+    app.UseForwardedHeaders(forwardedOptions);
+}
 if (!app.Environment.IsDevelopment())
 {
     app.UseExceptionHandler("/Home/Error");
