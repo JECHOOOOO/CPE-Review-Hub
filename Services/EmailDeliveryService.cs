@@ -48,6 +48,7 @@ public sealed class EmailDeliveryService(IOptions<EmailOptions> options, IWebHos
             var content = $"To: {recipientAddress.Address}\r\nSubject: {subject}\r\nContent-Type: text/html; charset=utf-8\r\n\r\n{htmlBody}";
             await File.WriteAllTextAsync(Path.Combine(directory, $"{Guid.NewGuid():N}.eml"), content,
                 cancellationToken);
+            logger.LogInformation("Account email written to the development pickup directory.");
             return;
         }
 
@@ -66,7 +67,11 @@ public sealed class EmailDeliveryService(IOptions<EmailOptions> options, IWebHos
             DeliveryMethod = SmtpDeliveryMethod.Network,
             Timeout = 15000
         };
-        try { await client.SendMailAsync(message, cancellationToken); }
+        try
+        {
+            await client.SendMailAsync(message, cancellationToken);
+            logger.LogInformation("Account email accepted by the configured SMTP server.");
+        }
         catch (Exception exception) when (exception is SmtpException or InvalidOperationException)
         {
             // A restricted Windows Event Log must never prevent registration cleanup.

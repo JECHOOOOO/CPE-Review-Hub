@@ -11,7 +11,8 @@ using Microsoft.EntityFrameworkCore;
 namespace CPE_Review_Hub.Areas.Student.Controllers;
 
 [Area("Student"), Authorize(Policy = PortalSecurity.Student), Route("student/assessments")]
-public class AssessmentsController(ApplicationDbContext db, StudentProgressService progressService) : Controller
+public class AssessmentsController(ApplicationDbContext db, StudentProgressService progressService,
+    AssessmentScoringService scoringService) : Controller
 {
     [HttpPost("{id:int}/start")]
     public async Task<IActionResult> Start(int id)
@@ -73,9 +74,11 @@ public class AssessmentsController(ApplicationDbContext db, StudentProgressServi
                 ChoiceId = choice.Id, IsCorrect = choice.IsCorrect
             });
         }
-        attempt.Score = attempt.Answers.Count(x => x.IsCorrect);
-        attempt.Percentage = Math.Round(100m * attempt.Score / attempt.TotalQuestions, 2);
-        attempt.IsPassed = attempt.Percentage >= attempt.Assessment.PassingPercentage;
+        var result = scoringService.Calculate(attempt.Answers.Count(x => x.IsCorrect),
+            attempt.TotalQuestions, attempt.Assessment.PassingPercentage);
+        attempt.Score = result.Score;
+        attempt.Percentage = result.Percentage;
+        attempt.IsPassed = result.IsPassed;
         attempt.SubmittedAtUtc = DateTime.UtcNow;
         await db.SaveChangesAsync();
         return RedirectToAction(nameof(Result), new { attemptId });

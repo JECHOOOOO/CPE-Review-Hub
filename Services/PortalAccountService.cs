@@ -8,14 +8,23 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CPE_Review_Hub.Services;
 
-public class PortalAccountService(UserManager<ApplicationUser> users, SignInManager<ApplicationUser> signIn)
+public class PortalAccountService(UserManager<ApplicationUser> users, SignInManager<ApplicationUser> signIn,
+    ILogger<PortalAccountService> logger)
 {
     public async Task<bool> LoginAsync(HttpContext context, LoginViewModel model, string portal)
     {
         var user = await users.FindByEmailAsync(model.Email.Trim());
-        if (user is null || !user.IsActive || user.AccountType != portal) return false;
+        if (user is null || !user.IsActive || user.AccountType != portal)
+        {
+            logger.LogWarning("Portal sign-in rejected for {Portal}; account unavailable or wrong portal.", portal);
+            return false;
+        }
         var result = await signIn.CheckPasswordSignInAsync(user, model.Password, lockoutOnFailure: true);
-        if (!result.Succeeded) return false;
+        if (!result.Succeeded)
+        {
+            logger.LogWarning("Portal sign-in rejected for {Portal}; password check failed or account locked.", portal);
+            return false;
+        }
 
         await LogoutAsync(context);
         var identity = new ClaimsIdentity(new[]
@@ -28,6 +37,7 @@ public class PortalAccountService(UserManager<ApplicationUser> users, SignInMana
         {
             IsPersistent = false, AllowRefresh = false
         });
+        logger.LogInformation("Portal sign-in succeeded for {Portal}.", portal);
         return true;
     }
 

@@ -5,7 +5,9 @@ using Microsoft.AspNetCore.DataProtection;
 using System.Threading.RateLimiting;
 
 var builder = WebApplication.CreateBuilder(args);
-if (builder.Environment.IsDevelopment() && OperatingSystem.IsWindows())
+// Restricted Windows accounts may not write to the machine Event Log. Console
+// logging remains available locally and is what the Vercel container captures.
+if (OperatingSystem.IsWindows())
     builder.Logging.AddFilter<Microsoft.Extensions.Logging.EventLog.EventLogLoggerProvider>((_, _) => false);
 var dataProtectionPath = builder.Configuration["DataProtection:KeysPath"];
 if (builder.Configuration.GetValue<bool>("DataProtection:PersistToDatabase"))
@@ -25,6 +27,7 @@ builder.Services.AddControllersWithViews(options =>
 builder.Services.AddPortalSecurity(builder.Configuration, builder.Environment.IsDevelopment());
 builder.Services.AddScoped<StudentProgressService>();
 builder.Services.AddScoped<ActivityAttachmentService>();
+builder.Services.AddScoped<AssessmentScoringService>();
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
 builder.Services.AddScoped<IEmailDeliveryService, EmailDeliveryService>();
 builder.Services.AddRateLimiter(options =>
@@ -63,8 +66,10 @@ app.Use(async (context, next) =>
 app.UseRouting();
 app.UseRateLimiter();
 app.UseMiddleware<DatabaseErrorMiddleware>();
+app.UseMiddleware<RequestMonitoringMiddleware>();
 app.UseAuthentication();
 app.UseAuthorization();
+app.UseStatusCodePagesWithReExecute("/Home/HttpStatus", "?code={0}");
 app.MapStaticAssets();
 app.MapControllerRoute("areas", "{area:exists}/{controller=Dashboard}/{action=Index}/{id?}");
 app.MapControllerRoute("default", "{controller=Home}/{action=Index}/{id?}").WithStaticAssets();
