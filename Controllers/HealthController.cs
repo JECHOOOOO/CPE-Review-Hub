@@ -18,8 +18,16 @@ public sealed class HealthController(ApplicationDbContext db, ILogger<HealthCont
         timeout.CancelAfter(TimeSpan.FromSeconds(5));
         try
         {
-            if (await db.Database.CanConnectAsync(timeout.Token))
-                return Ok(new { status = "Healthy" });
+            if (!await db.Database.CanConnectAsync(timeout.Token))
+                return StatusCode(StatusCodes.Status503ServiceUnavailable, new { status = "Unhealthy" });
+
+            // Verify both the connection and the schema used by lesson pages.
+            await db.Database.SqlQueryRaw<int>("SELECT 1 AS Value").SingleAsync(timeout.Token);
+            await db.LessonImages.AsNoTracking().Select(x => new
+            {
+                x.Id, x.Author, x.License, x.SourceName, x.SourceUrl
+            }).Take(1).ToListAsync(timeout.Token);
+            return Ok(new { status = "Healthy" });
         }
         catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
         {
