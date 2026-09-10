@@ -47,8 +47,11 @@ public class LessonImageFormViewModel
 {
     public int Id { get; set; }
     [Range(1, int.MaxValue)] public int LessonId { get; set; }
-    [StringLength(500), Display(Name = "Existing image path")] public string ImagePath { get; set; } = "";
-    [Display(Name = "Upload image")] public IFormFile? ImageFile { get; set; }
+    [Required, Url, StringLength(500), Display(Name = "Direct online image URL")] public string ImagePath { get; set; } = "";
+    [Required, Url, StringLength(500), Display(Name = "Source page URL")] public string SourceUrl { get; set; } = "";
+    [StringLength(120), Display(Name = "Source name")] public string SourceName { get; set; } = "Wikimedia Commons";
+    [StringLength(200)] public string License { get; set; } = "";
+    [StringLength(200)] public string Author { get; set; } = "";
     [Required, StringLength(500), Display(Name = "Alternative text")] public string AltText { get; set; } = "";
     [StringLength(1000)] public string Caption { get; set; } = "";
     [Range(0, 10000), Display(Name = "Display order")] public int DisplayOrder { get; set; }
@@ -78,7 +81,8 @@ public record StudentAssessmentStatusViewModel(int Id, string Title, int Require
 public record StudentSubjectDetailsViewModel(int Id, string Code, string Title, string Description, string Level,
     IReadOnlyList<StudentLessonRow> Lessons, StudentAssessmentStatusViewModel? FinalExam, int ProgressPercentage);
 public record StudentMaterialViewModel(string Title, string Content, string ResourceUrl);
-public record StudentLessonImageViewModel(string ImagePath, string AltText, string Caption, int DisplayOrder);
+public record StudentLessonImageViewModel(string ImagePath, string SourceUrl, string SourceName,
+    string License, string Author, string AltText, string Caption, int DisplayOrder);
 public record StudentActivityViewModel(int Id, string Title, string Instructions, string ExpectedOutput,
     ActivityResponseType ResponseType, IReadOnlyList<string> Options, IReadOnlyList<ActivityMatchViewModel> Matches,
     bool IsCompleted, string Response, DateTime? CompletedAtUtc,

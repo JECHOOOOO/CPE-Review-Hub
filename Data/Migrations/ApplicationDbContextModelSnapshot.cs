@@ -16,7 +16,7 @@ namespace CPE_Review_Hub.Data.Migrations
         {
 #pragma warning disable 612, 618
             modelBuilder
-                .HasAnnotation("ProductVersion", "10.0.9")
+                .HasAnnotation("ProductVersion", "10.0.12")
                 .HasAnnotation("Relational:MaxIdentifierLength", 64);
 
             modelBuilder.Entity("CPE_Review_Hub.Models.AcademicLevel", b =>
@@ -426,6 +426,11 @@ namespace CPE_Review_Hub.Data.Migrations
                         .HasMaxLength(500)
                         .HasColumnType("varchar(500)");
 
+                    b.Property<string>("Author")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
                     b.Property<string>("Caption")
                         .IsRequired()
                         .HasMaxLength(1000)
@@ -451,6 +456,21 @@ namespace CPE_Review_Hub.Data.Migrations
 
                     b.Property<int>("LessonId")
                         .HasColumnType("int");
+
+                    b.Property<string>("License")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("varchar(200)");
+
+                    b.Property<string>("SourceName")
+                        .IsRequired()
+                        .HasMaxLength(120)
+                        .HasColumnType("varchar(120)");
+
+                    b.Property<string>("SourceUrl")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)");
 
                     b.HasKey("Id");
 

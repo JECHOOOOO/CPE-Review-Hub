@@ -9,10 +9,8 @@ using Microsoft.EntityFrameworkCore;
 namespace CPE_Review_Hub.Areas.Admin.Controllers;
 
 [Area("Admin"), Authorize(Policy = PortalSecurity.Admin), Route("admin/lesson-images")]
-public class LessonImagesController(ApplicationDbContext db, IWebHostEnvironment environment) : Controller
+public class LessonImagesController(ApplicationDbContext db) : Controller
 {
-    private static readonly HashSet<string> UploadExtensions = [".png", ".jpg", ".jpeg", ".webp"];
-
     [HttpGet("")]
     public async Task<IActionResult> Index(int? lessonId)
     {
@@ -35,43 +33,25 @@ public class LessonImagesController(ApplicationDbContext db, IWebHostEnvironment
         return image is null ? NotFound() : View(await PopulateAsync(new LessonImageFormViewModel
         {
             Id = image.Id, LessonId = image.LessonId, ImagePath = image.ImagePath, AltText = image.AltText,
-            Caption = image.Caption, DisplayOrder = image.DisplayOrder, IsPublished = image.IsPublished
+            SourceUrl = image.SourceUrl, SourceName = image.SourceName, License = image.License,
+            Author = image.Author, Caption = image.Caption, DisplayOrder = image.DisplayOrder,
+            IsPublished = image.IsPublished
         }));
     }
 
-    [HttpPost("save"), RequestSizeLimit(6 * 1024 * 1024)]
+    [HttpPost("save")]
     public async Task<IActionResult> Save(LessonImageFormViewModel model, CancellationToken cancellationToken)
     {
         if (!await db.Lessons.AnyAsync(x => x.Id == model.LessonId, cancellationToken))
             ModelState.AddModelError(nameof(model.LessonId), "Select a valid lesson.");
         var imagePath = model.ImagePath.Trim();
-        byte[]? imageData = null;
-        string? contentType = null;
-        if (model.ImageFile is { Length: > 0 } upload)
-        {
-            var extension = Path.GetExtension(upload.FileName).ToLowerInvariant();
-            if (!UploadExtensions.Contains(extension) || upload.Length > 5 * 1024 * 1024)
-                ModelState.AddModelError(nameof(model.ImageFile), "Upload a PNG, JPG, or WEBP image no larger than 5 MB.");
-            else
-            {
-                await using var stream = new MemoryStream();
-                await upload.CopyToAsync(stream, cancellationToken);
-                imageData = stream.ToArray();
-                contentType = extension == ".png" ? "image/png" : extension == ".webp" ? "image/webp" : "image/jpeg";
-                var valid = contentType switch
-                {
-                    "image/png" => imageData.AsSpan().StartsWith(new byte[] { 137, 80, 78, 71, 13, 10, 26, 10 }),
-                    "image/jpeg" => imageData.AsSpan().StartsWith(new byte[] { 255, 216, 255 }),
-                    _ => imageData.Length >= 12 && System.Text.Encoding.ASCII.GetString(imageData, 0, 4) == "RIFF"
-                        && System.Text.Encoding.ASCII.GetString(imageData, 8, 4) == "WEBP"
-                };
-                if (!valid) ModelState.AddModelError(nameof(model.ImageFile), "The file contents do not match a supported image.");
-            }
-        }
-        var retainedUpload = model.Id > 0 && imagePath == $"/images/lessons/stored/{model.Id}" &&
-            await db.LessonImages.AnyAsync(x => x.Id == model.Id && x.ImageData != null, cancellationToken);
-        if (imageData is null && !retainedUpload && !IsExistingLocalImage(imagePath))
-            ModelState.AddModelError(nameof(model.ImagePath), "Choose an upload or enter an existing /images/... path.");
+        var sourceUrl = model.SourceUrl.Trim();
+        if (!LessonImageUrlPolicy.IsAllowedDirectImage(imagePath))
+            ModelState.AddModelError(nameof(model.ImagePath),
+                "Use a direct HTTPS image URL from upload.wikimedia.org (SVG, PNG, JPG, JPEG, or WEBP). ");
+        if (!LessonImageUrlPolicy.IsAllowedSourcePage(sourceUrl))
+            ModelState.AddModelError(nameof(model.SourceUrl),
+                "Use the matching HTTPS Wikimedia Commons File page.");
         if (!ModelState.IsValid) return View("Edit", await PopulateAsync(model));
 
         var image = model.Id == 0 ? new LessonImage() :
@@ -79,17 +59,11 @@ public class LessonImagesController(ApplicationDbContext db, IWebHostEnvironment
         if (image is null) return NotFound();
         if (model.Id == 0) db.LessonImages.Add(image);
         image.LessonId = model.LessonId; image.ImagePath = imagePath; image.AltText = model.AltText.Trim();
+        image.SourceUrl = sourceUrl; image.SourceName = model.SourceName.Trim();
+        image.License = model.License.Trim(); image.Author = model.Author.Trim();
         image.Caption = model.Caption.Trim(); image.DisplayOrder = model.DisplayOrder; image.IsPublished = model.IsPublished;
-        if (imageData is not null) { image.ImageData = imageData; image.ContentType = contentType; }
-        else if (!retainedUpload) { image.ImageData = null; image.ContentType = null; }
-        await using var transaction = await db.Database.BeginTransactionAsync(cancellationToken);
+        image.ImageData = null; image.ContentType = null;
         await db.SaveChangesAsync(cancellationToken);
-        if (imageData is not null)
-        {
-            image.ImagePath = $"/images/lessons/stored/{image.Id}";
-            await db.SaveChangesAsync(cancellationToken);
-        }
-        await transaction.CommitAsync(cancellationToken);
         TempData["Success"] = model.Id == 0 ? "Lesson image added." : "Lesson image updated.";
         return RedirectToAction(nameof(Index), new { lessonId = model.LessonId });
     }
@@ -110,15 +84,6 @@ public class LessonImagesController(ApplicationDbContext db, IWebHostEnvironment
         var lessonId = image.LessonId; db.LessonImages.Remove(image); await db.SaveChangesAsync();
         TempData["Success"] = "Lesson image removed.";
         return RedirectToAction(nameof(Index), new { lessonId });
-    }
-
-    private bool IsExistingLocalImage(string path)
-    {
-        if (string.IsNullOrWhiteSpace(path) || !path.StartsWith("/images/", StringComparison.OrdinalIgnoreCase) || path.Contains("..")) return false;
-        var relative = path.TrimStart('/').Replace('/', Path.DirectorySeparatorChar);
-        var root = Path.GetFullPath(environment.WebRootPath) + Path.DirectorySeparatorChar;
-        var fullPath = Path.GetFullPath(Path.Combine(environment.WebRootPath, relative));
-        return fullPath.StartsWith(root, StringComparison.OrdinalIgnoreCase) && System.IO.File.Exists(fullPath);
     }
 
     private async Task<LessonImageFormViewModel> PopulateAsync(LessonImageFormViewModel model)

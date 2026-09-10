@@ -29,3 +29,5 @@ body {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
   text-align: start;
 }
+.lesson-image-credit { display: block; margin-top: .55rem; color: var(--muted); font-size: .78rem; line-height: 1.5; }
+.lesson-image-credit a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }

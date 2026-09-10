@@ -1,12 +1,15 @@
 @model LessonImageFormViewModel
 @{ ViewData["Title"] = Model.Id == 0 ? "Add lesson image" : "Edit lesson image"; }
-<span class="eyebrow">CONTENT MANAGEMENT</span><h1>@ViewData["Title"]</h1><p class="lead">Upload an educational image or select an existing local asset. Alt text describes the visual for accessibility.</p>
-<section class="panel form-panel"><form asp-action="Save" method="post" enctype="multipart/form-data">
+<span class="eyebrow">CONTENT MANAGEMENT</span><h1>@ViewData["Title"]</h1><p class="lead">Reference a verified educational image online. Use the direct Wikimedia media URL for the image and its Commons file page for attribution.</p>
+<section class="panel form-panel"><form asp-action="Save" method="post">
     <div asp-validation-summary="All" class="validation" role="alert"></div><input asp-for="Id" type="hidden" />
     <label asp-for="LessonId">Lesson</label><select asp-for="LessonId" required><option value="">Select lesson</option>@foreach (var option in Model.Lessons) { <option value="@option.Id">@option.Label</option> }</select>
     @if (!string.IsNullOrWhiteSpace(Model.ImagePath)) { <img class="lesson-image-preview" src="@Model.ImagePath" alt="Current lesson image" /> }
-    <label asp-for="ImageFile"></label><input asp-for="ImageFile" type="file" accept=".png,.jpg,.jpeg,.webp" />
-    <label asp-for="ImagePath"></label><input asp-for="ImagePath" placeholder="/images/lessons/course/lesson-1.svg" />
+    <label asp-for="ImagePath"></label><input asp-for="ImagePath" type="url" placeholder="https://upload.wikimedia.org/.../diagram.svg" required />
+    <label asp-for="SourceUrl"></label><input asp-for="SourceUrl" type="url" placeholder="https://commons.wikimedia.org/wiki/File:..." required />
+    <label asp-for="SourceName"></label><input asp-for="SourceName" />
+    <label asp-for="Author"></label><input asp-for="Author" />
+    <label asp-for="License"></label><input asp-for="License" />
     <label asp-for="AltText"></label><input asp-for="AltText" required />
     <label asp-for="Caption"></label><textarea asp-for="Caption" rows="3"></textarea>
     <label asp-for="DisplayOrder"></label><input asp-for="DisplayOrder" type="number" min="0" />

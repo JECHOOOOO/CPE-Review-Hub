@@ -155,8 +155,10 @@ public static class CourseCatalogSeeder
                 var imageCode = NormalizeCode(definition.Code).ToLowerInvariant();
                 var seededPathPrefix = $"/images/lessons/{imageCode}/lesson-";
                 var oldSeededImages = lesson.Images.Where(x =>
-                    x.ImagePath.StartsWith(seededPathPrefix, StringComparison.OrdinalIgnoreCase)).ToList();
-                if (LessonVisualManifest.TryGet(definition.Code, template.Title, out var visual))
+                    x.ImagePath.StartsWith(seededPathPrefix, StringComparison.OrdinalIgnoreCase) ||
+                    x.SourceName.Equals("Wikimedia Commons", StringComparison.OrdinalIgnoreCase)).ToList();
+                if (OnlineLessonVisualManifest.TryGet(definition.Code, template.Title, out var visual) ||
+                    LessonVisualManifest.TryGet(definition.Code, template.Title, out visual))
                 {
                     var image = oldSeededImages.FirstOrDefault(x =>
                         x.ImagePath.Equals(visual.ImagePath, StringComparison.OrdinalIgnoreCase));
@@ -166,6 +168,12 @@ public static class CourseCatalogSeeder
                         lesson.Images.Add(image);
                     }
                     image.ImagePath = visual.ImagePath;
+                    image.SourceUrl = visual.SourceUrl;
+                    image.SourceName = visual.SourceName;
+                    image.License = visual.License;
+                    image.Author = visual.Author;
+                    image.ImageData = null;
+                    image.ContentType = null;
                     image.AltText = visual.AltText;
                     image.Caption = visual.Caption;
                     image.IsPublished = true;

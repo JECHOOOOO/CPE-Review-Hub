@@ -10,12 +10,13 @@ else { var lessonImageIndex = 0; <div class="material-stack">@foreach (var mater
             <div class="material-content lesson-section">@sections[sectionIndex]</div>
             @if (sectionIndex >= 2 && lessonImageIndex < Model.Images.Count) {
                 var lessonImage = Model.Images[lessonImageIndex++];
-                <figure class="lesson-figure"><img src="@lessonImage.ImagePath" alt="@lessonImage.AltText" loading="lazy" onerror="this.closest('figure').hidden=true" />
+                <figure class="lesson-figure"><img src="@lessonImage.ImagePath" alt="@lessonImage.AltText" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('figure').hidden=true" />
                     @if (!string.IsNullOrWhiteSpace(lessonImage.Caption)) { <figcaption>@lessonImage.Caption</figcaption> }
+                    @if (!string.IsNullOrWhiteSpace(lessonImage.SourceUrl)) { <small class="lesson-image-credit">Source: <a href="@lessonImage.SourceUrl" target="_blank" rel="noopener noreferrer">@(string.IsNullOrWhiteSpace(lessonImage.SourceName) ? "Image source" : lessonImage.SourceName)</a>@if (!string.IsNullOrWhiteSpace(lessonImage.Author)) { <text> · @lessonImage.Author</text> }@if (!string.IsNullOrWhiteSpace(lessonImage.License)) { <text> · @lessonImage.License</text> }</small> }
                 </figure>
             }
         }
-        @if (material == Model.Materials.Last()) { @while (lessonImageIndex < Model.Images.Count) { var lessonImage = Model.Images[lessonImageIndex++]; <figure class="lesson-figure"><img src="@lessonImage.ImagePath" alt="@lessonImage.AltText" loading="lazy" onerror="this.closest('figure').hidden=true" />@if (!string.IsNullOrWhiteSpace(lessonImage.Caption)) { <figcaption>@lessonImage.Caption</figcaption> }</figure> } }
+        @if (material == Model.Materials.Last()) { @while (lessonImageIndex < Model.Images.Count) { var lessonImage = Model.Images[lessonImageIndex++]; <figure class="lesson-figure"><img src="@lessonImage.ImagePath" alt="@lessonImage.AltText" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('figure').hidden=true" />@if (!string.IsNullOrWhiteSpace(lessonImage.Caption)) { <figcaption>@lessonImage.Caption</figcaption> }@if (!string.IsNullOrWhiteSpace(lessonImage.SourceUrl)) { <small class="lesson-image-credit">Source: <a href="@lessonImage.SourceUrl" target="_blank" rel="noopener noreferrer">@(string.IsNullOrWhiteSpace(lessonImage.SourceName) ? "Image source" : lessonImage.SourceName)</a>@if (!string.IsNullOrWhiteSpace(lessonImage.Author)) { <text> · @lessonImage.Author</text> }@if (!string.IsNullOrWhiteSpace(lessonImage.License)) { <text> · @lessonImage.License</text> }</small> }</figure> } }
         @if (!string.IsNullOrWhiteSpace(material.ResourceUrl)) { <p><a class="button secondary" href="@material.ResourceUrl" target="_blank" rel="noopener noreferrer">Open supporting resource ↗</a></p> }
     </article> }</div> }
 @if (Model.Activity is not null) {

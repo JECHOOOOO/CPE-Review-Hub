@@ -39,7 +39,8 @@ public class LessonsController(ApplicationDbContext db, StudentProgressService p
                 .OrderBy(x => x.SortOrder).ThenBy(x => x.Title)
                 .Select(x => new StudentMaterialViewModel(x.Title, x.Content, x.ResourceUrl)).ToList(),
             lesson.Images.Where(x => x.IsPublished).OrderBy(x => x.DisplayOrder)
-                .Select(x => new StudentLessonImageViewModel(x.ImagePath, x.AltText, x.Caption, x.DisplayOrder)).ToList(),
+                .Select(x => new StudentLessonImageViewModel(x.ImagePath, x.SourceUrl, x.SourceName,
+                    x.License, x.Author, x.AltText, x.Caption, x.DisplayOrder)).ToList(),
             lesson.Activity is { IsPublished: true } activity
                 ? new StudentActivityViewModel(activity.Id, activity.Title, activity.Instructions,
                     activity.ExpectedOutput, activity.ResponseType,
