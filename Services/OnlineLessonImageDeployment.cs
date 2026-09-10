@@ -2,6 +2,7 @@ using CPE_Review_Hub.Data;
 using CPE_Review_Hub.Models;
 using CPE_Review_Hub.Services.Curriculum;
 using Microsoft.EntityFrameworkCore;
+using System.Data;
 
 namespace CPE_Review_Hub.Services;
 
@@ -16,23 +17,73 @@ public static class OnlineLessonImageDeployment
         {
             await using var scope = app.Services.CreateAsyncScope();
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            var pending = (await db.Database.GetPendingMigrationsAsync()).ToList();
-            if (pending.Count > 0)
-            {
-                if (pending.Count != 1 || !pending.Contains(MigrationId, StringComparer.Ordinal))
-                {
-                    app.Logger.LogCritical("COLMS found unreviewed pending database migrations. Startup migration was not attempted.");
-                    return;
-                }
-                await db.Database.MigrateAsync(MigrationId);
-                app.Logger.LogInformation("Applied the reviewed additive lesson-image metadata migration.");
-            }
-
+            await EnsureAdditiveSchemaAsync(db, app.Logger);
             await ReplaceBundledReferencesOnceAsync(db);
         }
         catch (Exception exception)
         {
             app.Logger.LogError(exception, "Unable to apply the reviewed online lesson-image update.");
+        }
+    }
+
+    private static async Task EnsureAdditiveSchemaAsync(ApplicationDbContext db, ILogger logger)
+    {
+        var connection = db.Database.GetDbConnection();
+        await db.Database.OpenConnectionAsync();
+        try
+        {
+            // Connectivity is verified independently before any schema statement.
+            await using (var ping = connection.CreateCommand())
+            {
+                ping.CommandText = "SELECT 1";
+                await ping.ExecuteScalarAsync();
+            }
+
+            var existing = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            await using (var inspect = connection.CreateCommand())
+            {
+                inspect.CommandText = "SELECT COLUMN_NAME FROM information_schema.COLUMNS " +
+                    "WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'LessonImages'";
+                await using var reader = await inspect.ExecuteReaderAsync();
+                while (await reader.ReadAsync()) existing.Add(reader.GetString(0));
+            }
+            if (existing.Count == 0)
+                throw new InvalidOperationException("The existing LessonImages table was not found; no schema change was attempted.");
+
+            var additiveColumns = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+            {
+                ["Author"] = "ALTER TABLE `LessonImages` ADD COLUMN `Author` varchar(200) NOT NULL DEFAULT ''",
+                ["License"] = "ALTER TABLE `LessonImages` ADD COLUMN `License` varchar(200) NOT NULL DEFAULT ''",
+                ["SourceName"] = "ALTER TABLE `LessonImages` ADD COLUMN `SourceName` varchar(120) NOT NULL DEFAULT ''",
+                ["SourceUrl"] = "ALTER TABLE `LessonImages` ADD COLUMN `SourceUrl` varchar(500) NOT NULL DEFAULT ''"
+            };
+            foreach (var column in additiveColumns.Where(x => !existing.Contains(x.Key)))
+            {
+                await using var add = connection.CreateCommand();
+                add.CommandText = column.Value;
+                await add.ExecuteNonQueryAsync();
+                logger.LogInformation("Added reviewed LessonImages metadata column {ColumnName}.", column.Key);
+            }
+
+            await using var history = connection.CreateCommand();
+            history.CommandText = "INSERT INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`) " +
+                "SELECT @migration, @version WHERE NOT EXISTS " +
+                "(SELECT 1 FROM `__EFMigrationsHistory` WHERE `MigrationId` = @migration)";
+            var migration = history.CreateParameter();
+            migration.ParameterName = "@migration";
+            migration.DbType = DbType.String;
+            migration.Value = MigrationId;
+            history.Parameters.Add(migration);
+            var version = history.CreateParameter();
+            version.ParameterName = "@version";
+            version.DbType = DbType.String;
+            version.Value = "10.0.12";
+            history.Parameters.Add(version);
+            await history.ExecuteNonQueryAsync();
+        }
+        finally
+        {
+            await db.Database.CloseConnectionAsync();
         }
     }
 

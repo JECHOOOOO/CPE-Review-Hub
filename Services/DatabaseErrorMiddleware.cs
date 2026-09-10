@@ -1,5 +1,6 @@
 using System.Data.Common;
 using Microsoft.EntityFrameworkCore;
+using MySql.Data.MySqlClient;
 
 namespace CPE_Review_Hub.Services;
 
@@ -10,7 +11,7 @@ public class DatabaseErrorMiddleware(RequestDelegate next, ILogger<DatabaseError
     public async Task InvokeAsync(HttpContext context)
     {
         try { await next(context); }
-        catch (Exception exception) when (IsDatabaseFailure(exception))
+        catch (Exception exception) when (IsConnectivityFailure(exception))
         {
             // Do not display database exceptions or connection strings in the browser.
             logger.LogWarning("Database request unavailable ({ErrorType}).", exception.GetType().Name);
@@ -35,10 +36,16 @@ public class DatabaseErrorMiddleware(RequestDelegate next, ILogger<DatabaseError
 
     // Data Protection/antiforgery can wrap a database outage in a cryptographic
     // exception while rendering a login form. Preserve the same safe 503 response.
-    private static bool IsDatabaseFailure(Exception exception)
+    private static bool IsConnectivityFailure(Exception exception)
     {
         for (Exception? cause = exception; cause is not null; cause = cause.InnerException)
-            if (cause is DatabaseSetupException or DbException or DbUpdateException) return true;
+        {
+            if (cause is DatabaseSetupException) return true;
+            if (cause is MySqlException mysql) return mysql.Number is
+                1042 or 1045 or 1129 or 1130 or 1203 or 1226 or
+                2002 or 2003 or 2005 or 2006 or 2013 or 2055;
+            if (cause is DbException && cause is not MySqlException) return true;
+        }
         return false;
     }
 }

@@ -11,13 +11,17 @@ using System.Security.Claims;
 namespace CPE_Review_Hub.Areas.Student.Controllers;
 
 [Area("Student"), Authorize(Policy = PortalSecurity.Student), Route("student/lessons")]
-public class LessonsController(ApplicationDbContext db, StudentProgressService progressService) : Controller
+public class LessonsController(ApplicationDbContext db, StudentProgressService progressService,
+    ILogger<LessonsController> logger) : Controller
 {
     [HttpGet("{id:int}")]
     public async Task<IActionResult> Details(int id)
     {
         var userId = User.FindFirstValue(ClaimTypes.NameIdentifier)!;
-        var lesson = await db.Lessons.AsNoTracking().Include(x => x.Subject)
+        logger.LogInformation("Loading student lesson {LessonId} for authenticated user {UserId}.", id, userId);
+        try
+        {
+        var lesson = await db.Lessons.AsNoTracking().AsSplitQuery().Include(x => x.Subject)
             .Include(x => x.ReviewMaterials).Include(x => x.Activity)
             .Include(x => x.Images)
             .Include(x => x.Assessments).ThenInclude(x => x.AssessmentQuestions)
@@ -57,5 +61,11 @@ public class LessonsController(ApplicationDbContext db, StudentProgressService p
                 quiz.RequiredQuestionCount, quiz.AssessmentQuestions.Count, quiz.IsPublished,
                 submission is not null, quizAttempts.Count == 0 ? null : quizAttempts.Max(x => x.Percentage),
                 quizAttempts.Count)));
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "Failed to load student lesson {LessonId} for user {UserId}.", id, userId);
+            throw;
+        }
     }
 }
