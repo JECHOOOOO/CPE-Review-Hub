@@ -36,7 +36,7 @@ public sealed class HealthController(ApplicationDbContext db, ILogger<HealthCont
         }
         catch (Exception exception) when (!cancellationToken.IsCancellationRequested)
         {
-            logger.LogWarning("Readiness database check failed ({ErrorType}).", exception.GetType().Name);
+            logger.LogWarning(exception, "Readiness database check failed ({ErrorType}).", exception.GetType().Name);
         }
         return StatusCode(StatusCodes.Status503ServiceUnavailable, new { status = "Unhealthy" });
     }
