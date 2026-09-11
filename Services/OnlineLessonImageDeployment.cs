@@ -17,13 +17,18 @@ public static class OnlineLessonImageDeployment
         {
             await using var scope = app.Services.CreateAsyncScope();
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-            await EnsureAdditiveSchemaAsync(db, app.Logger);
-            await ReplaceBundledReferencesOnceAsync(db);
+            await RepairAsync(db, app.Logger);
         }
         catch (Exception exception)
         {
             app.Logger.LogError(exception, "Unable to apply the reviewed online lesson-image update.");
         }
+    }
+
+    public static async Task RepairAsync(ApplicationDbContext db, ILogger logger)
+    {
+        await EnsureAdditiveSchemaAsync(db, logger);
+        await ReplaceBundledReferencesOnceAsync(db);
     }
 
     private static async Task EnsureAdditiveSchemaAsync(ApplicationDbContext db, ILogger logger)
