@@ -81,11 +81,23 @@ public sealed class StudentProgressService(ApplicationDbContext db)
 
     public async Task<bool> IsLessonUnlockedAsync(int lessonId, string userId)
     {
-        var subjectId = await db.Lessons.AsNoTracking().Where(x => x.Id == lessonId)
-            .Select(x => (int?)x.SubjectId).SingleOrDefaultAsync();
-        if (!subjectId.HasValue) return false;
-        var course = await GetCourseAsync(subjectId.Value, userId);
-        return course?.Lessons.SingleOrDefault(x => x.LessonId == lessonId)?.IsUnlocked == true;
+        var target = await db.Lessons.AsNoTracking().Where(x => x.Id == lessonId && x.IsPublished)
+            .Select(x => new { x.Id, x.SubjectId, x.SortOrder }).SingleOrDefaultAsync();
+        if (target is null) return false;
+
+        // Opening one lesson used to load the entire course, every submission,
+        // and every quiz attempt through four additional Aiven round trips.
+        // A lesson is unlocked exactly when no earlier published lesson lacks a
+        // passed automatically-scored quiz, so let MySQL answer that directly.
+        var hasIncompletePreviousLesson = await db.Lessons.AsNoTracking()
+            .Where(x => x.SubjectId == target.SubjectId && x.IsPublished &&
+                (x.SortOrder < target.SortOrder ||
+                 (x.SortOrder == target.SortOrder && x.Id < target.Id)))
+            .AnyAsync(previous => !db.AssessmentAttempts.Any(attempt =>
+                attempt.UserId == userId && attempt.SubmittedAtUtc != null && attempt.IsPassed &&
+                attempt.Assessment.LessonId == previous.Id &&
+                attempt.Assessment.Type == AssessmentType.LessonQuiz && attempt.Assessment.IsPublished));
+        return !hasIncompletePreviousLesson;
     }
 
     public async Task<bool> IsAssessmentUnlockedAsync(Assessment assessment, string userId)

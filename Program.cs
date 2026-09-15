@@ -72,8 +72,18 @@ app.Use(async (context, next) =>
     context.Response.Headers["X-Content-Type-Options"] = "nosniff";
     context.Response.Headers["X-Frame-Options"] = "DENY";
     context.Response.Headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
-    context.Response.Headers.CacheControl = "no-cache, no-store";
-    context.Response.Headers.Pragma = "no-cache";
+    // Dynamic authenticated pages must not be stored by shared caches. Static
+    // assets are safe to cache and should not be downloaded again on every
+    // lesson navigation, especially from a serverless deployment.
+    var path = context.Request.Path;
+    var isStaticAsset = path.StartsWithSegments("/css") || path.StartsWithSegments("/js") ||
+        path.StartsWithSegments("/lib") || path.StartsWithSegments("/images") ||
+        path.StartsWithSegments("/fonts") || Path.HasExtension(path.Value);
+    if (!isStaticAsset)
+    {
+        context.Response.Headers.CacheControl = "no-cache, no-store";
+        context.Response.Headers.Pragma = "no-cache";
+    }
     await next();
 });
 app.UseRouting();
