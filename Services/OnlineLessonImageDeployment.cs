@@ -113,14 +113,16 @@ public static class OnlineLessonImageDeployment
             var lesson = lessons.FirstOrDefault(x =>
                 x.Subject.Code.Equals(entry.CourseCode, StringComparison.OrdinalIgnoreCase) &&
                 x.Title.Equals(entry.LessonTitle, StringComparison.OrdinalIgnoreCase));
-            if (lesson is null || lesson.Images.Any(x =>
-                    !string.IsNullOrWhiteSpace(x.SourceUrl) &&
-                    x.ImagePath.StartsWith("https://", StringComparison.OrdinalIgnoreCase))) continue;
+            if (lesson is null) continue;
 
             var localPrefix = $"/images/lessons/{NormalizeCode(entry.CourseCode).ToLowerInvariant()}/lesson-";
             var replaceable = lesson.Images.Where(x =>
-                x.ImagePath.StartsWith(localPrefix, StringComparison.OrdinalIgnoreCase)).ToList();
-            var image = replaceable.FirstOrDefault();
+                x.ImagePath.StartsWith(localPrefix, StringComparison.OrdinalIgnoreCase) ||
+                x.SourceName.Equals("Wikimedia Commons", StringComparison.OrdinalIgnoreCase) ||
+                x.ImagePath.Equals(entry.Visual.ImagePath, StringComparison.OrdinalIgnoreCase)).ToList();
+            var image = replaceable.FirstOrDefault(x =>
+                x.ImagePath.Equals(entry.Visual.ImagePath, StringComparison.OrdinalIgnoreCase))
+                ?? replaceable.FirstOrDefault();
             if (image is null)
             {
                 image = new LessonImage { Lesson = lesson, DisplayOrder = 1 };
@@ -136,7 +138,11 @@ public static class OnlineLessonImageDeployment
             image.ImageData = null;
             image.ContentType = null;
             image.IsPublished = true;
-            foreach (var duplicate in replaceable.Skip(1)) db.LessonImages.Remove(duplicate);
+            // A mapped lesson must have one canonical visual. Old generated SVG
+            // associations otherwise remain published and render beside/before
+            // the current online image even though the physical file itself has
+            // no selection priority.
+            foreach (var stale in replaceable.Where(x => x != image)) db.LessonImages.Remove(stale);
             changed = true;
         }
 
