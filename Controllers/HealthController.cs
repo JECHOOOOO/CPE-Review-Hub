@@ -1,5 +1,4 @@
 using CPE_Review_Hub.Data;
-using CPE_Review_Hub.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
@@ -19,10 +18,6 @@ public sealed class HealthController(ApplicationDbContext db, ILogger<HealthCont
         timeout.CancelAfter(TimeSpan.FromSeconds(5));
         try
         {
-            // The operation is idempotent and additive. It covers a deployment
-            // whose initial container startup could not finish the image schema
-            // update, without dropping or rewriting learning records.
-            await OnlineLessonImageDeployment.RepairAsync(db, logger);
             if (!await db.Database.CanConnectAsync(timeout.Token))
                 return StatusCode(StatusCodes.Status503ServiceUnavailable, new { status = "Unhealthy" });
 

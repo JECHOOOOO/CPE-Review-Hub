@@ -24,7 +24,8 @@ public static class DatabaseCommands
         var configureEmail = args.Contains("--configure-email");
         var testEmail = args.Contains("--test-email");
         var checkDatabase = args.Contains("--check-database");
-        if (!configure && !migrate && !admin && !seedCatalog && !configureEmail && !testEmail && !checkDatabase) return false;
+        var repairOnlineImages = args.Contains("--repair-online-images");
+        if (!configure && !migrate && !admin && !seedCatalog && !configureEmail && !testEmail && !checkDatabase && !repairOnlineImages) return false;
         try
         {
             if (configure)
@@ -43,6 +44,11 @@ public static class DatabaseCommands
             }
             await using var scope = app.Services.CreateAsyncScope();
             var db = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+            if (repairOnlineImages)
+            {
+                await OnlineLessonImageDeployment.RepairAsync(db, app.Logger);
+                Console.WriteLine("LessonImages schema and reviewed Batch 1 online references are up to date. No learning records were reset.");
+            }
             if (checkDatabase)
             {
                 await db.Database.OpenConnectionAsync();

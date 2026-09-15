@@ -62,29 +62,37 @@ public static class OnlineLessonImageDeployment
                 ["SourceName"] = "ALTER TABLE `LessonImages` ADD COLUMN `SourceName` varchar(120) NOT NULL DEFAULT ''",
                 ["SourceUrl"] = "ALTER TABLE `LessonImages` ADD COLUMN `SourceUrl` varchar(500) NOT NULL DEFAULT ''"
             };
+            var schemaChanged = false;
             foreach (var column in additiveColumns.Where(x => !existing.Contains(x.Key)))
             {
                 await using var add = connection.CreateCommand();
                 add.CommandText = column.Value;
                 await add.ExecuteNonQueryAsync();
+                schemaChanged = true;
                 logger.LogInformation("Added reviewed LessonImages metadata column {ColumnName}.", column.Key);
             }
 
-            await using var history = connection.CreateCommand();
-            history.CommandText = "INSERT INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`) " +
-                "SELECT @migration, @version WHERE NOT EXISTS " +
-                "(SELECT 1 FROM `__EFMigrationsHistory` WHERE `MigrationId` = @migration)";
-            var migration = history.CreateParameter();
-            migration.ParameterName = "@migration";
-            migration.DbType = DbType.String;
-            migration.Value = MigrationId;
-            history.Parameters.Add(migration);
-            var version = history.CreateParameter();
-            version.ParameterName = "@version";
-            version.DbType = DbType.String;
-            version.Value = "10.0.12";
-            history.Parameters.Add(version);
-            await history.ExecuteNonQueryAsync();
+            // A restricted runtime principal only needs SELECT/INSERT/UPDATE/DELETE.
+            // Migration history is written only by the privileged one-time repair
+            // that actually changes the schema.
+            if (schemaChanged)
+            {
+                await using var history = connection.CreateCommand();
+                history.CommandText = "INSERT INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`) " +
+                    "SELECT @migration, @version WHERE NOT EXISTS " +
+                    "(SELECT 1 FROM `__EFMigrationsHistory` WHERE `MigrationId` = @migration)";
+                var migration = history.CreateParameter();
+                migration.ParameterName = "@migration";
+                migration.DbType = DbType.String;
+                migration.Value = MigrationId;
+                history.Parameters.Add(migration);
+                var version = history.CreateParameter();
+                version.ParameterName = "@version";
+                version.DbType = DbType.String;
+                version.Value = "10.0.12";
+                history.Parameters.Add(version);
+                await history.ExecuteNonQueryAsync();
+            }
         }
         finally
         {
