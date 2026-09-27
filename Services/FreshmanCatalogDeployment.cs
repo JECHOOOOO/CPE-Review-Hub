@@ -2,6 +2,7 @@ using System.Data;
 using System.Data.Common;
 using CPE_Review_Hub.Data;
 using Microsoft.EntityFrameworkCore;
+using MySql.Data.MySqlClient;
 
 namespace CPE_Review_Hub.Services;
 
@@ -18,6 +19,7 @@ public static class FreshmanCatalogDeployment
     public static async Task ApplyAsync(WebApplication app)
     {
         if (!app.Environment.IsProduction()) return;
+        var stage = "connect";
 
         try
         {
@@ -30,6 +32,7 @@ public static class FreshmanCatalogDeployment
             {
                 await using (var command = connection.CreateCommand())
                 {
+                    stage = "lock";
                     command.CommandText = $"SELECT GET_LOCK('{LockName}', 30)";
                     lockAcquired = Convert.ToInt32(await command.ExecuteScalarAsync()) == 1;
                 }
@@ -37,6 +40,7 @@ public static class FreshmanCatalogDeployment
                     throw new InvalidOperationException("The catalog migration lock was unavailable.");
 
                 var columns = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                stage = "inspect-subjects";
                 await using (var inspect = connection.CreateCommand())
                 {
                     inspect.CommandText = "SELECT COLUMN_NAME FROM information_schema.COLUMNS " +
@@ -48,10 +52,17 @@ public static class FreshmanCatalogDeployment
                     throw new InvalidOperationException("Existing Subjects schema requires manual review.");
 
                 if (!columns.Contains("Semester"))
+                {
+                    stage = "add-semester";
                     await ExecuteAsync(connection, "ALTER TABLE `Subjects` ADD COLUMN `Semester` int NULL");
+                }
                 if (!columns.Contains("Units"))
+                {
+                    stage = "add-units";
                     await ExecuteAsync(connection, "ALTER TABLE `Subjects` ADD COLUMN `Units` decimal(4,1) NULL");
+                }
 
+                stage = "freshman-level";
                 await ExecuteAsync(connection,
                     "INSERT INTO `AcademicLevels` (`Id`, `Name`) VALUES (100, 'Freshman') " +
                     "ON DUPLICATE KEY UPDATE `Name` = 'Freshman'");
@@ -65,6 +76,7 @@ public static class FreshmanCatalogDeployment
                 };
                 foreach (var course in courses)
                 {
+                    stage = "course-" + course.Code;
                     await using var insert = connection.CreateCommand();
                     insert.CommandText = "INSERT INTO `Subjects` " +
                         "(`AcademicLevelId`, `Code`, `Title`, `Description`, `Units`, `Semester`, `IsPublished`, `CreatedAtUtc`, `UpdatedAtUtc`) " +
@@ -88,6 +100,7 @@ public static class FreshmanCatalogDeployment
 
                 await using (var history = connection.CreateCommand())
                 {
+                    stage = "migration-history";
                     history.CommandText = "INSERT INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`) " +
                         "SELECT @migration, @version WHERE NOT EXISTS " +
                         "(SELECT 1 FROM `__EFMigrationsHistory` WHERE `MigrationId` = @migration)";
@@ -110,8 +123,8 @@ public static class FreshmanCatalogDeployment
         }
         catch (Exception exception)
         {
-            app.Logger.LogError("Freshman catalog migration did not complete ({ErrorType}).",
-                exception.GetType().Name);
+            app.Logger.LogError("Freshman catalog migration did not complete at {Stage} ({ErrorType}, MySqlCode {MySqlCode}).",
+                stage, exception.GetType().Name, (exception as MySqlException)?.Number);
         }
     }
 
