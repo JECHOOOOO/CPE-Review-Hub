@@ -43,6 +43,7 @@ builder.Services.AddRateLimiter(options =>
 var app = builder.Build();
 if (await DatabaseCommands.TryRunAsync(app, args)) return;
 await OnlineLessonImageDeployment.ApplyAsync(app);
+await FreshmanCatalogDeployment.ApplyAsync(app);
 // Only explicitly configured reverse-proxy deployments may supply the external
 // HTTPS scheme. Vercel terminates TLS before forwarding to the container.
 if (builder.Configuration.GetValue<bool>("Hosting:LocalProxy") ||
