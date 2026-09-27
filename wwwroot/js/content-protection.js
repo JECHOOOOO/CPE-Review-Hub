@@ -7,6 +7,14 @@
         if (message) message.textContent = text;
         overlay.hidden = false;
     };
+    // Discourage casual copying/saving on protected lesson, activity, and
+    // assessment pages. This is only a browser-side deterrent; it is not DRM.
+    document.addEventListener("contextmenu", (event) => event.preventDefault());
+    document.addEventListener("dragstart", (event) => {
+        if (event.target instanceof Element && event.target.closest("img, .protected-learning-content")) {
+            event.preventDefault();
+        }
+    });
     const reveal = () => {
         if (!document.hidden) overlay.hidden = true;
     };
