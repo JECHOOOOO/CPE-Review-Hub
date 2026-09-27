@@ -1593,9 +1593,7 @@ th { color:rgba(255,255,255,.45) }
 .course-level-section>.subject-grid+.semester-heading { margin-top:30px }
 .course-coming-soon { color:rgba(255,255,255,.58);font-size:.84rem;font-weight:650 }
 
-/* Student learning content protection is a deterrent, not an OS screenshot lock. */
-.student-watermark { position:fixed;inset:-12%;z-index:20;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));grid-auto-rows:180px;align-items:center;justify-items:center;overflow:hidden;transform:rotate(-18deg);pointer-events:none;user-select:none;opacity:.075 }
-.student-watermark span { max-width:95%;color:#f4ffff;font-size:clamp(.72rem,1.1vw,1rem);font-weight:700;letter-spacing:.08em;white-space:nowrap }
+/* Learning-content protection is a deterrent, not an OS screenshot lock. */
 .privacy-overlay[hidden] { display:none!important }
 .privacy-overlay { position:fixed;inset:0;z-index:10000;display:grid;place-items:center;background:#000;color:#fff;text-align:center }
 .privacy-overlay-card { display:grid;gap:12px;padding:30px }
@@ -1611,5 +1609,4 @@ th { color:rgba(255,255,255,.45) }
     .about-page .public-main { padding:55px 20px 35px }
     .developers-section .section-heading { align-items:flex-start;flex-direction:column;gap:0 }
     .footer-links { width:100% }
-    .student-watermark { grid-template-columns:repeat(2,minmax(0,1fr));grid-auto-rows:145px }
 }
