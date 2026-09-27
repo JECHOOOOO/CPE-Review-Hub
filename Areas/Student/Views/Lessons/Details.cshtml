@@ -1,5 +1,5 @@
 @model StudentLessonDetailsViewModel
-@{ ViewData["Title"] = Model.Title; }
+@{ ViewData["Title"] = Model.Title; ViewData["ProtectedContent"] = true; }
 <nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-area="Student" asp-controller="Subjects" asp-action="Index">Subjects</a><span>/</span><a asp-area="Student" asp-controller="Subjects" asp-action="Details" asp-route-id="@Model.SubjectId">@Model.SubjectCode</a><span>/</span><span>@Model.Title</span></nav>
 <span class="eyebrow">@Model.SubjectCode · LESSON</span><h1>@Model.Title</h1><p class="lead">@Model.Summary</p>
 @if (Model.Materials.Count == 0) { <section class="panel empty-state"><h2>No published materials yet</h2><p>The lesson outline is available, but its review material is still being prepared.</p></section> }

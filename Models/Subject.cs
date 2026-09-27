@@ -9,6 +9,8 @@ public class Subject
     [MaxLength(20)] public string Code { get; set; } = "";
     [MaxLength(160)] public string Title { get; set; } = "";
     [MaxLength(1000)] public string Description { get; set; } = "";
+    public decimal? Units { get; set; }
+    public int? Semester { get; set; }
     public bool IsPublished { get; set; }
     public DateTime CreatedAtUtc { get; set; } = DateTime.UtcNow;
     public DateTime UpdatedAtUtc { get; set; } = DateTime.UtcNow;

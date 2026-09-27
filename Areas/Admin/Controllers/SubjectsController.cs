@@ -14,8 +14,9 @@ public class SubjectsController(ApplicationDbContext db) : Controller
     [HttpGet(""), HttpGet("/admin/courses")]
     public async Task<IActionResult> Index() => View(await db.Subjects.AsNoTracking()
         .OrderBy(x => x.AcademicLevelId).ThenBy(x => x.Code)
-        .Select(x => new SubjectAdminRow(x.Id, x.Code, x.Title, x.AcademicLevel.Name,
-            x.Lessons.Count, x.IsPublished)).ToListAsync());
+        .Select(x => new SubjectAdminRow(x.Id, x.Code, x.Title,
+            $"{x.AcademicLevel.Name} — {x.AcademicLevelId} Level",
+            x.Units, x.Semester, x.Lessons.Count, x.IsPublished)).ToListAsync());
 
     [HttpGet("create")]
     public async Task<IActionResult> Create() => View("Edit", await PopulateAsync(new SubjectFormViewModel()));
@@ -29,6 +30,7 @@ public class SubjectsController(ApplicationDbContext db) : Controller
         {
             Id = subject.Id, Code = subject.Code, Title = subject.Title,
             Description = subject.Description, AcademicLevelId = subject.AcademicLevelId,
+            Units = subject.Units, Semester = subject.Semester,
             IsPublished = subject.IsPublished
         }));
     }
@@ -58,6 +60,8 @@ public class SubjectsController(ApplicationDbContext db) : Controller
         subject.Title = model.Title.Trim();
         subject.Description = model.Description.Trim();
         subject.AcademicLevelId = model.AcademicLevelId;
+        subject.Units = model.Units;
+        subject.Semester = model.Semester;
         subject.IsPublished = model.IsPublished;
         subject.UpdatedAtUtc = DateTime.UtcNow;
         await db.SaveChangesAsync();
@@ -87,7 +91,7 @@ public class SubjectsController(ApplicationDbContext db) : Controller
     private async Task<SubjectFormViewModel> PopulateAsync(SubjectFormViewModel model)
     {
         model.Levels = await db.AcademicLevels.AsNoTracking().OrderBy(x => x.Id)
-            .Select(x => new SelectionOption(x.Id, x.Name)).ToListAsync();
+            .Select(x => new SelectionOption(x.Id, $"{x.Name} — {x.Id} Level")).ToListAsync();
         return model;
     }
 }

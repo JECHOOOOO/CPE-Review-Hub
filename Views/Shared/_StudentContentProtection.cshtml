@@ -1,0 +1,5 @@
+@{ var watermarkName = User.Identity?.Name ?? "COLMS Student"; var watermarkTime = DateTimeOffset.UtcNow.ToLocalTime().ToString("yyyy-MM-dd HH:mm"); }
+<div class="student-watermark" aria-hidden="true">@for (var mark = 0; mark < 18; mark++) { <span>COLMS · @watermarkName · @watermarkTime</span> }</div>
+<div class="privacy-overlay" data-privacy-overlay hidden role="status" aria-live="assertive">
+    <div class="privacy-overlay-card"><strong>COLMS</strong><span>Protected Learning Content</span><small data-privacy-message>Return to COLMS to continue.</small></div>
+</div>

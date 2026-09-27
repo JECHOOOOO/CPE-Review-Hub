@@ -8,7 +8,13 @@ else {
         var courses = Model.Subjects.Where(x => x.Level == level.Label).ToList();
         if (courses.Count == 0) { continue; }
         <section class="course-level-section"><div class="section-heading"><h2>@level.Label</h2><span class="muted small">@courses.Count course(s)</span></div>
-            <div class="subject-grid">@foreach (var subject in courses) { <article class="subject-card"><div><span class="eyebrow">@subject.Level</span><h2>@subject.Code</h2><h3>@subject.Title</h3><p>@subject.Description</p></div><div class="card-footer"><span>@subject.LessonCount lesson(s)</span><a class="button secondary" asp-action="Details" asp-route-id="@subject.Id">Open course →</a></div></article> }</div>
+            @foreach (var semester in courses.Where(x => x.Semester.HasValue).GroupBy(x => x.Semester).OrderBy(x => x.Key)) {
+                <h3 class="semester-heading">@(semester.Key == 1 ? "1st Semester" : "2nd Semester")</h3><div class="subject-grid">
+                @foreach (var subject in semester) { <article class="subject-card"><div><span class="eyebrow">@subject.Level@(subject.Units.HasValue ? $" · {subject.Units.Value:0.0} Units" : "")</span><h2>@subject.Code</h2><h3>@subject.Title</h3><p>@subject.Description</p></div><div class="card-footer"><span>@subject.LessonCount lesson(s)</span>@if (subject.LessonCount > 0) { <a class="button secondary" asp-action="Details" asp-route-id="@subject.Id">Open course →</a> } else { <span class="course-coming-soon" role="status">Content in preparation</span> }</div></article> }
+                </div>
+            }
+            @{ var coursesWithoutSemester = courses.Where(x => !x.Semester.HasValue).ToList(); }
+            @if (coursesWithoutSemester.Count > 0) { <div class="subject-grid">@foreach (var subject in coursesWithoutSemester) { <article class="subject-card"><div><span class="eyebrow">@subject.Level</span><h2>@subject.Code</h2><h3>@subject.Title</h3><p>@subject.Description</p></div><div class="card-footer"><span>@subject.LessonCount lesson(s)</span>@if (subject.LessonCount > 0) { <a class="button secondary" asp-action="Details" asp-route-id="@subject.Id">Open course →</a> } else { <span class="course-coming-soon" role="status">Content in preparation</span> }</div></article> }</div> }
         </section>
     }
 }

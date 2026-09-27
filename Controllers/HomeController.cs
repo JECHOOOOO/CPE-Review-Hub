@@ -16,6 +16,9 @@ public class HomeController : Controller
         return View();
     }
 
+    [HttpGet("/about")]
+    public IActionResult About() => View();
+
     public IActionResult AccessDenied()
     {
         Response.StatusCode = StatusCodes.Status403Forbidden;

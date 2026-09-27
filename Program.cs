@@ -28,6 +28,7 @@ builder.Services.AddPortalSecurity(builder.Configuration, builder.Environment.Is
 builder.Services.AddScoped<StudentProgressService>();
 builder.Services.AddScoped<ActivityAttachmentService>();
 builder.Services.AddScoped<AssessmentScoringService>();
+builder.Services.AddScoped<PortalPasswordResetService>();
 builder.Services.Configure<EmailOptions>(builder.Configuration.GetSection("Email"));
 builder.Services.AddScoped<IEmailDeliveryService, EmailDeliveryService>();
 builder.Services.AddRateLimiter(options =>

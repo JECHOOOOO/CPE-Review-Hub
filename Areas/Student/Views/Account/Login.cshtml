@@ -7,9 +7,11 @@
             <div asp-validation-summary="All" class="validation" role="alert"></div>
             <input asp-for="ReturnUrl" type="hidden" />
             <label asp-for="Email"></label><input asp-for="Email" autocomplete="username" placeholder="you@university.edu" required />
-            <label asp-for="Password"></label><input asp-for="Password" autocomplete="current-password" required />
+            <label asp-for="Password"></label><div class="password-field"><input asp-for="Password" autocomplete="current-password" required /><button type="button" class="password-toggle" data-password-toggle="Password" aria-label="Show password" aria-pressed="false"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12Z"/><circle cx="12" cy="12" r="3"/></svg></button></div>
+            <p class="forgot-link"><a href="/student/forgot-password">Forgot Password?</a></p>
             <button type="submit" class="button full">Sign in to student portal →</button>
         </form>
         <p class="form-foot">New here? <a asp-area="Student" asp-controller="Account" asp-action="Register">Create a student account</a></p>
+        <p class="form-foot about-form-link"><a href="/about">About COLMS</a></p>
     </section>
 </div>

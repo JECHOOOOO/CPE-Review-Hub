@@ -37,6 +37,11 @@ namespace CPE_Review_Hub.Data.Migrations
                     b.HasData(
                         new
                         {
+                            Id = 100,
+                            Name = "Freshman"
+                        },
+                        new
+                        {
                             Id = 200,
                             Name = "Sophomore"
                         },
@@ -590,10 +595,17 @@ namespace CPE_Review_Hub.Data.Migrations
                     b.Property<bool>("IsPublished")
                         .HasColumnType("tinyint(1)");
 
+                    b.Property<int?>("Semester")
+                        .HasColumnType("int");
+
                     b.Property<string>("Title")
                         .IsRequired()
                         .HasMaxLength(160)
                         .HasColumnType("varchar(160)");
+
+                    b.Property<decimal?>("Units")
+                        .HasPrecision(4, 1)
+                        .HasColumnType("decimal(4,1)");
 
                     b.Property<DateTime>("UpdatedAtUtc")
                         .HasColumnType("datetime(6)");

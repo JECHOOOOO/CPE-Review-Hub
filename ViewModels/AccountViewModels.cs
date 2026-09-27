@@ -20,6 +20,21 @@ public class RegisterViewModel
     public string ConfirmPassword { get; set; } = "";
 }
 
+public class PasswordResetRequestViewModel
+{
+    [Required, EmailAddress, StringLength(256)] public string Email { get; set; } = "";
+}
+
+public class PasswordResetViewModel
+{
+    [Required, EmailAddress, StringLength(256)] public string Email { get; set; } = "";
+    [Required] public string Token { get; set; } = "";
+    [Required, StringLength(128, MinimumLength = 8), DataType(DataType.Password)]
+    [Display(Name = "New password")] public string Password { get; set; } = "";
+    [Required, Compare(nameof(Password)), DataType(DataType.Password)]
+    [Display(Name = "Confirm new password")] public string ConfirmPassword { get; set; } = "";
+}
+
 public class ProfileViewModel
 {
     [Required, StringLength(120), Display(Name = "Full name")] public string FullName { get; set; } = "";

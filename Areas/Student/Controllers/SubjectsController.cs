@@ -20,10 +20,11 @@ public class SubjectsController(ApplicationDbContext db, StudentProgressService 
         var query = db.Subjects.AsNoTracking().Where(x => x.IsPublished);
         if (level.HasValue) query = query.Where(x => x.AcademicLevelId == level);
         var levels = await db.AcademicLevels.AsNoTracking().OrderBy(x => x.Id)
-            .Select(x => new SelectionOption(x.Id, x.Name)).ToListAsync();
+            .Select(x => new SelectionOption(x.Id, $"{x.Name} — {x.Id} Level")).ToListAsync();
         var subjects = await query.OrderBy(x => x.AcademicLevelId).ThenBy(x => x.Code)
             .Select(x => new StudentSubjectRow(x.Id, x.Code, x.Title, x.Description,
-                x.AcademicLevel.Name, x.Lessons.Count(l => l.IsPublished))).ToListAsync();
+                $"{x.AcademicLevel.Name} — {x.AcademicLevelId} Level", x.Lessons.Count(l => l.IsPublished),
+                x.Units, x.Semester)).ToListAsync();
         return View(new StudentSubjectIndexViewModel(level, levels, subjects));
     }
 
@@ -58,7 +59,7 @@ public class SubjectsController(ApplicationDbContext db, StudentProgressService 
             }).ToList();
         var finalAttempts = exam is null ? [] : submittedAttempts.Where(x => x.AssessmentId == exam.Id).ToList();
         return View(new StudentSubjectDetailsViewModel(subject.Id, subject.Code, subject.Title,
-            subject.Description, subject.AcademicLevel.Name, rows,
+            subject.Description, $"{subject.AcademicLevel.Name} — {subject.AcademicLevelId} Level", rows,
             exam is null ? null : new StudentAssessmentStatusViewModel(exam.Id, exam.Title,
                 exam.RequiredQuestionCount, exam.AssessmentQuestions.Count, exam.IsPublished,
                 progressState.FinalExamUnlocked,

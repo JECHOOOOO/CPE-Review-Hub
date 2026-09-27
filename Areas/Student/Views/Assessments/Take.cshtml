@@ -1,5 +1,5 @@
 @model AssessmentTakeViewModel
-@{ ViewData["Title"] = Model.Title; }
+@{ ViewData["Title"] = Model.Title; ViewData["ProtectedContent"] = true; }
 
 <nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-area="Student" asp-controller="Subjects" asp-action="Index">Subjects</a><span>/</span><span>@Model.CourseCode</span><span>/</span><span>@Model.AssessmentLabel</span></nav>
 

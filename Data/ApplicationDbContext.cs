@@ -46,12 +46,14 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         {
             entity.HasKey(x => x.Id);
             entity.HasData(
+                new AcademicLevel { Id = 100, Name = "Freshman" },
                 new AcademicLevel { Id = 200, Name = "Sophomore" },
                 new AcademicLevel { Id = 300, Name = "Junior" },
                 new AcademicLevel { Id = 400, Name = "Senior" });
         });
         builder.Entity<Subject>(entity =>
         {
+            entity.Property(x => x.Units).HasPrecision(4, 1);
             entity.HasIndex(x => x.Code).IsUnique();
             entity.HasIndex(x => new { x.AcademicLevelId, x.IsPublished });
             entity.HasOne(x => x.AcademicLevel).WithMany(x => x.Subjects)

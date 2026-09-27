@@ -9,6 +9,8 @@ public class SubjectFormViewModel
     [Required, StringLength(20), Display(Name = "Subject code")] public string Code { get; set; } = "";
     [Required, StringLength(160)] public string Title { get; set; } = "";
     [StringLength(1000)] public string Description { get; set; } = "";
+    [Range(typeof(decimal), "0.5", "50"), Display(Name = "Units")] public decimal? Units { get; set; }
+    [Range(1, 2), Display(Name = "Semester")] public int? Semester { get; set; }
     [Range(1, int.MaxValue), Display(Name = "Academic year")] public int AcademicLevelId { get; set; }
     [Display(Name = "Visible to students")] public bool IsPublished { get; set; }
     public IReadOnlyList<SelectionOption> Levels { get; set; } = [];
@@ -60,7 +62,8 @@ public class LessonImageFormViewModel
 }
 
 public record SelectionOption(int Id, string Label);
-public record SubjectAdminRow(int Id, string Code, string Title, string Level, int LessonCount, bool IsPublished);
+public record SubjectAdminRow(int Id, string Code, string Title, string Level, decimal? Units, int? Semester,
+    int LessonCount, bool IsPublished);
 public record LessonAdminRow(int Id, string Title, string SubjectCode, int SortOrder, int MaterialCount, bool IsPublished);
 public record MaterialAdminRow(int Id, string Title, string LessonTitle, string SubjectCode, int SortOrder, bool IsPublished);
 public record LessonImageAdminRow(int Id, string ImagePath, string AltText, string LessonTitle,
@@ -68,7 +71,8 @@ public record LessonImageAdminRow(int Id, string ImagePath, string AltText, stri
 public record AdminDashboardViewModel(string FullName, string Email, int StudentCount, int SubjectCount, int LessonCount, int MaterialCount);
 public record StudentLevelCard(int Id, string Name, int SubjectCount);
 public record StudentDashboardViewModel(string FullName, string Email, IReadOnlyList<StudentLevelCard> Levels);
-public record StudentSubjectRow(int Id, string Code, string Title, string Description, string Level, int LessonCount);
+public record StudentSubjectRow(int Id, string Code, string Title, string Description, string Level, int LessonCount,
+    decimal? Units, int? Semester);
 public record StudentSubjectIndexViewModel(int? SelectedLevel, IReadOnlyList<SelectionOption> Levels, IReadOnlyList<StudentSubjectRow> Subjects);
 public record StudentLessonRow(int Id, string Title, string Summary, int MaterialCount,
     bool ActivityCompleted, decimal? BestQuizPercentage, bool IsUnlocked, bool IsCompleted,

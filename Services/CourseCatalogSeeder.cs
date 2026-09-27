@@ -53,8 +53,8 @@ public static class CourseCatalogSeeder
     public static async Task<CatalogSeedResult> SeedAsync(ApplicationDbContext db)
     {
         var validLevels = await db.AcademicLevels.Select(x => x.Id).ToHashSetAsync();
-        if (!new[] { 200, 300, 400 }.All(validLevels.Contains))
-            throw new InvalidOperationException("Academic levels 200, 300, and 400 must exist before seeding courses.");
+        if (!new[] { 100, 200, 300, 400 }.All(validLevels.Contains))
+            throw new InvalidOperationException("Academic levels 100, 200, 300, and 400 must exist before seeding courses.");
 
         var existing = await db.Subjects
             .AsSplitQuery()

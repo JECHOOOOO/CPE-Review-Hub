@@ -1,5 +1,6 @@
 @{
     var controller = ViewContext.RouteData.Values["controller"]?.ToString();
+    var protectedContent = ViewData["ProtectedContent"] is true;
 }
 <!doctype html>
 <html lang="en">
@@ -9,7 +10,8 @@
     <link rel="icon" type="image/png" href="~/images/brand/colms-emblem.png" />
     <link rel="stylesheet" href="~/css/hub.css" asp-append-version="true" />
 </head>
-<body class="portal-body student-portal">
+<body class="portal-body student-portal @(protectedContent ? "protected-learning-page" : "")">
+    @if (protectedContent) { <partial name="_StudentContentProtection" /> }
     <a class="skip-link" href="#main">Skip to content</a>
     <aside class="sidebar liquid-glass">
         <a class="brand" asp-area="Student" asp-controller="Dashboard" asp-action="Index" aria-label="COLMS Student portal"><img class="brand-logo portal-brand-logo" src="~/images/brand/colms-emblem.png" alt="" /><span>COLMS<small>CentOs Learning Management System</small><small class="portal-label">STUDENT PORTAL</small></span></a>
@@ -19,6 +21,7 @@
             <a class="nav-item @(controller is "Subjects" or "Lessons" ? "active" : "")" asp-area="Student" asp-controller="Subjects" asp-action="Index">Subjects &amp; lessons</a>
             <a class="nav-item @(controller is "Assessments" or "Progress" ? "active" : "")" asp-area="Student" asp-controller="Progress" asp-action="Index">Quizzes, exams &amp; progress</a>
             <a class="nav-item @(controller == "Profile" ? "active" : "")" asp-area="Student" asp-controller="Profile" asp-action="Index">Profile</a>
+            <a class="nav-item @(controller == "Home" ? "active" : "")" href="/about">About COLMS</a>
         </nav>
         <div class="sidebar-bottom"><p>Signed in as<br /><strong>@User.Identity?.Name</strong></p>
             <form asp-area="Student" asp-controller="Account" asp-action="Logout" method="post"><button class="button secondary full" type="submit">Log out</button></form>
@@ -26,13 +29,14 @@
     </aside>
     <div class="portal-content">
         <header class="portal-header liquid-glass"><span>Student workspace</span><span class="badge">Student account</span></header>
-        <main id="main" class="dashboard-main">
+        <main id="main" class="dashboard-main @(protectedContent ? "protected-learning-content" : "")">
             @if (TempData["Success"] is string success) { <div class="notice success" role="status">@success</div> }
             @if (TempData["Error"] is string error) { <div class="notice" role="alert">@error</div> }
             @RenderBody()
         </main>
         <footer class="site-footer">COLMS: CentOs Learning Management System · Learn with purpose.</footer>
     </div>
+    @if (protectedContent) { <script src="~/js/content-protection.js" asp-append-version="true"></script> }
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

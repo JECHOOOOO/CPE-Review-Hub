@@ -32,6 +32,53 @@ public class AccountController : Controller
     [AllowAnonymous, HttpGet("/student/register"), HttpGet("/Student/Account/Register")]
     public IActionResult Register() => View(new RegisterViewModel());
 
+    [AllowAnonymous, HttpGet("/student/forgot-password")]
+    public IActionResult ForgotPassword()
+    {
+        ViewData["PortalName"] = "student";
+        ViewData["FormAction"] = "/student/forgot-password";
+        return View("~/Views/Shared/ForgotPassword.cshtml", new PasswordResetRequestViewModel());
+    }
+
+    [AllowAnonymous, HttpPost("/student/forgot-password"), EnableRateLimiting("account")]
+    public async Task<IActionResult> ForgotPassword(PasswordResetRequestViewModel model,
+        [FromServices] PortalPasswordResetService reset, CancellationToken cancellationToken)
+    {
+        ViewData["PortalName"] = "student";
+        ViewData["FormAction"] = "/student/forgot-password";
+        if (!ModelState.IsValid) return View("~/Views/Shared/ForgotPassword.cshtml", model);
+        await reset.SendIfEligibleAsync(model.Email, PortalSecurity.Student,
+            $"{Request.Scheme}://{Request.Host.Value}", cancellationToken);
+        TempData["PasswordResetNotice"] = "If an account exists for this email address, password reset instructions have been sent.";
+        return RedirectToAction(nameof(ForgotPassword));
+    }
+
+    [AllowAnonymous, HttpGet("/student/reset-password")]
+    public IActionResult ResetPassword(string? email, string? token)
+    {
+        Response.Headers["Referrer-Policy"] = "no-referrer";
+        ViewData["PortalName"] = "student";
+        ViewData["FormAction"] = "/student/reset-password";
+        return View("~/Views/Shared/ResetPassword.cshtml", new PasswordResetViewModel { Email = email ?? "", Token = token ?? "" });
+    }
+
+    [AllowAnonymous, HttpPost("/student/reset-password"), EnableRateLimiting("account")]
+    public async Task<IActionResult> ResetPassword(PasswordResetViewModel model,
+        [FromServices] PortalPasswordResetService reset)
+    {
+        Response.Headers["Referrer-Policy"] = "no-referrer";
+        ViewData["PortalName"] = "student";
+        ViewData["FormAction"] = "/student/reset-password";
+        if (!ModelState.IsValid) return View("~/Views/Shared/ResetPassword.cshtml", model);
+        if (!await reset.ResetAsync(model.Email, model.Token, PortalSecurity.Student, model.Password))
+        {
+            ModelState.AddModelError("", "This password reset link is invalid or expired. Request a new one to continue.");
+            return View("~/Views/Shared/ResetPassword.cshtml", model);
+        }
+        TempData["Success"] = "Your password was changed. Sign in with your new password.";
+        return Redirect("/student.html");
+    }
+
     [AllowAnonymous, HttpPost("/student/register"), HttpPost("/Student/Account/Register"), EnableRateLimiting("account")]
     public async Task<IActionResult> Register(RegisterViewModel model, [FromServices] PortalAccountService accounts,
         [FromServices] IEmailDeliveryService email, [FromServices] IConfiguration configuration,

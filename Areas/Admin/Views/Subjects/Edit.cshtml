@@ -5,6 +5,7 @@
     <div asp-validation-summary="All" class="validation" role="alert"></div><input asp-for="Id" type="hidden" />
     <div class="form-row"><div><label asp-for="Code"></label><input asp-for="Code" placeholder="CPE 211" required /></div><div><label asp-for="AcademicLevelId"></label><select asp-for="AcademicLevelId" required><option value="">Select level</option>@foreach (var option in Model.Levels) { <option value="@option.Id">@option.Label</option> }</select></div></div>
     <label asp-for="Title"></label><input asp-for="Title" required />
+    <div class="form-row"><div><label asp-for="Units"></label><input asp-for="Units" type="number" min="0.5" max="50" step="0.5" /></div><div><label asp-for="Semester"></label><select asp-for="Semester"><option value="">Not specified</option><option value="1">1st Semester</option><option value="2">2nd Semester</option></select></div></div>
     <label asp-for="Description"></label><textarea asp-for="Description" rows="5"></textarea>
     <label class="check-row"><input asp-for="IsPublished" /> <span>Publish this subject to students</span></label>
     <div class="form-actions"><button class="button" type="submit">Save subject</button><a class="button secondary" asp-action="Index">Cancel</a></div>
