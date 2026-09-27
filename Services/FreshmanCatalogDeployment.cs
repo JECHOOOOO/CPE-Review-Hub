@@ -13,7 +13,6 @@ namespace CPE_Review_Hub.Services;
 /// </summary>
 public static class FreshmanCatalogDeployment
 {
-    private const string MigrationId = "20260927123952_FreshmanLevelAndCourseMetadata";
     private const string LockName = "colms_freshman_catalog_20260927";
 
     public static async Task ApplyAsync(WebApplication app)
@@ -51,64 +50,43 @@ public static class FreshmanCatalogDeployment
                 if (!columns.Contains("Id") || !columns.Contains("Code") || !columns.Contains("AcademicLevelId"))
                     throw new InvalidOperationException("Existing Subjects schema requires manual review.");
 
-                if (!columns.Contains("Semester"))
-                {
-                    stage = "add-semester";
-                    await ExecuteAsync(connection, "ALTER TABLE `Subjects` ADD COLUMN `Semester` int NULL");
-                }
-                if (!columns.Contains("Units"))
-                {
-                    stage = "add-units";
-                    await ExecuteAsync(connection, "ALTER TABLE `Subjects` ADD COLUMN `Units` decimal(4,1) NULL");
-                }
-
+                // The runtime account has DML permission but MySQL error 1142
+                // confirms it cannot ALTER Subjects. Do not repeatedly attempt
+                // DDL on every cold start; preserve the pending EF migration for
+                // a separate privileged maintenance operation.
                 stage = "freshman-level";
                 await ExecuteAsync(connection,
                     "INSERT INTO `AcademicLevels` (`Id`, `Name`) VALUES (100, 'Freshman') " +
                     "ON DUPLICATE KEY UPDATE `Name` = 'Freshman'");
 
-                var courses = new (string Code, string Title, decimal Units, int Semester)[]
+                var courses = new (string Code, string Title)[]
                 {
-                    ("CPE 101", "Introduction to Computing", 3.0m, 1),
-                    ("CPE 102", "Computer Programming 1", 3.0m, 1),
-                    ("CPE 103", "Computer Programming 2", 3.0m, 2),
-                    ("CPE 104", "Discrete Mathematics", 3.0m, 2)
+                    ("CPE 101", "Introduction to Computing"),
+                    ("CPE 102", "Computer Programming 1"),
+                    ("CPE 103", "Computer Programming 2"),
+                    ("CPE 104", "Discrete Mathematics")
                 };
                 foreach (var course in courses)
                 {
                     stage = "course-" + course.Code;
                     await using var insert = connection.CreateCommand();
                     insert.CommandText = "INSERT INTO `Subjects` " +
-                        "(`AcademicLevelId`, `Code`, `Title`, `Description`, `Units`, `Semester`, `IsPublished`, `CreatedAtUtc`, `UpdatedAtUtc`) " +
-                        "SELECT 100, @code, @title, '', @units, @semester, 1, UTC_TIMESTAMP(6), UTC_TIMESTAMP(6) " +
+                        "(`AcademicLevelId`, `Code`, `Title`, `Description`, `IsPublished`, `CreatedAtUtc`, `UpdatedAtUtc`) " +
+                        "SELECT 100, @code, @title, '', 1, UTC_TIMESTAMP(6), UTC_TIMESTAMP(6) " +
                         "FROM DUAL WHERE NOT EXISTS (SELECT 1 FROM `Subjects` WHERE `Code` = @code)";
                     AddParameter(insert, "@code", DbType.String, course.Code);
                     AddParameter(insert, "@title", DbType.String, course.Title);
-                    AddParameter(insert, "@units", DbType.Decimal, course.Units);
-                    AddParameter(insert, "@semester", DbType.Int32, course.Semester);
                     await insert.ExecuteNonQueryAsync();
 
                     await using var update = connection.CreateCommand();
                     update.CommandText = "UPDATE `Subjects` SET `AcademicLevelId` = 100, `Title` = @title, " +
-                        "`Units` = @units, `Semester` = @semester WHERE `Code` = @code";
+                        "`UpdatedAtUtc` = UTC_TIMESTAMP(6) WHERE `Code` = @code " +
+                        "AND (`AcademicLevelId` <> 100 OR `Title` <> @title)";
                     AddParameter(update, "@code", DbType.String, course.Code);
                     AddParameter(update, "@title", DbType.String, course.Title);
-                    AddParameter(update, "@units", DbType.Decimal, course.Units);
-                    AddParameter(update, "@semester", DbType.Int32, course.Semester);
                     await update.ExecuteNonQueryAsync();
                 }
-
-                await using (var history = connection.CreateCommand())
-                {
-                    stage = "migration-history";
-                    history.CommandText = "INSERT INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`) " +
-                        "SELECT @migration, @version WHERE NOT EXISTS " +
-                        "(SELECT 1 FROM `__EFMigrationsHistory` WHERE `MigrationId` = @migration)";
-                    AddParameter(history, "@migration", DbType.String, MigrationId);
-                    AddParameter(history, "@version", DbType.String, "10.0.12");
-                    await history.ExecuteNonQueryAsync();
-                }
-                app.Logger.LogInformation("Freshman catalog schema and four course records are up to date.");
+                app.Logger.LogInformation("Freshman catalog records are up to date; Subjects metadata migration remains pending.");
             }
             finally
             {

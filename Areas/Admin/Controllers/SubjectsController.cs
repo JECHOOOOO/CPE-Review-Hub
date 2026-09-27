@@ -1,6 +1,7 @@
 using CPE_Review_Hub.Data;
 using CPE_Review_Hub.Models;
 using CPE_Review_Hub.Security;
+using CPE_Review_Hub.Services;
 using CPE_Review_Hub.ViewModels;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -12,11 +13,20 @@ namespace CPE_Review_Hub.Areas.Admin.Controllers;
 public class SubjectsController(ApplicationDbContext db) : Controller
 {
     [HttpGet(""), HttpGet("/admin/courses")]
-    public async Task<IActionResult> Index() => View(await db.Subjects.AsNoTracking()
+    public async Task<IActionResult> Index()
+    {
+        var data = await db.Subjects.AsNoTracking()
         .OrderBy(x => x.AcademicLevelId).ThenBy(x => x.Code)
-        .Select(x => new SubjectAdminRow(x.Id, x.Code, x.Title,
-            $"{x.AcademicLevel.Name} — {x.AcademicLevelId} Level",
-            x.Units, x.Semester, x.Lessons.Count, x.IsPublished)).ToListAsync());
+        .Select(x => new { x.Id, x.Code, x.Title, x.AcademicLevelId, LevelName = x.AcademicLevel.Name,
+            LessonCount = x.Lessons.Count, x.IsPublished }).ToListAsync();
+        return View(data.Select(x =>
+        {
+            var metadata = FreshmanCourseMetadata.ForCode(x.Code);
+            return new SubjectAdminRow(x.Id, x.Code, x.Title,
+                $"{x.LevelName} — {x.AcademicLevelId} Level",
+                metadata.Units, metadata.Semester, x.LessonCount, x.IsPublished);
+        }).ToList());
+    }
 
     [HttpGet("create")]
     public async Task<IActionResult> Create() => View("Edit", await PopulateAsync(new SubjectFormViewModel()));
@@ -30,7 +40,8 @@ public class SubjectsController(ApplicationDbContext db) : Controller
         {
             Id = subject.Id, Code = subject.Code, Title = subject.Title,
             Description = subject.Description, AcademicLevelId = subject.AcademicLevelId,
-            Units = subject.Units, Semester = subject.Semester,
+            Units = FreshmanCourseMetadata.ForCode(subject.Code).Units,
+            Semester = FreshmanCourseMetadata.ForCode(subject.Code).Semester,
             IsPublished = subject.IsPublished
         }));
     }

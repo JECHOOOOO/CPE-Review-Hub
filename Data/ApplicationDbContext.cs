@@ -53,7 +53,18 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
         });
         builder.Entity<Subject>(entity =>
         {
-            entity.Property(x => x.Units).HasPrecision(4, 1);
+            // The production runtime principal cannot ALTER the existing Aiven
+            // Subjects table. Keep the deployed model compatible until the
+            // reviewed migration is run with a schema administrator account.
+            var environmentName = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT")
+                ?? Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "Production";
+            if (!string.Equals(environmentName, "Development", StringComparison.OrdinalIgnoreCase))
+            {
+                entity.Ignore(x => x.Units);
+                entity.Ignore(x => x.Semester);
+            }
+            else
+                entity.Property(x => x.Units).HasPrecision(4, 1);
             entity.HasIndex(x => x.Code).IsUnique();
             entity.HasIndex(x => new { x.AcademicLevelId, x.IsPublished });
             entity.HasOne(x => x.AcademicLevel).WithMany(x => x.Subjects)

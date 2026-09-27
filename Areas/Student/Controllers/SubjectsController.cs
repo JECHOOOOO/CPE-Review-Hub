@@ -21,10 +21,17 @@ public class SubjectsController(ApplicationDbContext db, StudentProgressService 
         if (level.HasValue) query = query.Where(x => x.AcademicLevelId == level);
         var levels = await db.AcademicLevels.AsNoTracking().OrderBy(x => x.Id)
             .Select(x => new SelectionOption(x.Id, $"{x.Name} — {x.Id} Level")).ToListAsync();
-        var subjects = await query.OrderBy(x => x.AcademicLevelId).ThenBy(x => x.Code)
-            .Select(x => new StudentSubjectRow(x.Id, x.Code, x.Title, x.Description,
-                $"{x.AcademicLevel.Name} — {x.AcademicLevelId} Level", x.Lessons.Count(l => l.IsPublished),
-                x.Units, x.Semester)).ToListAsync();
+        var subjectData = await query.OrderBy(x => x.AcademicLevelId).ThenBy(x => x.Code)
+            .Select(x => new { x.Id, x.Code, x.Title, x.Description, x.AcademicLevelId,
+                LevelName = x.AcademicLevel.Name, LessonCount = x.Lessons.Count(l => l.IsPublished) })
+            .ToListAsync();
+        var subjects = subjectData.Select(x =>
+        {
+            var metadata = FreshmanCourseMetadata.ForCode(x.Code);
+            return new StudentSubjectRow(x.Id, x.Code, x.Title, x.Description,
+                $"{x.LevelName} — {x.AcademicLevelId} Level", x.LessonCount,
+                metadata.Units, metadata.Semester);
+        }).ToList();
         return View(new StudentSubjectIndexViewModel(level, levels, subjects));
     }
 
