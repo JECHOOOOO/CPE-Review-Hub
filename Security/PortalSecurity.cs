@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace CPE_Review_Hub.Security;
 
@@ -74,8 +75,15 @@ public static class PortalSecurity
         options.SlidingExpiration = false;
         options.Events.OnValidatePrincipal = async context =>
         {
-            var users = context.HttpContext.RequestServices.GetRequiredService<UserManager<ApplicationUser>>();
             var id = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
+            var stamp = context.Principal?.FindFirstValue(StampClaim);
+            var cache = context.HttpContext.RequestServices.GetRequiredService<IMemoryCache>();
+            var cacheKey = $"portal-principal:{portal}:{id}:{stamp}";
+            if (id is not null && stamp is not null &&
+                cache.TryGetValue(cacheKey, out bool isRecentlyValid) && isRecentlyValid)
+                return;
+
+            var users = context.HttpContext.RequestServices.GetRequiredService<UserManager<ApplicationUser>>();
             var user = id is null ? null : await users.FindByIdAsync(id);
             // Revoked roles, disabled accounts, password changes and lockouts invalidate old cookies.
             if (user is null || !user.IsActive || user.AccountType != portal ||
@@ -84,6 +92,8 @@ public static class PortalSecurity
                 context.RejectPrincipal();
                 await context.HttpContext.SignOutAsync(portal);
             }
+            else
+                cache.Set(cacheKey, true, TimeSpan.FromMinutes(1));
         };
     }
 }

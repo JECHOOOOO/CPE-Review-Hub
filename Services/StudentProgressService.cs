@@ -85,14 +85,21 @@ public sealed class StudentProgressService(ApplicationDbContext db)
             .Select(x => new { x.Id, x.SubjectId, x.SortOrder }).SingleOrDefaultAsync();
         if (target is null) return false;
 
+        return await IsLessonUnlockedAsync(target.Id, target.SubjectId, target.SortOrder, userId);
+    }
+
+    public async Task<bool> IsLessonUnlockedAsync(
+        int lessonId, int subjectId, int sortOrder, string userId)
+    {
+
         // Opening one lesson used to load the entire course, every submission,
         // and every quiz attempt through four additional Aiven round trips.
         // A lesson is unlocked exactly when no earlier published lesson lacks a
         // passed automatically-scored quiz, so let MySQL answer that directly.
         var hasIncompletePreviousLesson = await db.Lessons.AsNoTracking()
-            .Where(x => x.SubjectId == target.SubjectId && x.IsPublished &&
-                (x.SortOrder < target.SortOrder ||
-                 (x.SortOrder == target.SortOrder && x.Id < target.Id)))
+            .Where(x => x.SubjectId == subjectId && x.IsPublished &&
+                (x.SortOrder < sortOrder ||
+                 (x.SortOrder == sortOrder && x.Id < lessonId)))
             .AnyAsync(previous => !db.AssessmentAttempts.Any(attempt =>
                 attempt.UserId == userId && attempt.SubmittedAtUtc != null && attempt.IsPassed &&
                 attempt.Assessment.LessonId == previous.Id &&

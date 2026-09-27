@@ -21,13 +21,14 @@ public class LessonsController(ApplicationDbContext db, StudentProgressService p
         logger.LogInformation("Loading student lesson {LessonId} for authenticated user {UserId}.", id, userId);
         try
         {
-        var lesson = await db.Lessons.AsNoTracking().AsSplitQuery().Include(x => x.Subject)
+        var lesson = await db.Lessons.AsNoTracking().AsSingleQuery().Include(x => x.Subject)
             .Include(x => x.ReviewMaterials).Include(x => x.Activity)
             .Include(x => x.Images)
             .Include(x => x.Assessments).ThenInclude(x => x.AssessmentQuestions)
             .SingleOrDefaultAsync(x => x.Id == id && x.IsPublished && x.Subject.IsPublished);
         if (lesson is null) return NotFound();
-        if (!await progressService.IsLessonUnlockedAsync(lesson.Id, userId))
+        if (!await progressService.IsLessonUnlockedAsync(
+            lesson.Id, lesson.SubjectId, lesson.SortOrder, userId))
         {
             TempData["Error"] = "Complete and pass the previous lesson before opening this lesson.";
             return RedirectToAction("Details", "Subjects", new { area = "Student", id = lesson.SubjectId });

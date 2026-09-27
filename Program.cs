@@ -24,6 +24,7 @@ else if (!string.IsNullOrWhiteSpace(dataProtectionPath))
     builder.Services.AddDataProtection().PersistKeysToFileSystem(new DirectoryInfo(dataProtectionPath));
 builder.Services.AddControllersWithViews(options =>
     options.Filters.Add(new AutoValidateAntiforgeryTokenAttribute()));
+builder.Services.AddMemoryCache();
 builder.Services.AddPortalSecurity(builder.Configuration, builder.Environment.IsDevelopment());
 builder.Services.AddScoped<StudentProgressService>();
 builder.Services.AddScoped<ActivityAttachmentService>();
@@ -42,8 +43,10 @@ builder.Services.AddRateLimiter(options =>
 });
 var app = builder.Build();
 if (await DatabaseCommands.TryRunAsync(app, args)) return;
-await FreshmanCatalogDeployment.ApplyAsync(app);
-await OnlineLessonImageDeployment.ApplyAsync(app);
+// Catalog and image repairs are maintenance operations. Running them during
+// every serverless cold start adds several remote MySQL round trips and can
+// delay every first request. Image repair and schema migrations remain
+// available through the explicit DatabaseCommands maintenance paths.
 // Only explicitly configured reverse-proxy deployments may supply the external
 // HTTPS scheme. Vercel terminates TLS before forwarding to the container.
 if (builder.Configuration.GetValue<bool>("Hosting:LocalProxy") ||
