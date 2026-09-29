@@ -9,6 +9,10 @@ public static class CourseCatalogSeeder
 {
     private static readonly CourseDefinition[] Courses =
     [
+        new(100, "CPE 101", "Introduction to Computing", "Foundations of computing systems, digital data, software, networks, and responsible technology use.", 3.0m, 1),
+        new(100, "CPE 102", "Computer Programming 1", "Problem solving and introductory C++ programming with data, selection, loops, functions, and arrays.", 3.0m, 1),
+        new(100, "CPE 103", "Computer Programming 2", "Intermediate C++ programming with collections, pointers, structured data, object-oriented design, recursion, and files.", 3.0m, 2),
+        new(100, "CPE 104", "Discrete Mathematics", "Logic, sets, relations, proof, counting, graphs, and mathematical reasoning for computing.", 3.0m, 2),
         new(200, "CPE 211", "Data Structures And Algorithms"),
         new(200, "CPE 212", "Engineering Economics"),
         new(200, "CPE 213", "Fundamentals Of Electrical Circuits"),
@@ -50,13 +54,43 @@ public static class CourseCatalogSeeder
     public static int CourseCount => Courses.Length;
     public const int LessonsPerCourse = 6;
 
-    public static async Task<CatalogSeedResult> SeedAsync(ApplicationDbContext db)
+    public static Task<CatalogSeedResult> SeedAsync(ApplicationDbContext db) => SeedAsync(db, null);
+
+    public static async Task<CatalogSeedResult> SeedFirstYearAsync(ApplicationDbContext db)
+    {
+        var codes = Courses.Where(x => x.Level == 100).Select(x => x.Code)
+            .ToHashSet(StringComparer.OrdinalIgnoreCase);
+        var existing = await db.Subjects.AsNoTracking().Where(x => codes.Contains(x.Code))
+            .Select(x => new
+            {
+                x.Code, x.Id, LessonCount = x.Lessons.Count,
+                AssessmentCount = x.Assessments.Count, QuestionCount = x.Questions.Count
+            }).ToListAsync();
+        var existingWithContent = existing.Where(x =>
+                x.LessonCount > 0 || x.AssessmentCount > 0 || x.QuestionCount > 0)
+            .Select(x => x.Code).ToArray();
+        if (existingWithContent.Length > 0)
+            throw new InvalidOperationException(
+                $"First-year content was not changed because these courses already contain lessons, questions, or assessments: {string.Join(", ", existingWithContent)}. Review their content and student history before replacing anything.");
+        var subjectIds = existing.Select(x => x.Id).ToArray();
+        var hasAttempts = await db.AssessmentAttempts.AsNoTracking()
+            .AnyAsync(x => subjectIds.Contains(x.Assessment.SubjectId));
+        if (hasAttempts)
+            throw new InvalidOperationException(
+                "First-year content was not changed because an existing course has assessment attempts. Review student history before replacing anything.");
+        return await SeedAsync(db, codes);
+    }
+
+    private static async Task<CatalogSeedResult> SeedAsync(ApplicationDbContext db, IReadOnlySet<string>? courseCodes)
     {
         var validLevels = await db.AcademicLevels.Select(x => x.Id).ToHashSetAsync();
         if (!new[] { 100, 200, 300, 400 }.All(validLevels.Contains))
             throw new InvalidOperationException("Academic levels 100, 200, 300, and 400 must exist before seeding courses.");
 
-        var existing = await db.Subjects
+        var subjectQuery = db.Subjects.AsQueryable();
+        if (courseCodes is not null)
+            subjectQuery = subjectQuery.Where(x => courseCodes.Contains(x.Code));
+        var existing = await subjectQuery
             .AsSplitQuery()
             .Include(x => x.Assessments).ThenInclude(x => x.AssessmentQuestions)
                 .ThenInclude(x => x.Question).ThenInclude(x => x.Choices)
@@ -78,7 +112,7 @@ public static class CourseCatalogSeeder
         var addedMappings = 0;
         var now = DateTime.UtcNow;
 
-        foreach (var definition in Courses)
+        foreach (var definition in Courses.Where(x => courseCodes is null || courseCodes.Contains(x.Code)))
         {
             var subject = existing.FirstOrDefault(x =>
                 x.Code.Equals(definition.Code, StringComparison.OrdinalIgnoreCase));
@@ -92,7 +126,10 @@ public static class CourseCatalogSeeder
             subject.Code = definition.Code;
             subject.Title = definition.Title;
             subject.AcademicLevelId = definition.Level;
-            subject.Description = $"A structured six-lesson review course for {definition.Title}. Complete each lesson activity before attempting its 10-item quiz, then prepare for the 50-item course examination.";
+            subject.Description = definition.Description ??
+                $"A structured six-lesson review course for {definition.Title}. Complete each lesson activity before attempting its 10-item quiz, then prepare for the 50-item course examination.";
+            if (definition.Units.HasValue) subject.Units = definition.Units;
+            if (definition.Semester.HasValue) subject.Semester = definition.Semester;
             subject.IsPublished = true;
             subject.UpdatedAtUtc = now;
             var curriculum = CurriculumCatalog.Get(definition.Code);
@@ -283,7 +320,8 @@ public static class CourseCatalogSeeder
     private static string NormalizeCode(string code) => new(code.Where(char.IsLetterOrDigit)
         .Select(char.ToUpperInvariant).ToArray());
 
-    private sealed record CourseDefinition(int Level, string Code, string Title);
+    private sealed record CourseDefinition(int Level, string Code, string Title,
+        string? Description = null, decimal? Units = null, int? Semester = null);
 }
 
 public record CatalogSeedResult(int CoursesAdded, int LessonsAdded, int MaterialsAdded,

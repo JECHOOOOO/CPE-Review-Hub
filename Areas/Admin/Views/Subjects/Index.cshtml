@@ -1,6 +1,14 @@
 @model IReadOnlyList<SubjectAdminRow>
 @{ ViewData["Title"] = "Manage subjects"; }
 <div class="page-heading"><div><span class="eyebrow">CONTENT MANAGEMENT</span><h1>Subjects</h1><p class="lead">Organize CPE subjects by academic year.</p></div><a class="button" asp-action="Create">Add subject</a></div>
+<section class="panel" style="margin-bottom:1rem">
+    <h2>First-year curriculum</h2>
+    <p>Prepare CPE 101–104 with six topic-based lessons each, practice activities, 10-question quizzes, and a 50-question final exam.</p>
+    <form asp-area="Admin" asp-controller="Subjects" asp-action="SeedFirstYear" method="post">
+        <button class="button" type="submit">Add first-year course content</button>
+    </form>
+    <small>This only fills the four first-year courses. If any already has content or assessment history, the operation stops without replacing it.</small>
+</section>
 <section class="panel">
     @if (Model.Count == 0) { <div class="empty-state"><h2>No subjects yet</h2><p>Create the first subject for Sophomore, Junior, or Senior students.</p></div> }
     else { <div class="table-scroll"><table><thead><tr><th>Code</th><th>Subject</th><th>Academic year</th><th>Units / Semester</th><th>Lessons</th><th>Status</th><th>Actions</th></tr></thead><tbody>

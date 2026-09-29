@@ -10,7 +10,7 @@ using Microsoft.EntityFrameworkCore;
 namespace CPE_Review_Hub.Areas.Admin.Controllers;
 
 [Area("Admin"), Authorize(Policy = PortalSecurity.Admin), Route("admin/subjects")]
-public class SubjectsController(ApplicationDbContext db) : Controller
+public class SubjectsController(ApplicationDbContext db, ILogger<SubjectsController> logger) : Controller
 {
     [HttpGet(""), HttpGet("/admin/courses")]
     public async Task<IActionResult> Index()
@@ -26,6 +26,31 @@ public class SubjectsController(ApplicationDbContext db) : Controller
                 $"{x.LevelName} — {x.AcademicLevelId} Level",
                 metadata.Units, metadata.Semester, x.LessonCount, x.IsPublished);
         }).ToList());
+    }
+
+    [HttpPost("seed-first-year")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> SeedFirstYear()
+    {
+        try
+        {
+            var result = await CourseCatalogSeeder.SeedFirstYearAsync(db);
+            TempData["Success"] = $"First-year curriculum is ready: {result.LessonsAdded} lessons, " +
+                $"{result.MaterialsAdded} study guides, {result.ActivitiesAdded} activities, " +
+                $"{result.AssessmentsAdded} assessments, and {result.QuestionsAdded} questions added. " +
+                "Existing course content and student history were not overwritten.";
+        }
+        catch (InvalidOperationException exception)
+        {
+            TempData["Error"] = exception.Message;
+        }
+        catch (Exception exception)
+        {
+            logger.LogError(exception, "Failed to seed the first-year COLMS curriculum.");
+            TempData["Error"] = "Could not initialize first-year content. No account or progress data was reset; check application logs and try again.";
+        }
+
+        return RedirectToAction(nameof(Index));
     }
 
     [HttpGet("create")]

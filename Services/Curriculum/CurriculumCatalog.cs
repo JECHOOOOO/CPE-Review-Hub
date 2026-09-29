@@ -3,7 +3,8 @@ namespace CPE_Review_Hub.Services.Curriculum;
 public static class CurriculumCatalog
 {
     private static readonly IReadOnlyDictionary<string, CurriculumCourse> Courses =
-        Level200Curriculum.Build().Concat(Level300Curriculum.Build()).Concat(Level400Curriculum.Build())
+        Level100Curriculum.Build().Concat(Level200Curriculum.Build())
+            .Concat(Level300Curriculum.Build()).Concat(Level400Curriculum.Build())
             .ToDictionary(x => x.Code, StringComparer.OrdinalIgnoreCase);
 
     public static CurriculumCourse Get(string code) => Courses.TryGetValue(code, out var course)

@@ -21,11 +21,13 @@ public static class DatabaseCommands
         var migrate = args.Contains("--initialize-database");
         var admin = args.Contains("--create-admin");
         var seedCatalog = args.Contains("--seed-course-catalog");
+        var seedFirstYear = args.Contains("--seed-first-year-catalog");
+        var auditFirstYear = args.Contains("--audit-first-year-catalog");
         var configureEmail = args.Contains("--configure-email");
         var testEmail = args.Contains("--test-email");
         var checkDatabase = args.Contains("--check-database");
         var repairOnlineImages = args.Contains("--repair-online-images");
-        if (!configure && !migrate && !admin && !seedCatalog && !configureEmail && !testEmail && !checkDatabase && !repairOnlineImages) return false;
+        if (!configure && !migrate && !admin && !seedCatalog && !seedFirstYear && !auditFirstYear && !configureEmail && !testEmail && !checkDatabase && !repairOnlineImages) return false;
         try
         {
             if (configure)
@@ -82,6 +84,25 @@ public static class DatabaseCommands
                     $"{result.ActivitiesAdded} activities, {result.AssessmentsAdded} assessments, " +
                     $"{result.QuestionsAdded} questions, {result.ChoicesAdded} choices and " +
                     $"{result.MappingsAdded} assessment-question links.");
+            }
+            if (auditFirstYear)
+            {
+                var codes = new[] { "CPE 101", "CPE 102", "CPE 103", "CPE 104" };
+                var rows = await db.Subjects.AsNoTracking().Where(x => codes.Contains(x.Code))
+                    .Select(x => new { x.Code, x.Title, Lessons = x.Lessons.Count })
+                    .OrderBy(x => x.Code).ToListAsync();
+                foreach (var row in rows)
+                    Console.WriteLine($"{row.Code} | {row.Title} | {row.Lessons} lesson(s)");
+                Console.WriteLine($"Found {rows.Count}/4 first-year course records. Read-only audit; no database data was changed.");
+            }
+            if (seedFirstYear)
+            {
+                var result = await CourseCatalogSeeder.SeedFirstYearAsync(db);
+                Console.WriteLine($"First-year catalog ready. Added {result.CoursesAdded} courses, " +
+                    $"{result.LessonsAdded} lessons, {result.MaterialsAdded} study guides, " +
+                    $"{result.ActivitiesAdded} activities, {result.AssessmentsAdded} assessments, " +
+                    $"{result.QuestionsAdded} questions, {result.ChoicesAdded} choices and " +
+                    $"{result.MappingsAdded} assessment-question links. No other year-level courses were changed.");
             }
             if (admin)
             {
