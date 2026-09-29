@@ -186,7 +186,7 @@ public static class CourseCatalogSeeder
                 lesson.Activity.Instructions = CurriculumRenderer.RenderActivity(number, template);
                 lesson.Activity.ResponseType = activityType;
                 lesson.Activity.Options = CurriculumRenderer.ActivityOptions(number, template);
-                lesson.Activity.ExpectedOutput = CurriculumRenderer.ActivityExpectedOutput(activityType);
+                lesson.Activity.ExpectedOutput = CurriculumRenderer.ActivityExpectedOutput(activityType, template);
                 lesson.Activity.IsPublished = true;
 
                 var imageCode = NormalizeCode(definition.Code).ToLowerInvariant();

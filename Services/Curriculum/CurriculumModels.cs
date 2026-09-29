@@ -10,9 +10,24 @@ public sealed record CurriculumLesson(
     string WorkedExample,
     string ExampleResult,
     string Activity,
-    IReadOnlyList<CurriculumConcept> Concepts);
+    IReadOnlyList<CurriculumConcept> Concepts)
+{
+    public IReadOnlyList<string> LearningObjectives { get; init; } = [];
+    public IReadOnlyList<CurriculumSection> StudySections { get; init; } = [];
+    public IReadOnlyList<CurriculumReference> References { get; init; } = [];
+    public Models.ActivityResponseType? PracticeType { get; init; }
+    public string ActivityPurpose { get; init; } = "";
+    public string ActivityTask { get; init; } = "";
+    public string ActivityExpectedOutput { get; init; } = "";
+    public string ActivityOptions { get; init; } = "";
+    public string CodeExample { get; init; } = "";
+    public string CodeExpectedResult { get; init; } = "";
+}
 
 public sealed record CurriculumConcept(string Term, string Definition);
+public sealed record CurriculumSection(string Heading, string Content);
+public sealed record CurriculumReference(string SourceTitle, string Institution, string SourceUrl,
+    string TopicsSupported, string VerifiedDate = "2026-09-30");
 
 public static class CurriculumSeedFactory
 {

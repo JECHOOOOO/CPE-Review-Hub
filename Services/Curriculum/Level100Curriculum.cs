@@ -8,7 +8,7 @@ namespace CPE_Review_Hub.Services.Curriculum;
 /// </summary>
 public static class Level100Curriculum
 {
-    public static IReadOnlyList<CurriculumCourse> Build() =>
+    public static IReadOnlyList<CurriculumCourse> Build() => Level100StudyGuides.Enrich(
     [
         new("CPE 101",
         [
@@ -286,5 +286,5 @@ public static class Level100Curriculum
                 "Path|A sequence of vertices connected by consecutive edges.",
                 "Tree|A connected acyclic graph with a unique path between every pair of vertices.")
         ])
-    ];
+    ]);
 }

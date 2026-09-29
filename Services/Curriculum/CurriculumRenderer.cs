@@ -13,15 +13,28 @@ public static class CurriculumRenderer
         text.AppendLine($"LESSON {lessonNumber}: {lesson.Title}");
         text.AppendLine();
         text.AppendLine("LEARNING OBJECTIVES");
-        text.AppendLine($"• Explain {string.Join(", ", lesson.Concepts.Take(3).Select(x => x.Term))} in your own words.");
-        text.AppendLine($"• Apply this governing idea correctly: {lesson.KeyRule}");
-        text.AppendLine("• Follow the lesson method, show intermediate reasoning, and check the result.");
-        text.AppendLine($"• Use the concepts to analyze a Computer Engineering example involving {lesson.Focus.ToLowerInvariant()}.");
+        foreach (var objective in lesson.LearningObjectives)
+            text.AppendLine($"• {objective}");
         text.AppendLine();
         text.AppendLine("INTRODUCTION");
-        text.AppendLine($"This lesson studies {lesson.Focus}. The topic matters in {courseTitle} because engineers must connect a technical model to observable behavior, constraints, and a defensible result. The ideas below are presented as a review sequence: define the system, select the appropriate relationship, work carefully, and interpret the answer rather than stopping at a number or isolated fact.");
+        text.AppendLine($"This lesson studies {lesson.Focus}. It is part of {courseTitle} because the concepts help Computer Engineering students explain a system, justify a method, and evaluate the consequences of a result. Read the topic together with its assumptions and examples: technical procedures are reliable only when the problem is stated clearly and the limits of the method are understood.");
         text.AppendLine();
-        text.AppendLine("MAIN CONCEPTS AND IMPORTANT DEFINITIONS");
+        text.AppendLine("LESSON DISCUSSION");
+        foreach (var section in lesson.StudySections)
+        {
+            text.AppendLine(section.Heading.ToUpperInvariant());
+            text.AppendLine(section.Content);
+            text.AppendLine();
+        }
+        if (!string.IsNullOrWhiteSpace(lesson.CodeExample))
+        {
+            text.AppendLine("C++ WORKED EXAMPLE");
+            text.AppendLine(lesson.CodeExample);
+            text.AppendLine($"Expected result: {lesson.CodeExpectedResult}");
+            text.AppendLine("Trace the values and control flow before compiling. This example illustrates the stated lesson point; it is not a substitute for validating user input or testing boundary cases in a complete program.");
+            text.AppendLine();
+        }
+        text.AppendLine("IMPORTANT TERMS");
         foreach (var concept in lesson.Concepts)
             text.AppendLine($"• {concept.Term}: {concept.Definition}");
         text.AppendLine();
@@ -37,40 +50,40 @@ public static class CurriculumRenderer
         text.AppendLine($"Result and interpretation: {lesson.ExampleResult}");
         text.AppendLine("Check the result against the key relationship above. If an assumption, input, or constraint changes, repeat the method instead of reusing the old conclusion without analysis.");
         text.AppendLine();
+        text.AppendLine("COMMON MISTAKES TO AVOID");
+        text.AppendLine(CommonMistakes(courseCode, lesson));
+        text.AppendLine();
         text.AppendLine("KEY TAKEAWAYS");
         text.AppendLine($"• The lesson centers on {lesson.Focus}.");
         text.AppendLine($"• Remember and apply: {lesson.KeyRule}");
         text.AppendLine($"• The terms {string.Join(", ", lesson.Concepts.Select(x => x.Term))} describe different parts of the same problem and should not be treated as interchangeable.");
         text.AppendLine("• Good engineering work shows the method, validates the result, and explains what the result means.");
-        text.AppendLine("Complete the activity using your own work before opening the 10-item quiz.");
+        text.AppendLine();
+        text.AppendLine("REFERENCES / FURTHER READING");
+        foreach (var reference in lesson.References)
+            text.AppendLine($"• {reference.SourceTitle}. {reference.Institution}. {reference.SourceUrl} (verified {reference.VerifiedDate}; supports: {reference.TopicsSupported})");
+        text.AppendLine();
+        text.AppendLine("Complete the practice activity before opening the 10-item quiz.");
         return text.ToString();
     }
 
-    public static string RenderActivity(int lessonNumber, CurriculumLesson lesson) => lessonNumber switch
-    {
-        2 => $"Match each {lesson.Title.ToLowerInvariant()} term with its correct description.",
-        4 => $"Choose the term that best matches this definition: {lesson.Concepts[0].Definition}",
-        _ => lesson.Activity
-    };
+    public static string RenderActivity(int lessonNumber, CurriculumLesson lesson) =>
+        string.IsNullOrWhiteSpace(lesson.ActivityPurpose) ? lesson.Activity :
+        $"Purpose: {lesson.ActivityPurpose}\n\n{lesson.Activity}";
 
     public static Models.ActivityResponseType ActivityType(int lessonNumber, CurriculumLesson lesson)
     {
-        if (lessonNumber == 2) return Models.ActivityResponseType.Matching;
-        if (lessonNumber == 4) return Models.ActivityResponseType.MultipleChoice;
+        if (lesson.PracticeType.HasValue) return lesson.PracticeType.Value;
         var text = $"{lesson.Activity} {lesson.Focus}".ToLowerInvariant();
         if (new[] { "implement", "code", "program", "algorithm" }.Any(text.Contains)) return Models.ActivityResponseType.Coding;
         if (new[] { "calculate", "compute", "solve", "equation", "current", "voltage", "cost" }.Any(text.Contains)) return Models.ActivityResponseType.Calculation;
         return lessonNumber == 1 ? Models.ActivityResponseType.Identification : Models.ActivityResponseType.ShortAnswer;
     }
 
-    public static string ActivityOptions(int lessonNumber, CurriculumLesson lesson) => lessonNumber switch
-    {
-        2 => string.Join('\n', lesson.Concepts.Take(4).Select(x => $"{x.Term}|{x.Definition}")),
-        4 => string.Join('\n', lesson.Concepts.Take(4).Select(x => x.Term)),
-        _ => ""
-    };
+    public static string ActivityOptions(int lessonNumber, CurriculumLesson lesson) => lesson.ActivityOptions;
 
-    public static string ActivityExpectedOutput(Models.ActivityResponseType type) => type switch
+    public static string ActivityExpectedOutput(Models.ActivityResponseType type, CurriculumLesson? lesson = null) =>
+        string.IsNullOrWhiteSpace(lesson?.ActivityExpectedOutput) ? type switch
     {
         Models.ActivityResponseType.Matching => "Complete every match.",
         Models.ActivityResponseType.MultipleChoice => "Select one answer.",
@@ -78,5 +91,12 @@ public static class CurriculumRenderer
         Models.ActivityResponseType.Coding => "Enter your code or attach the source file.",
         Models.ActivityResponseType.Identification => "Enter the requested term or identification.",
         _ => "Enter a concise response to the task."
+    } : lesson.ActivityExpectedOutput;
+
+    private static string CommonMistakes(string courseCode, CurriculumLesson lesson) => courseCode switch
+    {
+        "CPE 102" or "CPE 103" => "Do not assume that successful compilation proves the algorithm is correct. Trace a small input, check types and boundary conditions, and use the C++ language rules taught in this lesson. Avoid silently accepting invalid input or relying on undefined behavior.",
+        "CPE 104" => "Do not substitute examples for proof, omit the domain or universe, or use a formula before checking its assumptions. Keep notation consistent and verify a result against the definitions.",
+        _ => $"Do not confuse related components or concepts in {lesson.Title}. State assumptions, distinguish observed evidence from interpretation, and verify the conclusion using the conditions in the problem."
     };
 }

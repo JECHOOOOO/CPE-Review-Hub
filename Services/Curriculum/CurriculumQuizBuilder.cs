@@ -27,42 +27,55 @@ public static class CurriculumQuizBuilder
 
         var steps = lesson.Method.Split('>', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
         var correctMethod = string.Join(" → ", steps);
+        var swappedStart = steps.ToArray();
+        (swappedStart[0], swappedStart[1]) = (swappedStart[1], swappedStart[0]);
+        var swappedMiddle = steps.ToArray();
+        var middle = Math.Max(1, steps.Length / 2);
+        (swappedMiddle[middle - 1], swappedMiddle[middle]) = (swappedMiddle[middle], swappedMiddle[middle - 1]);
+        var swappedEnd = steps.ToArray();
+        (swappedEnd[^1], swappedEnd[^2]) = (swappedEnd[^2], swappedEnd[^1]);
         questions.Add(new QuizQuestionSeed(
             $"Which sequence correctly applies the method taught in “{lesson.Title}”?",
             $"The lesson uses this order: {correctMethod}",
-            [correctMethod, string.Join(" → ", steps.Reverse()),
-                $"Skip the analysis → {steps.Last()} → guess the result",
-                $"{steps.Last()} → ignore constraints → {steps.First()}"], 0));
+            [correctMethod, string.Join(" → ", swappedStart),
+                string.Join(" → ", swappedMiddle), string.Join(" → ", swappedEnd)], 0));
+
+        var ruleChoices = lesson.Concepts.Take(3).Select(x => $"{x.Term}: {x.Definition}").ToList();
+        ruleChoices.Insert(1, lesson.KeyRule);
+        questions.Add(new QuizQuestionSeed(
+            "Which statement expresses the governing relationship or design rule for this lesson?",
+            $"The lesson's governing rule is: {lesson.KeyRule}", ruleChoices, 1));
+
+        questions.Add(string.IsNullOrWhiteSpace(lesson.CodeExample)
+            ? new QuizQuestionSeed(
+                $"In the worked example — {lesson.WorkedExample} — what conclusion is explicitly supported?",
+                lesson.ExampleResult,
+                [$"The example's result is not established because the stated method was not applied.",
+                    $"The result should be interpreted as {lesson.Concepts[0].Definition}", lesson.ExampleResult,
+                    $"The example reaches the conclusion without using or checking its given information."], 2)
+            : new QuizQuestionSeed(
+                $"Trace this C++ example. {lesson.CodeExample}\nAssuming the stated inputs are valid, what result is produced?",
+                $"The code's result is {lesson.CodeExpectedResult}; trace the declared values and executed statements to confirm it.",
+                [lesson.CodeExpectedResult,
+                    "The program fails to compile because the shown declarations and operations are incompatible.",
+                    "The program enters an unbounded loop or recursive call before producing a result.",
+                    "The program fails at runtime before reaching the output statement."], 0));
 
         questions.Add(new QuizQuestionSeed(
-            "Which key relationship or design rule is taught in this lesson?",
-            lesson.KeyRule,
-            ["Use an unrelated average and omit the stated variables.", lesson.KeyRule,
-                "The result is valid even when units and assumptions contradict the problem.",
-                "No verification is needed when an answer appears plausible."], 1));
+            $"A student is completing the lesson activity: {lesson.Activity} Which submission meets its stated requirements?",
+            $"Apply the lesson concepts and provide the evidence requested by the activity: {lesson.Activity}",
+            [$"Provide only a final conclusion, leaving out the method and checks requested by the activity.",
+                $"Use the required method but omit the assumptions or constraints stated in the activity.",
+                $"Provide an answer for a different input case and do not address the requested output.",
+                $"Apply the lesson concepts and provide the evidence requested by the activity: {lesson.Activity}"], 3));
 
         questions.Add(new QuizQuestionSeed(
-            $"Based on the worked example — {lesson.WorkedExample} — which conclusion is supported?",
-            lesson.ExampleResult,
-            [$"The example cannot be analyzed using any concept from {lesson.Title}.",
-                "All input values may be discarded without changing the conclusion.", lesson.ExampleResult,
-                "The opposite conclusion is guaranteed without checking assumptions."], 2));
-
-        questions.Add(new QuizQuestionSeed(
-            "Which approach best satisfies the required lesson activity?",
-            $"The activity requires application of the lesson concepts: {lesson.Activity}",
-            ["Submit only a copied definition with no application or evidence.",
-                "Use a topic that was not discussed and omit the required output.",
-                "Skip the procedure and report an unsupported answer.",
-                $"Apply the lesson concepts and governing rule to this task: {lesson.Activity}"], 3));
-
-        questions.Add(new QuizQuestionSeed(
-            $"Which statement best summarizes the engineering focus of “{lesson.Title}”?",
-            $"The lesson focuses on {lesson.Focus} and requires a checked, interpretable result.",
-            [$"It focuses on {lesson.Focus} and connects definitions, method, example, and verification.",
-                "It teaches that engineering decisions should ignore constraints and evidence.",
-                "It requires memorizing an answer while avoiding the stated method.",
-                "It concludes that definitions and practical examples are interchangeable."], 0));
+            $"Which review practice best supports reliable work on “{lesson.Title}”?",
+            $"Define the problem about {lesson.Focus}, apply the stated rule, show the method, and check that the result fits the assumptions.",
+            ["Treat the first plausible result as correct without checking inputs or assumptions.",
+                "Memorize a worked-example answer and reuse it even when the problem conditions change.",
+                "Replace the stated method with an unrelated technique and omit the reasoning.",
+                $"Define the problem about {lesson.Focus}, apply the stated rule, show the method, and check that the result fits the assumptions."], 3));
         return questions;
     }
 }
