@@ -1,56 +1,199 @@
 @model StudentLessonDetailsViewModel
-@{ ViewData["Title"] = Model.Title; ViewData["ProtectedContent"] = true; }
-<nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-area="Student" asp-controller="Subjects" asp-action="Index">Subjects</a><span>/</span><a asp-area="Student" asp-controller="Subjects" asp-action="Details" asp-route-id="@Model.SubjectId">@Model.SubjectCode</a><span>/</span><span>@Model.Title</span></nav>
-<span class="eyebrow">@Model.SubjectCode · LESSON</span><h1>@Model.Title</h1><p class="lead">@Model.Summary</p>
-@if (Model.Materials.Count == 0) { <section class="panel empty-state"><h2>No published materials yet</h2><p>The lesson outline is available, but its review material is still being prepared.</p></section> }
-else { var lessonImageIndex = 0; <div class="material-stack">@foreach (var material in Model.Materials) {
-    var sections = material.Content.Replace("\r\n", "\n").Split("\n\n", StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
-    <article class="panel material-card"><h2>@material.Title</h2>
-        @for (var sectionIndex = 0; sectionIndex < sections.Length; sectionIndex++) {
-            <div class="material-content lesson-section">@sections[sectionIndex]</div>
-            @if (sectionIndex >= 2 && lessonImageIndex < Model.Images.Count) {
-                var lessonImage = Model.Images[lessonImageIndex++];
-                <figure class="lesson-figure"><img src="@lessonImage.ImagePath" alt="@lessonImage.AltText" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('figure').hidden=true" />
-                    @if (!string.IsNullOrWhiteSpace(lessonImage.Caption)) { <figcaption>@lessonImage.Caption</figcaption> }
-                    @if (!string.IsNullOrWhiteSpace(lessonImage.SourceUrl)) { <small class="lesson-image-credit">Source: <a href="@lessonImage.SourceUrl" target="_blank" rel="noopener noreferrer">@(string.IsNullOrWhiteSpace(lessonImage.SourceName) ? "Image source" : lessonImage.SourceName)</a>@if (!string.IsNullOrWhiteSpace(lessonImage.Author)) { <text> · @lessonImage.Author</text> }@if (!string.IsNullOrWhiteSpace(lessonImage.License)) { <text> · @lessonImage.License</text> }</small> }
-                </figure>
-            }
-        }
-        @if (material == Model.Materials.Last()) { @while (lessonImageIndex < Model.Images.Count) { var lessonImage = Model.Images[lessonImageIndex++]; <figure class="lesson-figure"><img src="@lessonImage.ImagePath" alt="@lessonImage.AltText" loading="lazy" referrerpolicy="no-referrer" onerror="this.closest('figure').hidden=true" />@if (!string.IsNullOrWhiteSpace(lessonImage.Caption)) { <figcaption>@lessonImage.Caption</figcaption> }@if (!string.IsNullOrWhiteSpace(lessonImage.SourceUrl)) { <small class="lesson-image-credit">Source: <a href="@lessonImage.SourceUrl" target="_blank" rel="noopener noreferrer">@(string.IsNullOrWhiteSpace(lessonImage.SourceName) ? "Image source" : lessonImage.SourceName)</a>@if (!string.IsNullOrWhiteSpace(lessonImage.Author)) { <text> · @lessonImage.Author</text> }@if (!string.IsNullOrWhiteSpace(lessonImage.License)) { <text> · @lessonImage.License</text> }</small> }</figure> } }
-        @if (!string.IsNullOrWhiteSpace(material.ResourceUrl)) { <p><a class="button secondary" href="@material.ResourceUrl" target="_blank" rel="noopener noreferrer">Open supporting resource ↗</a></p> }
-    </article> }</div> }
-@if (Model.Activity is not null) {
-    <section class="panel activity-card"><span class="eyebrow">REQUIRED BEFORE QUIZ</span><h2>@Model.Activity.Title</h2>
-        <div class="material-content">@Model.Activity.Instructions</div>
-        @if (Model.Activity.IsCompleted)
-        {
-            <div class="activity-grade" role="status"><strong>Activity completed.</strong></div>
-        }
-        <form asp-area="Student" asp-controller="Activities" asp-action="Submit" asp-route-id="@Model.Activity.Id" method="post" enctype="multipart/form-data" class="activity-form">
-            @if (Model.Activity.ResponseType == ActivityResponseType.MultipleChoice) {
-                <fieldset class="activity-options"><legend>Select your answer</legend>@foreach (var option in Model.Activity.Options) { <label class="activity-option"><input type="radio" name="Response" value="@option" checked="@(Model.Activity.Response == option)" required /> <span>@option</span></label> }</fieldset>
-            } else if (Model.Activity.ResponseType == ActivityResponseType.Matching) {
-                <div class="matching-grid"><p class="muted">Choose a description for every term.</p>@for (var matchIndex = 0; matchIndex < Model.Activity.Matches.Count; matchIndex++) { var match = Model.Activity.Matches[matchIndex]; <label><strong>@match.Term</strong><select name="MatchingResponses[@matchIndex]" required><option value="">Select description</option>@foreach (var choice in Model.Activity.Matches.Select(x => x.Definition)) { <option value="@choice" selected="@(Model.Activity.Response.Contains($"{match.Term} → {choice}", StringComparison.Ordinal))">@choice</option> }</select></label> }</div>
-            } else if (Model.Activity.ResponseType is ActivityResponseType.Calculation or ActivityResponseType.Identification) {
-                <label for="Response">Your answer</label><input id="Response" name="Response" value="@Model.Activity.Response" maxlength="10000" required />
-            } else {
-                <label for="Response">@(Model.Activity.ResponseType == ActivityResponseType.Coding ? "Your code or explanation" : "Your response")</label>
-                <textarea id="Response" name="Response" rows="@(Model.Activity.ResponseType == ActivityResponseType.Coding ? 12 : 6)" maxlength="10000">@Model.Activity.Response</textarea>
-            }
-            <div class="attachment-picker"><label for="Attachments">Attach files or images <span class="muted">(optional)</span></label><input id="Attachments" name="Attachments" type="file" multiple accept=".png,.jpg,.jpeg,.webp,.pdf,.docx,.txt" /><p class="small muted">Up to 3 files · 5 MB each · 10 MB total. PNG, JPG, WEBP, PDF, DOCX, or TXT.</p></div>
-            <div class="form-actions"><button class="button" type="submit">@(Model.Activity.IsCompleted ? "Update activity" : "Submit activity and unlock quiz")</button>
-                @if (Model.Activity.IsCompleted) { <span class="status-complete">Completed @Model.Activity.CompletedAtUtc?.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</span> }
+@using CPE_Review_Hub.Services
+@{
+    ViewData["Title"] = Model.Title;
+    ViewData["ProtectedContent"] = true;
+    var parsedMaterials = Model.Materials.Select((material, index) => new
+    {
+        Material = material,
+        Index = index,
+        Sections = LessonContentParser.Parse(material.Content)
+    }).ToList();
+    var allSections = parsedMaterials.SelectMany(x => x.Sections.Select(section =>
+        (MaterialIndex: x.Index, Section: section, Id: $"material-{x.Index + 1}-{section.Id}"))).ToList();
+    var displayedImages = new HashSet<StudentLessonImageViewModel>();
+    var minutes = Math.Max(1, (int)Math.Ceiling(Model.Materials.Sum(x => x.Content.Length) / 900d));
+    var discussionNumber = 0;
+}
+
+<div class="lesson-reading-page">
+    <nav class="breadcrumbs lesson-breadcrumbs" aria-label="Breadcrumb">
+        <a asp-area="Student" asp-controller="Subjects" asp-action="Index">Subjects</a><span aria-hidden="true">/</span>
+        <a asp-area="Student" asp-controller="Subjects" asp-action="Details" asp-route-id="@Model.SubjectId">@Model.SubjectCode</a><span aria-hidden="true">/</span>
+        <span aria-current="page">Lesson @Model.LessonNumber</span>
+    </nav>
+
+    <header class="lesson-hero">
+        <a class="lesson-back-link" asp-area="Student" asp-controller="Subjects" asp-action="Details" asp-route-id="@Model.SubjectId">← Back to @Model.SubjectCode</a>
+        <p class="eyebrow">@Model.SubjectCode · @Model.SubjectTitle</p>
+        <h1>@Model.Title</h1>
+        @if (!string.IsNullOrWhiteSpace(Model.Summary)) { <p class="lesson-deck">@Model.Summary</p> }
+        <div class="lesson-meta" aria-label="Lesson details">
+            <span>◷ @minutes min read</span>
+            @if (Model.LessonCount > 0) { <span>Lesson @Model.LessonNumber of @Model.LessonCount</span> }
+            @if (Model.Activity is not null) { <span>@(Model.Activity.IsCompleted ? "✓ Activity complete" : "Activity before quiz")</span> }
+            @if (Model.Quiz is not null && Model.Quiz.BestPercentage is not null) { <span>Best quiz score @Model.Quiz.BestPercentage.Value.ToString("0.#")%</span> }
+        </div>
+        @if (Model.LessonCount > 0) {
+            <div class="lesson-progress" role="progressbar" aria-label="Position in course" aria-valuemin="1" aria-valuemax="@Model.LessonCount" aria-valuenow="@Model.LessonNumber">
+                <span style="width:@(Math.Clamp((double)Model.LessonNumber / Model.LessonCount * 100, 0, 100).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture))%"></span>
             </div>
-        </form>
-        @if (Model.Activity.Attachments.Count > 0) { <div class="attachment-list"><h3>Submitted attachments</h3>@foreach (var file in Model.Activity.Attachments) { <div class="attachment-row"><a asp-area="Student" asp-controller="Activities" asp-action="Download" asp-route-id="@file.Id">@file.FileName</a><span class="small muted">@((file.FileSize / 1024d).ToString("0.#")) KB</span><form asp-area="Student" asp-controller="Activities" asp-action="DeleteAttachment" asp-route-id="@file.Id" method="post"><button class="danger-link" type="submit">Remove</button></form></div> }</div> }
-    </section>
-}
-@if (Model.Quiz is not null) {
-    <section class="panel assessment-status" id="quiz"><div><span class="eyebrow">LESSON CHECK</span><h2>10-item lesson quiz</h2>
-        <p>@(Model.Quiz.IsUnlocked ? "Your activity is complete. You may take the quiz." : "Submit the required activity above before attempting this quiz.")</p>
-        @if (Model.Quiz.BestPercentage is not null) { <p><strong>Best score: @Model.Quiz.BestPercentage.Value.ToString("0.##")%</strong> from @Model.Quiz.AttemptCount attempt(s)</p> }
-    </div><div><strong>@Model.Quiz.CurrentQuestions / @Model.Quiz.RequiredQuestions</strong><span>@(Model.Quiz.IsReady ? "Questions ready" : "Questions being prepared")</span>
-        @if (Model.Quiz.IsReady && Model.Quiz.IsUnlocked) { <form asp-area="Student" asp-controller="Assessments" asp-action="Start" asp-route-id="@Model.Quiz.Id" method="post"><button class="button" type="submit">@(Model.Quiz.AttemptCount > 0 ? "Retake quiz" : "Start quiz") →</button></form> }
-        else if (!Model.Quiz.IsUnlocked) { <span class="badge">Locked</span> }
-    </div></section>
-}
+        }
+    </header>
+
+    @if (Model.Materials.Count == 0) {
+        <section class="panel empty-state"><h2>No published materials yet</h2><p>The lesson outline is available, but its review material is still being prepared.</p></section>
+    } else {
+        <div class="lesson-reading-grid">
+            <main class="lesson-reading-main" aria-label="Lesson content">
+                @foreach (var parsed in parsedMaterials) {
+                    @if (Model.Materials.Count > 1 && !string.IsNullOrWhiteSpace(parsed.Material.Title)) {
+                        <p class="lesson-material-label">@parsed.Material.Title</p>
+                    }
+                    @for (var sectionIndex = 0; sectionIndex < parsed.Sections.Count; sectionIndex++) {
+                        var contentSection = parsed.Sections[sectionIndex];
+                        var sectionId = $"material-{parsed.Index + 1}-{contentSection.Id}";
+                        var isDiscussion = contentSection.Kind == LessonSectionKind.Discussion && contentSection.Heading != "Lesson discussion";
+                        var sectionImages = Model.Images.Where(image => !displayedImages.Contains(image) &&
+                            LessonContentParser.MatchImageSection(image, parsed.Sections) == sectionIndex).ToList();
+                        foreach (var image in sectionImages) { displayedImages.Add(image); }
+                        <section class="lesson-reading-section @(isDiscussion ? "lesson-topic-section" : $"lesson-{contentSection.Kind.ToString().ToLowerInvariant()}")" id="@sectionId">
+                            @if (isDiscussion) {
+                                discussionNumber++;
+                                <p class="lesson-section-number">@discussionNumber.ToString("00")</p>
+                                <h2>@contentSection.Heading</h2>
+                            } else if (contentSection.Heading != "Overview" || contentSection.Kind != LessonSectionKind.General) {
+                                <h2>@contentSection.Heading</h2>
+                            }
+
+                            @switch (contentSection.Kind) {
+                                case LessonSectionKind.Objectives:
+                                    @foreach (var paragraph in contentSection.Paragraphs) { <p class="lesson-section-intro">@paragraph</p> }
+                                    var objectives = contentSection.Items.Where(x => !x.StartsWith("By the end", StringComparison.OrdinalIgnoreCase)).ToList();
+                                    @if (objectives.Count > 0) { <ul class="lesson-check-list">@foreach (var item in objectives) { <li>@item</li> }</ul> }
+                                    break;
+                                case LessonSectionKind.Terms:
+                                    <dl class="lesson-term-grid">
+                                        @foreach (var item in contentSection.Items) {
+                                            var parts = item.Split(':', 2, StringSplitOptions.TrimEntries);
+                                            <div><dt>@(parts.Length > 1 ? parts[0] : "Term")</dt><dd>@(parts.Length > 1 ? parts[1] : parts[0])</dd></div>
+                                        }
+                                    </dl>
+                                    @foreach (var paragraph in contentSection.Paragraphs) { <p>@paragraph</p> }
+                                    break;
+                                case LessonSectionKind.Method:
+                                    <ol class="lesson-step-list">@foreach (var item in contentSection.Items) { <li>@item</li> }</ol>
+                                    @foreach (var paragraph in contentSection.Paragraphs) { <p>@paragraph</p> }
+                                    break;
+                                case LessonSectionKind.Takeaways:
+                                    <ul class="lesson-takeaways">@foreach (var item in contentSection.Items) { <li>@item</li> }</ul>
+                                    @foreach (var paragraph in contentSection.Paragraphs) { <p>@paragraph</p> }
+                                    break;
+                                case LessonSectionKind.Mistakes:
+                                    @foreach (var paragraph in contentSection.Paragraphs) { <p>@paragraph</p> }
+                                    @if (contentSection.Items.Count > 0) { <ul class="lesson-mistakes">@foreach (var item in contentSection.Items) { <li>@item</li> }</ul> }
+                                    break;
+                                case LessonSectionKind.References:
+                                    @if (contentSection.References.Count > 0) {
+                                        <ul class="lesson-reference-list">
+                                            @foreach (var reference in contentSection.References) {
+                                                <li><span>@reference.Institution</span><a href="@reference.Url" target="_blank" rel="noopener noreferrer">@reference.Title <span aria-hidden="true">↗</span></a>@if (!string.IsNullOrWhiteSpace(reference.Details)) { <small>@reference.Details</small> }</li>
+                                            }
+                                        </ul>
+                                    } else { @foreach (var paragraph in contentSection.Paragraphs) { <p>@paragraph</p> } }
+                                    break;
+                                case LessonSectionKind.Example:
+                                    @foreach (var paragraph in contentSection.Paragraphs) {
+                                        @if (contentSection.Heading.Contains("C++", StringComparison.OrdinalIgnoreCase) && (paragraph.Contains(';') || paragraph.Contains('{') || paragraph.Contains("#include", StringComparison.Ordinal))) {
+                                            <pre class="lesson-code"><code>@paragraph</code></pre>
+                                        } else { <p>@paragraph</p> }
+                                    }
+                                    break;
+                                default:
+                                    @foreach (var paragraph in contentSection.Paragraphs) { <p class="lesson-prose">@paragraph</p> }
+                                    @if (contentSection.Items.Count > 0) { <ul>@foreach (var item in contentSection.Items) { <li>@item</li> }</ul> }
+                                    break;
+                            }
+
+                            @foreach (var image in sectionImages) {
+                                <figure class="lesson-figure">
+                                    <img src="@image.ImagePath" alt="@image.AltText" loading="lazy" decoding="async" referrerpolicy="no-referrer" onerror="this.closest('figure').hidden=true" />
+                                    @if (!string.IsNullOrWhiteSpace(image.Caption)) { <figcaption>@image.Caption</figcaption> }
+                                    @if (!string.IsNullOrWhiteSpace(image.SourceUrl)) {
+                                        <small class="lesson-image-credit">Source: <a href="@image.SourceUrl" target="_blank" rel="noopener noreferrer">@(string.IsNullOrWhiteSpace(image.SourceName) ? "Image source" : image.SourceName)</a>@if (!string.IsNullOrWhiteSpace(image.Author)) { <text> · @image.Author</text> }@if (!string.IsNullOrWhiteSpace(image.License)) { <text> · @image.License</text> }</small>
+                                    }
+                                </figure>
+                            }
+                        </section>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(parsed.Material.ResourceUrl)) {
+                        <p class="lesson-resource-link"><a href="@parsed.Material.ResourceUrl" target="_blank" rel="noopener noreferrer">Open supporting resource ↗</a></p>
+                    }
+                }
+
+                @if (Model.Images.Count > 0 && parsedMaterials.Count == 0) {
+                    @foreach (var image in Model.Images) { <partial name="_LessonFigure" model="image" /> }
+                }
+
+                @if (Model.Activity is not null) {
+                    <section class="panel activity-card lesson-interaction" id="activity">
+                        <span class="eyebrow">@(Model.Activity.IsCompleted ? "PRACTICE COMPLETED" : "PRACTICE BEFORE THE QUIZ")</span>
+                        <h2>@Model.Activity.Title</h2>
+                        <div class="material-content">@Model.Activity.Instructions</div>
+                        @if (Model.Activity.IsCompleted) { <div class="activity-grade" role="status"><strong>Activity completed.</strong></div> }
+                        <form asp-area="Student" asp-controller="Activities" asp-action="Submit" asp-route-id="@Model.Activity.Id" method="post" enctype="multipart/form-data" class="activity-form">
+                            @if (Model.Activity.ResponseType == ActivityResponseType.MultipleChoice) {
+                                <fieldset class="activity-options"><legend>Select your answer</legend>@foreach (var option in Model.Activity.Options) { <label class="activity-option"><input type="radio" name="Response" value="@option" checked="@(Model.Activity.Response == option)" required /> <span>@option</span></label> }</fieldset>
+                            } else if (Model.Activity.ResponseType == ActivityResponseType.Matching) {
+                                <div class="matching-grid"><p class="muted">Choose a description for every term.</p>@for (var matchIndex = 0; matchIndex < Model.Activity.Matches.Count; matchIndex++) { var match = Model.Activity.Matches[matchIndex]; <label><strong>@match.Term</strong><select name="MatchingResponses[@matchIndex]" required><option value="">Select description</option>@foreach (var choice in Model.Activity.Matches.Select(x => x.Definition)) { <option value="@choice" selected="@(Model.Activity.Response.Contains($"{match.Term} → {choice}", StringComparison.Ordinal))">@choice</option> }</select></label> }</div>
+                            } else if (Model.Activity.ResponseType is ActivityResponseType.Calculation or ActivityResponseType.Identification) {
+                                <label for="Response">Your answer</label><input id="Response" name="Response" value="@Model.Activity.Response" maxlength="10000" required />
+                            } else {
+                                <label for="Response">@(Model.Activity.ResponseType == ActivityResponseType.Coding ? "Your code or explanation" : "Your response")</label><textarea id="Response" name="Response" rows="@(Model.Activity.ResponseType == ActivityResponseType.Coding ? 12 : 6)" maxlength="10000">@Model.Activity.Response</textarea>
+                            }
+                            <div class="attachment-picker"><label for="Attachments">Attach files or images <span class="muted">(optional)</span></label><input id="Attachments" name="Attachments" type="file" multiple accept=".png,.jpg,.jpeg,.webp,.pdf,.docx,.txt" /><p class="small muted">Up to 3 files · 5 MB each · 10 MB total. PNG, JPG, WEBP, PDF, DOCX, or TXT.</p></div>
+                            <div class="form-actions"><button class="button" type="submit">@(Model.Activity.IsCompleted ? "Update activity" : "Submit activity and unlock quiz")</button>
+                                @if (Model.Activity.IsCompleted) { <span class="status-complete">Completed @Model.Activity.CompletedAtUtc?.ToLocalTime().ToString("MMM d, yyyy h:mm tt")</span> }
+                            </div>
+                        </form>
+                        @if (Model.Activity.Attachments.Count > 0) { <div class="attachment-list"><h3>Submitted attachments</h3>@foreach (var file in Model.Activity.Attachments) { <div class="attachment-row"><a asp-area="Student" asp-controller="Activities" asp-action="Download" asp-route-id="@file.Id">@file.FileName</a><span class="small muted">@((file.FileSize / 1024d).ToString("0.#")) KB</span><form asp-area="Student" asp-controller="Activities" asp-action="DeleteAttachment" asp-route-id="@file.Id" method="post"><button class="danger-link" type="submit">Remove</button></form></div> }</div> }
+                    </section>
+                }
+
+                @if (Model.Quiz is not null) {
+                    <section class="panel assessment-status lesson-interaction" id="quiz"><div><span class="eyebrow">LESSON CHECK</span><h2>10-item lesson quiz</h2>
+                        <p>@(Model.Quiz.IsUnlocked ? "Your activity is complete. You may take the quiz." : "Submit the required activity above before attempting this quiz.")</p>
+                        @if (Model.Quiz.BestPercentage is not null) { <p><strong>Best score: @Model.Quiz.BestPercentage.Value.ToString("0.##")%</strong> from @Model.Quiz.AttemptCount attempt(s)</p> }
+                    </div><div><strong>@Model.Quiz.CurrentQuestions / @Model.Quiz.RequiredQuestions</strong><span>@(Model.Quiz.IsReady ? "Questions ready" : "Questions being prepared")</span>
+                        @if (Model.Quiz.IsReady && Model.Quiz.IsUnlocked) { <form asp-area="Student" asp-controller="Assessments" asp-action="Start" asp-route-id="@Model.Quiz.Id" method="post"><button class="button" type="submit">@(Model.Quiz.AttemptCount > 0 ? "Retake quiz" : "Start quiz") →</button></form> }
+                        else if (!Model.Quiz.IsUnlocked) { <span class="badge">Locked</span> }
+                    </div></section>
+                }
+
+                @if (Model.Activity is not null || Model.Quiz is not null) {
+                    <section class="lesson-next-step" aria-label="Continue learning"><span class="eyebrow">KEEP YOUR PROGRESS MOVING</span><h2>Finished reading this lesson?</h2>
+                        @if (Model.Activity is not null && !Model.Activity.IsCompleted) { <a class="button" href="#activity">Continue to activity →</a> }
+                        else if (Model.Quiz is not null && Model.Quiz.IsUnlocked) { <a class="button" href="#quiz">Continue to quiz →</a> }
+                        else if (Model.Activity is not null) { <a class="button" href="#activity">Review activity →</a> }
+                    </section>
+                }
+            </main>
+
+            <aside class="lesson-toc" aria-label="Lesson navigation">
+                <details class="lesson-toc-details" open>
+                    <summary>On this lesson</summary>
+                    <nav aria-label="On this lesson">
+                        @foreach (var item in allSections) {
+                            <a href="#@item.Id"><span>@(item.Section.Kind == LessonSectionKind.Discussion ? "§" : "·")</span>@item.Section.Heading</a>
+                        }
+                        @if (Model.Activity is not null) { <a href="#activity"><span>·</span>Practice activity</a> }
+                        @if (Model.Quiz is not null) { <a href="#quiz"><span>·</span>Lesson quiz</a> }
+                    </nav>
+                    @if (Model.LessonCount > 0) {
+                        <div class="lesson-toc-progress"><span>Your place in this course</span><div class="lesson-progress"><span style="width:@(Math.Clamp((double)Model.LessonNumber / Model.LessonCount * 100, 0, 100).ToString("0.#", System.Globalization.CultureInfo.InvariantCulture))%"></span></div><strong>Lesson @Model.LessonNumber of @Model.LessonCount</strong></div>
+                    }
+                </details>
+            </aside>
+        </div>
+    }
+</div>

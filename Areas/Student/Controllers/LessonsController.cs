@@ -39,7 +39,11 @@ public class LessonsController(ApplicationDbContext db, StudentProgressService p
         var quizAttempts = quiz is null ? [] : await db.AssessmentAttempts.AsNoTracking()
             .Where(x => x.UserId == userId && x.AssessmentId == quiz.Id && x.SubmittedAtUtc != null)
             .ToListAsync();
-        return View(new StudentLessonDetailsViewModel(lesson.Id, lesson.Title, lesson.Summary,
+        var lessonNumber = await db.Lessons.AsNoTracking()
+            .CountAsync(x => x.SubjectId == lesson.SubjectId && x.IsPublished && x.SortOrder < lesson.SortOrder) + 1;
+        var lessonCount = await db.Lessons.AsNoTracking()
+            .CountAsync(x => x.SubjectId == lesson.SubjectId && x.IsPublished);
+        var model = new StudentLessonDetailsViewModel(lesson.Id, lesson.Title, lesson.Summary,
             lesson.Subject.Code, lesson.SubjectId, lesson.ReviewMaterials.Where(x => x.IsPublished)
                 .OrderBy(x => x.SortOrder).ThenBy(x => x.Title)
                 .Select(x => new StudentMaterialViewModel(x.Title, x.Content, x.ResourceUrl)).ToList(),
@@ -61,7 +65,13 @@ public class LessonsController(ApplicationDbContext db, StudentProgressService p
             quiz is null ? null : new StudentAssessmentStatusViewModel(quiz.Id, quiz.Title,
                 quiz.RequiredQuestionCount, quiz.AssessmentQuestions.Count, quiz.IsPublished,
                 submission is not null, quizAttempts.Count == 0 ? null : quizAttempts.Max(x => x.Percentage),
-                quizAttempts.Count)));
+                quizAttempts.Count))
+        {
+            SubjectTitle = lesson.Subject.Title,
+            LessonNumber = lessonNumber,
+            LessonCount = lessonCount
+        };
+        return View(model);
         }
         catch (Exception exception)
         {

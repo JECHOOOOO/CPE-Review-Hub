@@ -96,7 +96,12 @@ public record AttachmentViewModel(int Id, string FileName, string ContentType, l
 public record StudentLessonDetailsViewModel(int Id, string Title, string Summary, string SubjectCode, int SubjectId,
     IReadOnlyList<StudentMaterialViewModel> Materials, IReadOnlyList<StudentLessonImageViewModel> Images,
     StudentActivityViewModel? Activity,
-    StudentAssessmentStatusViewModel? Quiz);
+    StudentAssessmentStatusViewModel? Quiz)
+{
+    public string SubjectTitle { get; init; } = "";
+    public int LessonNumber { get; init; }
+    public int LessonCount { get; init; }
+}
 
 public class ActivitySubmissionViewModel
 {
