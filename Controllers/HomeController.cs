@@ -1,13 +1,34 @@
 using System.Diagnostics;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Authentication;
 using CPE_Review_Hub.Models;
+using CPE_Review_Hub.Security;
 
 namespace CPE_Review_Hub.Controllers;
 
 public class HomeController : Controller
 {
-    public IActionResult Index()
+    [AllowAnonymous]
+    public async Task<IActionResult> Index()
     {
+        var student = await HttpContext.AuthenticateAsync(PortalSecurity.Student);
+        var admin = await HttpContext.AuthenticateAsync(PortalSecurity.Admin);
+        if (student.Succeeded && student.Principal?.IsInRole(PortalSecurity.Student) == true)
+        {
+            ViewData["JourneyUrl"] = "/student/dashboard";
+            ViewData["JourneyLabel"] = "Go to student dashboard";
+        }
+        else if (admin.Succeeded && admin.Principal?.IsInRole(PortalSecurity.Admin) == true)
+        {
+            ViewData["JourneyUrl"] = "/admin/dashboard";
+            ViewData["JourneyLabel"] = "Open admin dashboard";
+        }
+        else
+        {
+            ViewData["JourneyUrl"] = "/student/register";
+            ViewData["JourneyLabel"] = "Begin your journey";
+        }
         return View();
     }
 
@@ -16,7 +37,7 @@ public class HomeController : Controller
         return View();
     }
 
-    [HttpGet("/about")]
+    [AllowAnonymous, HttpGet("/about")]
     public IActionResult About() => View();
 
     public IActionResult AccessDenied()

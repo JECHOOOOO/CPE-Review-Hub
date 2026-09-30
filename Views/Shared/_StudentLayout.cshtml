@@ -21,7 +21,6 @@
             <a class="nav-item @(controller is "Subjects" or "Lessons" ? "active" : "")" asp-area="Student" asp-controller="Subjects" asp-action="Index">Subjects &amp; lessons</a>
             <a class="nav-item @(controller is "Assessments" or "Progress" ? "active" : "")" asp-area="Student" asp-controller="Progress" asp-action="Index">Quizzes, exams &amp; progress</a>
             <a class="nav-item @(controller == "Profile" ? "active" : "")" asp-area="Student" asp-controller="Profile" asp-action="Index">Profile</a>
-            <a class="nav-item @(controller == "Home" ? "active" : "")" href="/about">About COLMS</a>
         </nav>
         <div class="sidebar-bottom"><p>Signed in as<br /><strong>@User.Identity?.Name</strong></p>
             <form asp-area="Student" asp-controller="Account" asp-action="Logout" method="post"><button class="button secondary full" type="submit">Log out</button></form>

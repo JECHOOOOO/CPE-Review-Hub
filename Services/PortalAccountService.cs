@@ -26,7 +26,9 @@ public class PortalAccountService(UserManager<ApplicationUser> users, SignInMana
             return false;
         }
 
-        await LogoutAsync(context);
+        // Student and Admin use separate cookies. Signing into one portal must
+        // not silently revoke the other portal's still-valid session.
+        await context.SignOutAsync(portal);
         var identity = new ClaimsIdentity(new[]
         {
             new Claim(ClaimTypes.NameIdentifier, user.Id), new Claim(ClaimTypes.Name, user.FullName),
@@ -70,9 +72,5 @@ public class PortalAccountService(UserManager<ApplicationUser> users, SignInMana
 
     public Task<IdentityResult> DeleteAsync(ApplicationUser user) => users.DeleteAsync(user);
 
-    public async Task LogoutAsync(HttpContext context)
-    {
-        await context.SignOutAsync(PortalSecurity.Student);
-        await context.SignOutAsync(PortalSecurity.Admin);
-    }
+    public Task LogoutAsync(HttpContext context, string portal) => context.SignOutAsync(portal);
 }

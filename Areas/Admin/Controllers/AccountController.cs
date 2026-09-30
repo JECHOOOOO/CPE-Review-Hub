@@ -11,8 +11,13 @@ namespace CPE_Review_Hub.Areas.Admin.Controllers;
 [Area("Admin")]
 public class AccountController : Controller
 {
-    [AllowAnonymous, HttpGet("/admin.html"), HttpGet("/admin/login")]
-    public IActionResult Login(string? returnUrl = null) => View(new LoginViewModel { ReturnUrl = returnUrl });
+    [AllowAnonymous, HttpGet("/admin.html"), HttpGet("/admin/login"),
+     ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    public IActionResult Login(string? returnUrl = null)
+    {
+        if (User.IsInRole(PortalSecurity.Admin)) return RedirectToAction("Index", "Dashboard", new { area = "Admin" });
+        return View(new LoginViewModel { ReturnUrl = returnUrl });
+    }
 
     [AllowAnonymous, HttpGet("/admin/forgot-password")]
     public IActionResult ForgotPassword()
@@ -64,6 +69,7 @@ public class AccountController : Controller
     [AllowAnonymous, HttpPost("/admin.html"), HttpPost("/admin/login"), EnableRateLimiting("account")]
     public async Task<IActionResult> Login(LoginViewModel model, [FromServices] PortalAccountService accounts)
     {
+        if (User.IsInRole(PortalSecurity.Admin)) return RedirectToAction("Index", "Dashboard", new { area = "Admin" });
         if (!ModelState.IsValid) return View(model);
         if (!await accounts.LoginAsync(HttpContext, model, PortalSecurity.Admin))
         {
@@ -78,7 +84,7 @@ public class AccountController : Controller
     [Authorize(Policy = PortalSecurity.Admin), HttpPost]
     public async Task<IActionResult> Logout([FromServices] PortalAccountService accounts)
     {
-        await accounts.LogoutAsync(HttpContext);
+        await accounts.LogoutAsync(HttpContext, PortalSecurity.Admin);
         return Redirect("/admin.html");
     }
 }

@@ -1,18 +1,51 @@
 @{ ViewData["Title"] = "About COLMS"; ViewData["BodyClass"] = "about-page"; }
-<section class="about-hero">
-    <span class="eyebrow">COLMS · ABOUT THE PROJECT</span>
-    <h1>About COLMS</h1>
+<section class="about-hero" aria-labelledby="about-title">
+    <span class="eyebrow">A COMPUTER ENGINEERING LEARNING PLATFORM</span>
+    <h1 id="about-title">About COLMS</h1>
     <p class="about-subtitle">CentOs Learning Management System</p>
-    <p class="lead">COLMS is a learning management and review platform designed to help Computer Engineering students access organized courses, lessons, activities, quizzes, examinations, and learning progress.</p>
+    <p class="lead">COLMS is a learning platform developed by CentOs, a student development team committed to creating an organized and accessible digital learning environment for Computer Engineering students. It brings lessons, learning activities, quizzes, examinations, and progress tracking together in one structured place.</p>
 </section>
+
+<section class="centos-purpose" aria-labelledby="centos-purpose-title">
+    <span class="centos-wordmark">CentOs</span>
+    <p class="eyebrow">THE MEANING BEHIND THE NAME</p>
+    <h2 id="centos-purpose-title">CENTERED ON SUCCESS</h2>
+    <p>The idea behind the team. The principle behind COLMS.</p>
+    <p class="centos-purpose-detail">The name reflects the team's goal of keeping learning, progress, and student development at the center of the COLMS experience.</p>
+</section>
+
+<section class="about-purpose-grid" aria-label="About COLMS">
+    <article>
+        <span class="eyebrow">OUR STORY</span>
+        <h2>Built around engineering learning</h2>
+        <p>CentOs developed COLMS to help Computer Engineering students review course material, practice what they learn, assess their understanding, and follow their academic progress.</p>
+    </article>
+    <article>
+        <span class="eyebrow">WHAT COLMS PROVIDES</span>
+        <h2>A structured study path</h2>
+        <ul class="about-feature-list">
+            <li>Organized Computer Engineering courses and lessons</li>
+            <li>Lesson activities for practice</li>
+            <li>Automatically scored quizzes and examinations</li>
+            <li>Student progress and results tracking</li>
+            <li>Academic resources and lesson visuals</li>
+        </ul>
+    </article>
+</section>
+
 <section class="developers-section" aria-labelledby="developers-title">
-    <div class="section-heading"><div><span class="eyebrow">THE PEOPLE BEHIND COLMS</span><h2 id="developers-title">Developers</h2></div><span class="muted small">BS Computer Engineering Students</span></div>
+    <div class="section-heading"><div><span class="eyebrow">THE PEOPLE BEHIND COLMS</span><h2 id="developers-title">Development Team</h2></div><span class="muted small">BS Computer Engineering Students</span></div>
     <div class="developer-grid">
-        <article class="developer-card"><span class="developer-index">01</span><h3>Cuerpo, Justine Alviel</h3></article>
-        <article class="developer-card project-leader"><span class="developer-index">02</span><span class="developer-role">Project Leader</span><h3>Del Socorro, Jericho S.</h3></article>
-        <article class="developer-card"><span class="developer-index">03</span><h3>Eulogio, Reyco E.</h3></article>
-        <article class="developer-card"><span class="developer-index">04</span><h3>Gico, Vince Kenneth A.</h3></article>
-        <article class="developer-card"><span class="developer-index">05</span><h3>Rodriguez, Ronnie Jr. L.</h3></article>
-        <article class="developer-card"><span class="developer-index">06</span><h3>Zamudio, Owen Dave B.</h3></article>
+        <article class="developer-card"><span class="developer-index">01</span><span class="developer-role">Lead Developer</span><h3>Del Socorro, Jericho S.</h3><p>Leads the technical development and implementation of the COLMS platform.</p></article>
+        <article class="developer-card project-leader"><span class="developer-index">02</span><span class="developer-role">Project Leader</span><h3>Rodriguez, Ronnie Jr. L.</h3><p>Coordinates the project direction and development work.</p></article>
+        <article class="developer-card"><span class="developer-index">03</span><span class="developer-role">Front-End Developer</span><h3>Zamudio, Owen Dave B.</h3><p>Works on the student-facing interface and browser experience.</p></article>
+        <article class="developer-card"><span class="developer-index">04</span><span class="developer-role">Back-End Developer</span><h3>Eulogio, Reyco E.</h3><p>Works on server-side features and application data handling.</p></article>
+        <article class="developer-card"><span class="developer-index">05</span><span class="developer-role">UI/UX Designer</span><h3>Gico, Vince Kenneth A.</h3><p>Works on the interface design and usability of COLMS.</p></article>
+        <article class="developer-card"><span class="developer-index">06</span><span class="developer-role">Quality Assurance (QA) &amp; Testing</span><h3>Cuerpo, Justine Alviel</h3><p>Checks system behavior and supports testing across COLMS features.</p></article>
     </div>
+</section>
+
+<section class="about-actions" aria-label="Continue to COLMS">
+    <a class="button secondary" href="/">Back to COLMS</a>
+    <a class="button" href="/student/register">Begin your journey →</a>
 </section>

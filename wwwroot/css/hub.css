@@ -1665,6 +1665,34 @@ th { color:rgba(255,255,255,.45) }
 .developer-role { position:absolute;top:17px;right:18px;padding:6px 9px;border:1px solid rgba(231,190,91,.48);border-radius:999px;color:#f0cf75;font-size:.68rem;font-weight:750;letter-spacing:.06em;text-transform:uppercase }
 .project-leader { border-color:rgba(231,190,91,.4);background:linear-gradient(145deg,rgba(231,190,91,.11),rgba(255,255,255,.02)) }
 
+.hero-journey,.nav-journey { display:inline-flex;align-items:center;justify-content:center;gap:10px;border:1px solid rgba(132,235,224,.72);background:linear-gradient(115deg,#0b7281,#086b78 58%,#10545f);box-shadow:0 10px 34px rgba(5,145,157,.28),inset 0 1px rgba(255,255,255,.2);color:#fff!important;font-weight:800;text-decoration:none;text-shadow:0 1px 2px rgba(0,0,0,.25); }
+.hero-journey:hover,.nav-journey:hover { border-color:#baf6e9;background:linear-gradient(115deg,#128c96,#087480 58%,#13636b);box-shadow:0 14px 38px rgba(5,145,157,.38); }
+.hero-journey:focus-visible,.nav-journey:focus-visible { outline:3px solid #f0cf75;outline-offset:4px; }
+.hero-journey:active,.nav-journey:active { transform:translateY(1px) scale(.99); }
+.centos-about-section { display:flex;justify-content:center;padding-top:72px;padding-bottom:92px;border-top:1px solid rgba(164,204,222,.13); }
+.centos-about-copy { width:min(100%,800px);padding:clamp(26px,6vw,58px);border:1px solid rgba(132,235,224,.19);border-radius:26px;background:radial-gradient(ellipse at 50% 0,rgba(15,153,158,.13),transparent 67%),linear-gradient(140deg,rgba(13,29,34,.9),rgba(5,12,19,.94));text-align:center; }
+.centos-about-copy h2 { margin:0;color:#fff;font-size:clamp(2rem,5vw,3.5rem);line-height:1.1;letter-spacing:-.04em; }
+.centos-about-copy h2 em { color:#8fe8df;font-style:normal; }
+.centos-about-copy p:not(.section-label) { max-width:580px;margin:16px auto 24px;color:rgba(239,246,251,.72);line-height:1.7; }
+.centos-about-copy .button { border-color:rgba(143,232,223,.38); }
+.centos-purpose { max-width:960px;margin:0 auto 78px;padding:clamp(32px,7vw,72px) 24px;border:1px solid rgba(143,232,223,.22);border-radius:26px;background:radial-gradient(ellipse at 50% 0,rgba(15,153,158,.18),transparent 65%),linear-gradient(135deg,rgba(11,34,39,.96),rgba(8,14,23,.97));box-shadow:0 24px 70px rgba(0,0,0,.2);text-align:center; }
+.centos-wordmark { display:block;margin-bottom:10px;color:#8fe8df;font-size:clamp(1.8rem,4vw,2.5rem);font-weight:750;letter-spacing:-.045em; }
+.centos-purpose .eyebrow { margin-bottom:10px;color:rgba(239,246,251,.54); }
+.centos-purpose h2 { margin:0;color:#f0cf75;font-size:clamp(2rem,6vw,4.25rem);font-weight:850;letter-spacing:.07em;line-height:1.12;text-shadow:0 0 34px rgba(231,190,91,.13); }
+.centos-purpose>p:not(.eyebrow) { max-width:620px;margin:15px auto 0;color:rgba(239,246,251,.74);line-height:1.7; }
+.centos-purpose .centos-purpose-detail { color:rgba(239,246,251,.62);font-size:.92rem; }
+.about-purpose-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;margin:0 0 68px; }
+.about-purpose-grid article { padding:clamp(23px,4vw,36px);border:1px solid rgba(164,204,222,.15);border-radius:20px;background:rgba(255,255,255,.025); }
+.about-purpose-grid h2 { margin:0 0 14px;color:#f7fbff;font-size:clamp(1.35rem,2.5vw,1.8rem); }
+.about-purpose-grid p,.about-feature-list { color:rgba(239,246,251,.72);line-height:1.75; }
+.about-feature-list { display:grid;gap:9px;margin:0;padding-left:1.25rem; }
+.developer-card { display:flex;flex-direction:column;align-items:flex-start; }
+.developer-card h3 { margin:29px 0 7px; }
+.developer-card p { margin:0;color:rgba(239,246,251,.63);font-size:.88rem;line-height:1.6; }
+.developer-role { max-width:calc(100% - 70px);text-align:right; }
+.about-actions { display:flex;justify-content:center;gap:14px;flex-wrap:wrap;padding:0 0 76px; }
+.about-actions .button { min-width:185px;text-align:center; }
+
 .semester-heading { margin:26px 0 14px;color:#d8e5ec;font-size:1.12rem;letter-spacing:0 }
 .course-level-section>.subject-grid+.semester-heading { margin-top:30px }
 .course-coming-soon { color:rgba(255,255,255,.58);font-size:.84rem;font-weight:650 }
@@ -1685,4 +1713,7 @@ th { color:rgba(255,255,255,.45) }
     .about-page .public-main { padding:55px 20px 35px }
     .developers-section .section-heading { align-items:flex-start;flex-direction:column;gap:0 }
     .footer-links { width:100% }
+    .about-purpose-grid { grid-template-columns:1fr; }
+    .centos-purpose { margin-bottom:55px; }
+    .developer-card { min-height:0; }
 }

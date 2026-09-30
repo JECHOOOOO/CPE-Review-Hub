@@ -31,6 +31,16 @@
     </footer>
     <script src="~/js/ambient-video.js" asp-append-version="true"></script>
     <script src="~/js/site.js" asp-append-version="true"></script>
+    @if (ViewData["BodyClass"]?.ToString()?.Split(' ').Contains("login-page") == true)
+    {
+        <script>
+            // If Back restores this auth form from the browser's back/forward
+            // cache, request it again so the server can redirect a live session.
+            window.addEventListener("pageshow", function (event) {
+                if (event.persisted) window.location.reload();
+            });
+        </script>
+    }
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>

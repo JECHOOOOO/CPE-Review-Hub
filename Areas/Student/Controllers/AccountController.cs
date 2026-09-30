@@ -12,12 +12,18 @@ namespace CPE_Review_Hub.Areas.Student.Controllers;
 [Area("Student")]
 public class AccountController : Controller
 {
-    [AllowAnonymous, HttpGet("/student.html"), HttpGet("/student/login")]
-    public IActionResult Login(string? returnUrl = null) => View(new LoginViewModel { ReturnUrl = returnUrl });
+    [AllowAnonymous, HttpGet("/student.html"), HttpGet("/student/login"),
+     ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    public IActionResult Login(string? returnUrl = null)
+    {
+        if (User.IsInRole(PortalSecurity.Student)) return RedirectToAction("Index", "Dashboard", new { area = "Student" });
+        return View(new LoginViewModel { ReturnUrl = returnUrl });
+    }
 
     [AllowAnonymous, HttpPost("/student.html"), HttpPost("/student/login"), EnableRateLimiting("account")]
     public async Task<IActionResult> Login(LoginViewModel model, [FromServices] PortalAccountService accounts)
     {
+        if (User.IsInRole(PortalSecurity.Student)) return RedirectToAction("Index", "Dashboard", new { area = "Student" });
         if (!ModelState.IsValid) return View(model);
         if (!await accounts.LoginAsync(HttpContext, model, PortalSecurity.Student))
         {
@@ -29,8 +35,13 @@ public class AccountController : Controller
         return RedirectToAction("Index", "Dashboard", new { area = "Student" });
     }
 
-    [AllowAnonymous, HttpGet("/student/register"), HttpGet("/Student/Account/Register")]
-    public IActionResult Register() => View(new RegisterViewModel());
+    [AllowAnonymous, HttpGet("/student/register"), HttpGet("/Student/Account/Register"),
+     ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
+    public IActionResult Register()
+    {
+        if (User.IsInRole(PortalSecurity.Student)) return RedirectToAction("Index", "Dashboard", new { area = "Student" });
+        return View(new RegisterViewModel());
+    }
 
     [AllowAnonymous, HttpGet("/student/forgot-password")]
     public IActionResult ForgotPassword()
@@ -84,6 +95,7 @@ public class AccountController : Controller
         [FromServices] IEmailDeliveryService email, [FromServices] IConfiguration configuration,
         [FromServices] ApplicationDbContext db, CancellationToken cancellationToken)
     {
+        if (User.IsInRole(PortalSecurity.Student)) return RedirectToAction("Index", "Dashboard", new { area = "Student" });
         if (!ModelState.IsValid) return View(model);
         if (!email.IsConfigured)
         {
@@ -131,7 +143,7 @@ public class AccountController : Controller
     [Authorize(Policy = PortalSecurity.Student), HttpPost]
     public async Task<IActionResult> Logout([FromServices] PortalAccountService accounts)
     {
-        await accounts.LogoutAsync(HttpContext);
+        await accounts.LogoutAsync(HttpContext, PortalSecurity.Student);
         return Redirect("/student.html");
     }
 }
