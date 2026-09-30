@@ -103,7 +103,7 @@ public sealed class StudentProfileService(ApplicationDbContext db)
         var inProgressCount = courseStates.Count(x => x.IsStarted && !x.IsComplete);
         var totalLessons = courseStates.Sum(x => x.Lessons.Count);
         var lessonsCompleted = courseStates.Sum(x => x.Completed);
-        var overall = totalLessons == 0 ? 0 : (int)Math.Round(100m * lessonsCompleted / totalLessons);
+        var overall = totalLessons == 0 ? 0m : Math.Round(100m * lessonsCompleted / totalLessons, 1);
 
         var courseProgress = courseStates.Where(x => x.IsStarted).Select(x =>
         {

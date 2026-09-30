@@ -75,7 +75,7 @@ public record StudentProfilePageViewModel(string FullName, string Email, string 
     bool IsActive, DateTime MemberSinceUtc, string Initials, ProfileViewModel EditProfile,
     StudentProfileLearningViewModel Learning);
 public record StudentProfileLearningViewModel(int CoursesInProgress, int LessonsCompleted, int TotalLessons,
-    int OverallProgressPercentage, int ActivitiesCompleted, int QuizzesTaken, int QuizzesPassed,
+    decimal OverallProgressPercentage, int ActivitiesCompleted, int QuizzesTaken, int QuizzesPassed,
     int FinalExamsCompleted, IReadOnlyList<StudentProfileCourseViewModel> Courses,
     StudentProfileContinueViewModel? ContinueLearning,
     IReadOnlyList<StudentProfileActivityViewModel> RecentActivity);

@@ -57,7 +57,7 @@
     <div class="profile-metrics">
         <article class="profile-metric"><span>Courses in progress</span><strong>@learning.CoursesInProgress</strong><small>Started courses not yet completed</small></article>
         <article class="profile-metric"><span>Lessons completed</span><strong>@learning.LessonsCompleted <small>/ @learning.TotalLessons</small></strong><small>Completion requires a passed lesson quiz</small></article>
-        <article class="profile-metric"><span>Overall progress</span><strong>@learning.OverallProgressPercentage%</strong><small>Passed lesson quizzes across published courses</small></article>
+        <article class="profile-metric"><span>Overall progress</span><strong>@learning.OverallProgressPercentage.ToString("0.#")%</strong><small>Passed lesson quizzes across published courses</small></article>
     </div>
 </section>
 
@@ -146,3 +146,13 @@
         <button class="button" type="submit">Save profile</button>
     </form>
 </details>
+
+@section Scripts {
+    <script>
+        const profileEdit = document.getElementById("edit-profile");
+        if (profileEdit && window.location.hash === "#edit-profile") profileEdit.open = true;
+        document.querySelector('a[href="#edit-profile"]')?.addEventListener("click", () => {
+            if (profileEdit) profileEdit.open = true;
+        });
+    </script>
+}
