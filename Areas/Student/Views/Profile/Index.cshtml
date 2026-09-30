@@ -1,10 +1,148 @@
-@model ProfileViewModel
-@{ ViewData["Title"] = "My profile"; }
-<span class="eyebrow">YOUR ACCOUNT</span><h1>My profile</h1><p class="lead">Keep your student details up to date.</p>
-<section class="panel profile-panel"><form asp-area="Student" asp-controller="Profile" asp-action="Index" method="post">
-    <div asp-validation-summary="All" class="validation" role="alert"></div>
-    <label asp-for="FullName"></label><input asp-for="FullName" autocomplete="name" required />
-    <label asp-for="University"></label><input asp-for="University" autocomplete="organization" />
-    <label asp-for="YearLevel"></label><input asp-for="YearLevel" />
-    <button class="button" type="submit">Save profile</button>
-</form></section>
+@model StudentProfilePageViewModel
+@{
+    ViewData["Title"] = "My profile";
+    var learning = Model.Learning;
+}
+
+<span class="eyebrow">STUDENT PROFILE</span>
+<h1>My profile</h1>
+<p class="lead">Your account details and learning progress in one place.</p>
+
+<section class="profile-hero panel" aria-labelledby="profile-name">
+    <div class="profile-identity">
+        <div class="profile-avatar" aria-hidden="true">@Model.Initials</div>
+        <div>
+            <h2 id="profile-name">@Model.FullName</h2>
+            <p>BS Computer Engineering</p>
+            <span class="profile-status"><span aria-hidden="true">●</span> @(Model.IsActive ? "Active account" : "Inactive account")</span>
+        </div>
+    </div>
+    <a class="button secondary" href="#edit-profile">Edit profile</a>
+</section>
+
+<section class="profile-continue panel" aria-labelledby="continue-heading">
+    <div>
+        <span class="eyebrow">YOUR NEXT STEP</span>
+        <h2 id="continue-heading">Continue learning</h2>
+        @if (learning.ContinueLearning is { } next)
+        {
+            <p class="profile-course-line"><strong>@next.CourseCode</strong> · @next.CourseTitle</p>
+            <h3>@next.StepTitle</h3>
+            <p>@next.Description</p>
+            <div class="profile-next-progress">
+                <div class="progress-track" role="progressbar" aria-label="Course lesson progress"
+                     aria-valuemin="0" aria-valuemax="@next.TotalLessons" aria-valuenow="@next.CompletedLessons">
+                    <span style="width:@(next.TotalLessons == 0 ? 0 : (int)Math.Round(100d * next.CompletedLessons / next.TotalLessons))%"></span>
+                </div>
+                <span>@next.CompletedLessons of @next.TotalLessons lessons completed</span>
+            </div>
+        }
+        else
+        {
+            <p>You have completed the available learning path. Browse courses to review lessons or explore more content.</p>
+        }
+    </div>
+    @if (learning.ContinueLearning is { } continueItem)
+    {
+        <a class="button" href="@continueItem.Url">@continueItem.ActionLabel <span aria-hidden="true">→</span></a>
+    }
+    else
+    {
+        <a class="button" href="/student/courses">Explore courses <span aria-hidden="true">→</span></a>
+    }
+</section>
+
+<section class="profile-overview" aria-labelledby="overview-heading">
+    <div class="section-heading"><div><span class="eyebrow">AT A GLANCE</span><h2 id="overview-heading">Learning overview</h2></div></div>
+    <div class="profile-metrics">
+        <article class="profile-metric"><span>Courses in progress</span><strong>@learning.CoursesInProgress</strong><small>Started courses not yet completed</small></article>
+        <article class="profile-metric"><span>Lessons completed</span><strong>@learning.LessonsCompleted <small>/ @learning.TotalLessons</small></strong><small>Completion requires a passed lesson quiz</small></article>
+        <article class="profile-metric"><span>Overall progress</span><strong>@learning.OverallProgressPercentage%</strong><small>Passed lesson quizzes across published courses</small></article>
+    </div>
+</section>
+
+<div class="profile-columns">
+    <section class="profile-section panel" aria-labelledby="course-progress-heading">
+        <div class="section-heading"><div><span class="eyebrow">YOUR COURSES</span><h2 id="course-progress-heading">Course progress</h2></div></div>
+        @if (learning.Courses.Count == 0)
+        {
+            <div class="profile-empty"><p>No course progress yet.</p><span>Start your first COLMS lesson to begin tracking your learning.</span><a href="/student/courses">Explore courses →</a></div>
+        }
+        else
+        {
+            <div class="profile-course-list">
+                @foreach (var course in learning.Courses)
+                {
+                    <article class="profile-course">
+                        <div class="profile-course-heading"><div><strong>@course.Code</strong><h3>@course.Title</h3></div><strong>@course.ProgressPercentage%</strong></div>
+                        <div class="progress-track" role="progressbar" aria-label="@course.Code lesson progress"
+                             aria-valuemin="0" aria-valuemax="@course.TotalLessons" aria-valuenow="@course.CompletedLessons">
+                            <span style="width:@course.ProgressPercentage%"></span>
+                        </div>
+                        <div class="profile-course-footer"><span>@course.CompletedLessons of @course.TotalLessons lessons completed</span><a href="@course.ContinueUrl">Continue course →</a></div>
+                    </article>
+                }
+            </div>
+        }
+    </section>
+
+    <section class="profile-section panel" aria-labelledby="student-info-heading">
+        <div class="section-heading"><div><span class="eyebrow">YOUR DETAILS</span><h2 id="student-info-heading">Student information</h2></div></div>
+        <dl class="profile-info-list">
+            <div><dt>Email address</dt><dd>@Model.Email</dd></div>
+            <div><dt>Program</dt><dd>BS Computer Engineering</dd></div>
+            <div><dt>University</dt><dd>@(string.IsNullOrWhiteSpace(Model.University) ? "Not provided" : Model.University)</dd></div>
+            <div><dt>Year level</dt><dd>@(string.IsNullOrWhiteSpace(Model.YearLevel) ? "Not provided" : Model.YearLevel)</dd></div>
+            <div><dt>Account status</dt><dd>@(Model.IsActive ? "Active" : "Inactive")</dd></div>
+            <div><dt>Member since</dt><dd>@Model.MemberSinceUtc.ToLocalTime().ToString("MMMM yyyy")</dd></div>
+        </dl>
+    </section>
+</div>
+
+<div class="profile-columns">
+    <section class="profile-section panel" aria-labelledby="recent-activity-heading">
+        <div class="section-heading"><div><span class="eyebrow">LATEST UPDATES</span><h2 id="recent-activity-heading">Recent learning activity</h2></div></div>
+        @if (learning.RecentActivity.Count == 0)
+        {
+            <div class="profile-empty"><p>No learning activity yet.</p><span>Completed activities and submitted assessments will appear here.</span></div>
+        }
+        else
+        {
+            <ol class="profile-activity-list">
+                @foreach (var item in learning.RecentActivity)
+                {
+                    <li><span class="profile-activity-mark" aria-hidden="true">✓</span><div><span class="eyebrow">@item.Kind</span><h3>@item.Title</h3><p>@item.CourseCode · @item.Details</p></div><time datetime="@item.OccurredAtUtc.ToString("O")">@item.OccurredAtUtc.ToLocalTime().ToString("MMM d, yyyy")</time></li>
+                }
+            </ol>
+        }
+    </section>
+
+    <section class="profile-section panel" aria-labelledby="learning-stats-heading">
+        <div class="section-heading"><div><span class="eyebrow">YOUR LEARNING</span><h2 id="learning-stats-heading">Learning statistics</h2></div></div>
+        <dl class="profile-stat-list">
+            <div><dt>Lessons completed</dt><dd>@learning.LessonsCompleted</dd></div>
+            <div><dt>Activities completed</dt><dd>@learning.ActivitiesCompleted</dd></div>
+            <div><dt>Quizzes taken</dt><dd>@learning.QuizzesTaken</dd></div>
+            <div><dt>Quizzes passed</dt><dd>@learning.QuizzesPassed <small>unique quizzes passed</small></dd></div>
+            <div><dt>Final exams completed</dt><dd>@learning.FinalExamsCompleted <small>unique exams submitted</small></dd></div>
+        </dl>
+    </section>
+</div>
+
+<section class="profile-section panel" aria-labelledby="account-security-heading">
+    <div class="section-heading"><div><span class="eyebrow">ACCOUNT</span><h2 id="account-security-heading">Account &amp; security</h2></div></div>
+    <div class="profile-security-row"><div><span>Email address</span><strong>@Model.Email</strong></div><div><span>Password</span><strong aria-label="Password is hidden">••••••••••••</strong></div></div>
+    <div class="profile-actions"><a class="button secondary" href="/student/change-password">Change password</a><form asp-area="Student" asp-controller="Account" asp-action="Logout" method="post"><button class="button secondary" type="submit">Log out</button></form></div>
+</section>
+
+<details id="edit-profile" class="profile-edit panel">
+    <summary>Edit profile information</summary>
+    <p class="small muted">Update your display name, university, and year level. Your email and account permissions cannot be changed here.</p>
+    <form asp-area="Student" asp-controller="Profile" asp-action="Index" method="post">
+        <div asp-validation-summary="All" class="validation" role="alert"></div>
+        <label asp-for="EditProfile.FullName"></label><input asp-for="EditProfile.FullName" autocomplete="name" required />
+        <label asp-for="EditProfile.University"></label><input asp-for="EditProfile.University" autocomplete="organization" />
+        <label asp-for="EditProfile.YearLevel"></label><input asp-for="EditProfile.YearLevel" placeholder="e.g. 1st Year" />
+        <button class="button" type="submit">Save profile</button>
+    </form>
+</details>

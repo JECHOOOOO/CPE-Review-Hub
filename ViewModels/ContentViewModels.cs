@@ -71,6 +71,20 @@ public record LessonImageAdminRow(int Id, string ImagePath, string AltText, stri
 public record AdminDashboardViewModel(string FullName, string Email, int StudentCount, int SubjectCount, int LessonCount, int MaterialCount);
 public record StudentLevelCard(int Id, string Name, int SubjectCount);
 public record StudentDashboardViewModel(string FullName, string Email, IReadOnlyList<StudentLevelCard> Levels);
+public record StudentProfilePageViewModel(string FullName, string Email, string University, string YearLevel,
+    bool IsActive, DateTime MemberSinceUtc, string Initials, ProfileViewModel EditProfile,
+    StudentProfileLearningViewModel Learning);
+public record StudentProfileLearningViewModel(int CoursesInProgress, int LessonsCompleted, int TotalLessons,
+    int OverallProgressPercentage, int ActivitiesCompleted, int QuizzesTaken, int QuizzesPassed,
+    int FinalExamsCompleted, IReadOnlyList<StudentProfileCourseViewModel> Courses,
+    StudentProfileContinueViewModel? ContinueLearning,
+    IReadOnlyList<StudentProfileActivityViewModel> RecentActivity);
+public record StudentProfileCourseViewModel(int SubjectId, string Code, string Title,
+    int CompletedLessons, int TotalLessons, int ProgressPercentage, string ContinueUrl);
+public record StudentProfileContinueViewModel(string CourseCode, string CourseTitle, string StepTitle,
+    string Description, string Url, string ActionLabel, int CompletedLessons, int TotalLessons);
+public record StudentProfileActivityViewModel(string Kind, string Title, string CourseCode,
+    string Details, DateTime OccurredAtUtc);
 public record StudentSubjectRow(int Id, string Code, string Title, string Description, string Level, int LessonCount,
     decimal? Units, int? Semester);
 public record StudentSubjectIndexViewModel(int? SelectedLevel, IReadOnlyList<SelectionOption> Levels, IReadOnlyList<StudentSubjectRow> Subjects);

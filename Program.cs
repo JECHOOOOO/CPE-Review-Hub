@@ -27,6 +27,7 @@ builder.Services.AddControllersWithViews(options =>
 builder.Services.AddMemoryCache();
 builder.Services.AddPortalSecurity(builder.Configuration, builder.Environment.IsDevelopment());
 builder.Services.AddScoped<StudentProgressService>();
+builder.Services.AddScoped<StudentProfileService>();
 builder.Services.AddScoped<ActivityAttachmentService>();
 builder.Services.AddScoped<AssessmentScoringService>();
 builder.Services.AddScoped<PortalPasswordResetService>();

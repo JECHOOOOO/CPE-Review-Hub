@@ -41,3 +41,13 @@ public class ProfileViewModel
     [StringLength(120)] public string? University { get; set; }
     [StringLength(40), Display(Name = "Year level")] public string? YearLevel { get; set; }
 }
+
+public class ChangePasswordViewModel
+{
+    [Required, DataType(DataType.Password), Display(Name = "Current password")]
+    public string CurrentPassword { get; set; } = "";
+    [Required, StringLength(128, MinimumLength = 8), DataType(DataType.Password), Display(Name = "New password")]
+    public string NewPassword { get; set; } = "";
+    [Required, Compare(nameof(NewPassword)), DataType(DataType.Password), Display(Name = "Confirm new password")]
+    public string ConfirmNewPassword { get; set; } = "";
+}
