@@ -2,7 +2,6 @@
 @using CPE_Review_Hub.Services
 @{
     ViewData["Title"] = Model.Title;
-    ViewData["ProtectedContent"] = true;
     var parsedMaterials = Model.Materials.Select((material, index) => new
     {
         Material = material,

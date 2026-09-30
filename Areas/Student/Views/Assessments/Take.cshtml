@@ -1,6 +1,12 @@
 @model AssessmentTakeViewModel
-@{ ViewData["Title"] = Model.Title; ViewData["ProtectedContent"] = true; }
+@{ ViewData["Title"] = Model.Title; ViewData["AssessmentPage"] = true; }
 
+<aside class="assessment-security-note" role="note" aria-label="Assessment copy restrictions">
+    <strong>SECURE ASSESSMENT</strong>
+    <span>Copying and printing of assessment content are restricted.</span>
+</aside>
+
+<div class="assessment-protected">
 <nav class="breadcrumbs" aria-label="Breadcrumb"><a asp-area="Student" asp-controller="Subjects" asp-action="Index">Subjects</a><span>/</span><span>@Model.CourseCode</span><span>/</span><span>@Model.AssessmentLabel</span></nav>
 
 <header class="quiz-heading">
@@ -42,5 +48,10 @@
     }
     <div class="assessment-submit"><div><strong>Ready to submit?</strong><p>Your score and feedback will be saved to My Progress.</p></div><button class="button" type="submit">Submit @Model.AssessmentLabel.ToLowerInvariant()</button></div>
 </form>
+</div>
 
-@section Scripts { <script src="~/js/quiz.js" asp-append-version="true"></script> }
+@section Styles { <link rel="stylesheet" href="~/css/assessment-protection.css" asp-append-version="true" /> }
+@section Scripts {
+    <script src="~/js/quiz.js" asp-append-version="true"></script>
+    <script src="~/js/assessment-protection.js" asp-append-version="true"></script>
+}

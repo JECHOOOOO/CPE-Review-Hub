@@ -1778,17 +1778,6 @@ th { color:rgba(255,255,255,.45) }
 .course-level-section>.subject-grid+.semester-heading { margin-top:30px }
 .course-coming-soon { color:rgba(255,255,255,.58);font-size:.84rem;font-weight:650 }
 
-/* Learning-content protection is a deterrent, not an OS screenshot lock. */
-.privacy-overlay[hidden] { display:none!important }
-.privacy-overlay { position:fixed;inset:0;z-index:10000;display:grid;place-items:center;background:#000;color:#fff;text-align:center }
-.privacy-overlay-card { display:grid;gap:12px;padding:30px }
-.privacy-overlay-card strong { color:#fff;font-size:1.35rem;letter-spacing:.08em }
-.privacy-overlay-card span { color:#dbe5ec;font-size:1.08rem }
-.privacy-overlay-card small { color:#9ca8b2 }
-@media print {
-    body.protected-learning-page * { visibility:hidden!important }
-    body.protected-learning-page::after { content:'Printing of protected COLMS learning content is disabled.';position:fixed;inset:0;z-index:2147483647;display:grid;place-items:center;padding:30px;background:#fff;color:#111;font:600 18px Arial,sans-serif;text-align:center;visibility:visible!important }
-}
 @media(max-width:760px) {
     .developer-grid { grid-template-columns:1fr }
     .about-page .public-main { padding:55px 20px 35px }

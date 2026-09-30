@@ -14,15 +14,27 @@ public class PortalAccountService(UserManager<ApplicationUser> users, SignInMana
     public async Task<bool> LoginAsync(HttpContext context, LoginViewModel model, string portal)
     {
         var user = await users.FindByEmailAsync(model.Email.Trim());
-        if (user is null || !user.IsActive || user.AccountType != portal)
+        if (user is null)
         {
-            logger.LogWarning("Portal sign-in rejected for {Portal}; account unavailable or wrong portal.", portal);
+            logger.LogWarning("Portal sign-in rejected for {Portal}; no account matched the submitted email.", portal);
+            return false;
+        }
+        if (!user.IsActive)
+        {
+            logger.LogWarning("Portal sign-in rejected for {Portal}; account is inactive.", portal);
+            return false;
+        }
+        if (!string.Equals(user.AccountType, portal, StringComparison.Ordinal))
+        {
+            logger.LogWarning("Portal sign-in rejected for {Portal}; account belongs to a different portal.", portal);
             return false;
         }
         var result = await signIn.CheckPasswordSignInAsync(user, model.Password, lockoutOnFailure: true);
         if (!result.Succeeded)
         {
-            logger.LogWarning("Portal sign-in rejected for {Portal}; password check failed or account locked.", portal);
+            var reason = result.IsLockedOut ? "locked out" : result.IsNotAllowed ? "not allowed by Identity policy" :
+                result.RequiresTwoFactor ? "additional factor required" : "password verification failed";
+            logger.LogWarning("Portal sign-in rejected for {Portal}; {FailureReason}.", portal, reason);
             return false;
         }
 
