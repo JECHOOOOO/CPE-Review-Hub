@@ -20,7 +20,7 @@ public class SubjectsController(ApplicationDbContext db, StudentProgressService 
         var query = db.Subjects.AsNoTracking().Where(x => x.IsPublished);
         if (level.HasValue) query = query.Where(x => x.AcademicLevelId == level);
         var levels = await db.AcademicLevels.AsNoTracking().OrderBy(x => x.Id)
-            .Select(x => new SelectionOption(x.Id, $"{x.Name} — {x.Id} Level")).ToListAsync();
+            .Select(x => new SelectionOption(x.Id, x.Name)).ToListAsync();
         var subjectData = await query.OrderBy(x => x.AcademicLevelId).ThenBy(x => x.Code)
             .Select(x => new { x.Id, x.Code, x.Title, x.Description, x.AcademicLevelId,
                 LevelName = x.AcademicLevel.Name, LessonCount = x.Lessons.Count(l => l.IsPublished) })
@@ -29,7 +29,7 @@ public class SubjectsController(ApplicationDbContext db, StudentProgressService 
         {
             var metadata = FreshmanCourseMetadata.ForCode(x.Code);
             return new StudentSubjectRow(x.Id, x.Code, x.Title, x.Description,
-                $"{x.LevelName} — {x.AcademicLevelId} Level", x.LessonCount,
+                x.LevelName, x.LessonCount,
                 metadata.Units, metadata.Semester);
         }).ToList();
         return View(new StudentSubjectIndexViewModel(level, levels, subjects));
@@ -66,7 +66,7 @@ public class SubjectsController(ApplicationDbContext db, StudentProgressService 
             }).ToList();
         var finalAttempts = exam is null ? [] : submittedAttempts.Where(x => x.AssessmentId == exam.Id).ToList();
         return View(new StudentSubjectDetailsViewModel(subject.Id, subject.Code, subject.Title,
-            subject.Description, $"{subject.AcademicLevel.Name} — {subject.AcademicLevelId} Level", rows,
+            subject.Description, subject.AcademicLevel.Name, rows,
             exam is null ? null : new StudentAssessmentStatusViewModel(exam.Id, exam.Title,
                 exam.RequiredQuestionCount, exam.AssessmentQuestions.Count, exam.IsPublished,
                 progressState.FinalExamUnlocked,

@@ -17,7 +17,7 @@ public class DashboardController(UserManager<ApplicationUser> users, Application
         var user = await users.GetUserAsync(User);
         if (user is null) return Challenge(PortalSecurity.Student);
         var levels = await db.AcademicLevels.AsNoTracking().OrderBy(x => x.Id)
-            .Select(x => new StudentLevelCard(x.Id, $"{x.Name} — {x.Id} Level",
+            .Select(x => new StudentLevelCard(x.Id, x.Name,
                 x.Subjects.Count(s => s.IsPublished))).ToListAsync();
         return View(new StudentDashboardViewModel(user.FullName, user.Email ?? "", levels));
     }

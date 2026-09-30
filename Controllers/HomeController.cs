@@ -12,33 +12,48 @@ public class HomeController : Controller
     [AllowAnonymous]
     public async Task<IActionResult> Index()
     {
+        await SetJourneyNavigationAsync();
+        return View();
+    }
+
+    [AllowAnonymous, HttpGet("/about")]
+    public async Task<IActionResult> About()
+    {
+        await SetJourneyNavigationAsync();
+        return View();
+    }
+
+    private async Task SetJourneyNavigationAsync()
+    {
         var student = await HttpContext.AuthenticateAsync(PortalSecurity.Student);
         var admin = await HttpContext.AuthenticateAsync(PortalSecurity.Admin);
         if (student.Succeeded && student.Principal?.IsInRole(PortalSecurity.Student) == true)
         {
             ViewData["JourneyUrl"] = "/student/dashboard";
-            ViewData["JourneyLabel"] = "Go to student dashboard";
+            ViewData["JourneyLabel"] = "Continue to student dashboard";
+            ViewData["StudentLoginLabel"] = "Student dashboard";
+            ViewData["StudentLoginUrl"] = "/student/dashboard";
         }
         else if (admin.Succeeded && admin.Principal?.IsInRole(PortalSecurity.Admin) == true)
         {
             ViewData["JourneyUrl"] = "/admin/dashboard";
-            ViewData["JourneyLabel"] = "Open admin dashboard";
+            ViewData["JourneyLabel"] = "Continue to admin dashboard";
+            ViewData["StudentLoginLabel"] = "Student login";
+            ViewData["StudentLoginUrl"] = "/student.html";
         }
         else
         {
             ViewData["JourneyUrl"] = "/student/register";
             ViewData["JourneyLabel"] = "Begin your journey";
+            ViewData["StudentLoginLabel"] = "Student login";
+            ViewData["StudentLoginUrl"] = "/student.html";
         }
-        return View();
     }
 
     public IActionResult Privacy()
     {
         return View();
     }
-
-    [AllowAnonymous, HttpGet("/about")]
-    public IActionResult About() => View();
 
     public IActionResult AccessDenied()
     {
