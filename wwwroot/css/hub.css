@@ -1756,12 +1756,12 @@ th { color:rgba(255,255,255,.45) }
 .centos-about-copy h2 em { color:#8fe8df;font-style:normal; }
 .centos-about-copy p:not(.section-label) { max-width:580px;margin:16px auto 24px;color:rgba(239,246,251,.72);line-height:1.7; }
 .centos-about-copy .button { border-color:rgba(143,232,223,.38); }
-.centos-purpose { max-width:960px;margin:0 auto 78px;padding:clamp(32px,7vw,72px) 24px;border:1px solid rgba(143,232,223,.22);border-radius:26px;background:radial-gradient(ellipse at 50% 0,rgba(15,153,158,.18),transparent 65%),linear-gradient(135deg,rgba(11,34,39,.96),rgba(8,14,23,.97));box-shadow:0 24px 70px rgba(0,0,0,.2);text-align:center; }
-.centos-wordmark { display:block;margin-bottom:10px;color:#8fe8df;font-size:clamp(1.8rem,4vw,2.5rem);font-weight:750;letter-spacing:-.045em; }
-.centos-purpose .eyebrow { margin-bottom:10px;color:rgba(239,246,251,.54); }
-.centos-purpose h2 { margin:0;color:#f0cf75;font-size:clamp(2rem,6vw,4.25rem);font-weight:850;letter-spacing:.07em;line-height:1.12;text-shadow:0 0 34px rgba(231,190,91,.13); }
-.centos-purpose>p:not(.eyebrow) { max-width:620px;margin:15px auto 0;color:rgba(239,246,251,.74);line-height:1.7; }
-.centos-purpose .centos-purpose-detail { color:rgba(239,246,251,.62);font-size:.92rem; }
+.centos-purpose { max-width:960px;margin:0 auto 78px;padding:clamp(32px,7vw,72px) 24px;border:1px solid rgba(143,232,223,.16);border-radius:20px;background:#07131d;text-align:center; }
+.centos-wordmark { display:block;margin-bottom:12px;color:#8fe8df;font-family:var(--font-body);font-size:clamp(1.8rem,4vw,2.5rem);font-weight:800;letter-spacing:-.035em;line-height:1.15; }
+.centos-purpose .eyebrow { margin-bottom:18px;color:#aebdca;font-family:var(--font-body);font-size:.75rem;font-weight:600;letter-spacing:.09em; }
+.centos-purpose h2 { display:grid;gap:0;margin:0;color:#e8c86f;font-family:var(--font-body);font-size:clamp(2rem,6vw,4rem);font-weight:800;letter-spacing:.015em;line-height:1.06;text-shadow:none; }
+.centos-purpose>p:not(.eyebrow) { max-width:620px;margin:18px auto 0;color:#e5ebf0;font-family:var(--font-body);font-size:1.05rem;line-height:1.6;text-shadow:none; }
+.centos-purpose>p.centos-purpose-detail { margin-top:10px;color:#b8c5d0;font-size:1rem;line-height:1.65; }
 .about-purpose-grid { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:22px;margin:0 0 68px; }
 .about-purpose-grid article { padding:clamp(23px,4vw,36px);border:1px solid rgba(164,204,222,.15);border-radius:20px;background:rgba(255,255,255,.025); }
 .about-purpose-grid h2 { margin:0 0 14px;color:#f7fbff;font-size:clamp(1.35rem,2.5vw,1.8rem); }
