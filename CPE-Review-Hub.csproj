@@ -9,6 +9,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Content Remove="CPE-Review-Hub.Tests/**" />
     <Compile Remove="CPE-Review-Hub.Tests/**/*.cs" />
     <None Remove="CPE-Review-Hub.Tests/**" />
     <None Update="certificates/aiven-ca.pem" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />

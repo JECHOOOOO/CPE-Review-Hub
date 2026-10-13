@@ -493,4 +493,3 @@ secrets.json
 
 .vercel
 .private-deployment/
-.env*

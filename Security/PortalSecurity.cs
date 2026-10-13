@@ -16,6 +16,9 @@ public static class PortalSecurity
     public const string Admin = "Admin";
     public const string StampClaim = "cpe:security-stamp";
 
+    public static string PrincipalCacheKey(string portal, string userId, string stamp) =>
+        $"portal-principal:{portal}:{userId}:{stamp}";
+
     public static IServiceCollection AddPortalSecurity(this IServiceCollection services,
         IConfiguration configuration, bool development)
     {
@@ -78,9 +81,9 @@ public static class PortalSecurity
             var id = context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier);
             var stamp = context.Principal?.FindFirstValue(StampClaim);
             var cache = context.HttpContext.RequestServices.GetRequiredService<IMemoryCache>();
-            var cacheKey = $"portal-principal:{portal}:{id}:{stamp}";
+            var cacheKey = id is null || stamp is null ? null : PrincipalCacheKey(portal, id, stamp);
             if (id is not null && stamp is not null &&
-                cache.TryGetValue(cacheKey, out bool isRecentlyValid) && isRecentlyValid)
+                cache.TryGetValue(cacheKey!, out bool isRecentlyValid) && isRecentlyValid)
                 return;
 
             var users = context.HttpContext.RequestServices.GetRequiredService<UserManager<ApplicationUser>>();
@@ -93,7 +96,7 @@ public static class PortalSecurity
                 await context.HttpContext.SignOutAsync(portal);
             }
             else
-                cache.Set(cacheKey, true, TimeSpan.FromMinutes(1));
+                cache.Set(cacheKey!, true, TimeSpan.FromMinutes(1));
         };
     }
 }

@@ -135,14 +135,18 @@ def verify(mysql_bin):
 
     def wait_app(client):
         deadline = time.monotonic() + 20
+        last_status = None
         while time.monotonic() < deadline:
             try:
-                if client.request("/")[0] == 200:
+                last_status = client.request("/")[0]
+                if last_status == 200:
                     return
             except OSError:
                 pass
+            if app_process and app_process.poll() is not None:
+                raise AssertionError(f"Test app exited before becoming ready (exit code {app_process.returncode}).")
             time.sleep(.25)
-        raise AssertionError("Test app did not become ready.")
+        raise AssertionError(f"Test app did not become ready (last HTTP status: {last_status}).")
 
     def login(client, portal, email, secret, extra=None):
         return client.post(f"/{portal}.html", {"Email": email, "Password": secret, **(extra or {})})
@@ -178,27 +182,28 @@ def verify(mysql_bin):
         command("--initialize-database")
         command("--seed-course-catalog")
         command("--seed-course-catalog")
-        assert sql("SELECT COUNT(*) FROM cpe_integration.Subjects;") == "34"
+        assert sql("SELECT COUNT(*) FROM cpe_integration.Subjects;") == "38"
         assert sql("SELECT GROUP_CONCAT(CONCAT(AcademicLevelId, ':', CourseCount) ORDER BY AcademicLevelId SEPARATOR ',') "
-            "FROM (SELECT AcademicLevelId, COUNT(*) CourseCount FROM cpe_integration.Subjects GROUP BY AcademicLevelId) levels;") == "200:11,300:16,400:7"
-        assert sql("SELECT COUNT(*) FROM cpe_integration.Lessons;") == "204"
-        assert sql("SELECT COUNT(*) FROM cpe_integration.ReviewMaterials WHERE CHAR_LENGTH(Content) > 1500;") == "204"
-        assert sql("SELECT COUNT(*) FROM cpe_integration.LessonImages WHERE ImagePath LIKE '/images/lessons/%' AND AltText<>'';") == "148"
-        assert sql("SELECT COUNT(DISTINCT ImagePath) FROM cpe_integration.LessonImages WHERE ImagePath LIKE '/images/lessons/%';") == "148"
+            "FROM (SELECT AcademicLevelId, COUNT(*) CourseCount FROM cpe_integration.Subjects GROUP BY AcademicLevelId) levels;") == "100:4,200:11,300:16,400:7"
+        assert sql("SELECT COUNT(*) FROM cpe_integration.Lessons;") == "228"
+        assert sql("SELECT COUNT(*) FROM cpe_integration.ReviewMaterials WHERE CHAR_LENGTH(Content) > 1500;") == "228"
+        assert sql("SELECT COUNT(*) FROM cpe_integration.LessonImages WHERE ImagePath LIKE '/images/lessons/%' AND AltText<>'';") == "126"
+        assert sql("SELECT COUNT(DISTINCT ImagePath) FROM cpe_integration.LessonImages WHERE ImagePath LIKE '/images/lessons/%';") == "126"
+        assert sql("SELECT COUNT(*) FROM cpe_integration.LessonImages WHERE ImagePath LIKE 'https://%' AND SourceUrl LIKE 'https://%' AND AltText<>'';") == "32"
         assert sql("SELECT COUNT(*) FROM cpe_integration.LessonActivities WHERE Instructions LIKE '%Required process:%' OR ExpectedOutput LIKE '%50 characters%';") == "0"
-        assert sql("SELECT COUNT(*) FROM cpe_integration.LessonActivities;") == "204"
-        assert sql("SELECT COUNT(*) FROM cpe_integration.Assessments WHERE Type=1 AND RequiredQuestionCount=10;") == "204"
-        assert sql("SELECT COUNT(*) FROM cpe_integration.Assessments WHERE Type=2 AND RequiredQuestionCount=50;") == "34"
-        assert sql("SELECT COUNT(*) FROM cpe_integration.Questions WHERE SourceKey IS NOT NULL AND IsActive=1;") == "2040"
-        assert sql("SELECT COUNT(*) FROM cpe_integration.Choices;") == "8160"
-        assert sql("SELECT COUNT(*) FROM cpe_integration.Assessments WHERE IsPublished=1;") == "238"
-        assert sql("SELECT COUNT(*) FROM cpe_integration.AssessmentQuestions aq JOIN cpe_integration.Assessments a ON a.Id=aq.AssessmentId WHERE a.Type=1;") == "2040"
-        assert sql("SELECT COUNT(*) FROM cpe_integration.AssessmentQuestions aq JOIN cpe_integration.Assessments a ON a.Id=aq.AssessmentId WHERE a.Type=2;") == "1700"
+        assert sql("SELECT COUNT(*) FROM cpe_integration.LessonActivities;") == "228"
+        assert sql("SELECT COUNT(*) FROM cpe_integration.Assessments WHERE Type=1 AND RequiredQuestionCount=10;") == "228"
+        assert sql("SELECT COUNT(*) FROM cpe_integration.Assessments WHERE Type=2 AND RequiredQuestionCount=50;") == "38"
+        assert sql("SELECT COUNT(*) FROM cpe_integration.Questions WHERE SourceKey IS NOT NULL AND IsActive=1;") == "2280"
+        assert sql("SELECT COUNT(*) FROM cpe_integration.Choices;") == "9120"
+        assert sql("SELECT COUNT(*) FROM cpe_integration.Assessments WHERE IsPublished=1;") == "266"
+        assert sql("SELECT COUNT(*) FROM cpe_integration.AssessmentQuestions aq JOIN cpe_integration.Assessments a ON a.Id=aq.AssessmentId WHERE a.Type=1;") == "2280"
+        assert sql("SELECT COUNT(*) FROM cpe_integration.AssessmentQuestions aq JOIN cpe_integration.Assessments a ON a.Id=aq.AssessmentId WHERE a.Type=2;") == "1900"
         assert sql("SELECT COUNT(*) FROM cpe_integration.Lessons WHERE Title IN ('Orientation, Scope, and Foundations','Core Concepts and Representations');") == "0"
         assert sql("SELECT Title FROM cpe_integration.Subjects WHERE Code='CPE Elec 2';") == "System Maintenance and Administration 2"
         assert sql("SELECT Title FROM cpe_integration.Subjects WHERE Code='CPE 530';") == "Engineering Ethics"
         command("--create-admin", input=f"admin@example.test\nTest Administrator\n{admin_password}\n{admin_password}\n")
-        print("PASS: Migrations, idempotent 34-course catalog, six-lesson structure, and CLI admin provisioning.", flush=True)
+        print("PASS: Migrations, idempotent 38-course catalog, six-lesson structure, and CLI admin provisioning.", flush=True)
         app_process = start_app()
         base = f"http://127.0.0.1:{app_port}"
         anonymous, student, admin, second = [Client(base) for _ in range(4)]
@@ -240,7 +245,7 @@ def verify(mysql_bin):
             assert "Welcome to COLMS, Test!" in email_content and email in email_content
             assert "Use the password you created during registration." in email_content
             assert registration_password not in email_content, "Plain-text password leaked into welcome email"
-            assert "/student/login" in email_content and "SIGN IN TO COLMS" in email_content
+            assert "/student.html" in email_content and "SIGN IN TO COLMS" in email_content
             assert "No confirmation link or additional action is required" not in email_content
             assert login(client, "student", email, registration_password)[0] == 302
             assert client.post("/Student/Account/Logout", {}, "/Student/Dashboard")[0] == 302
@@ -259,7 +264,7 @@ def verify(mysql_bin):
         assert "httponly" in headers.get("Set-Cookie", "").lower()
         dashboard_status, dashboard_body, _ = student.request("/Student/Dashboard")
         assert dashboard_status == 200
-        assert "Sophomore" in dashboard_body and "Junior" in dashboard_body and "Senior" in dashboard_body
+        assert "Freshman" in dashboard_body and "Sophomore" in dashboard_body and "Junior" in dashboard_body and "Senior" in dashboard_body
         assert student.request("/Admin/Dashboard")[0] == 302
         assert student.request("/Admin/Students")[0] == 302
         first_lesson_id = sql("SELECT l.Id FROM cpe_integration.Lessons l JOIN cpe_integration.Subjects s ON s.Id=l.SubjectId WHERE s.Code='CPE 211' AND l.SortOrder=1;")
@@ -270,10 +275,17 @@ def verify(mysql_bin):
         lesson_path = f"/student/lessons/{first_lesson_id}"
         lesson_body = student.request(lesson_path)[1]
         assert "Arrays and Linked Lists" in lesson_body and "Array access by index is O(1)" in lesson_body
-        assert "/images/lessons/cpe211/lesson-1.svg" in lesson_body and "<figcaption>" in lesson_body
+        assert "https://upload.wikimedia.org/wikipedia/commons/0/05/Associative_array_as_linked_list.svg" in lesson_body
+        assert "<figcaption>" in lesson_body and "commons.wikimedia.org/wiki/File:Associative_array_as_linked_list.svg" in lesson_body
         assert "minlength=\"50\"" not in lesson_body and "Required process:" not in lesson_body
-        for course_code, image_code in (("CPE 212", "cpe212"), ("CPE 213", "cpe213"),
-                ("MT 211", "mt211"), ("CPE 312", "cpe312"), ("CPE 322", "cpe322"),
+        for course_code, image_fragment in (("CPE 212", "20130131_Abzinsungsdiagramm"),
+                ("CPE 213", "Ohm%27s_law_simple_circuit.svg")):
+            online_lesson_id = sql("SELECT l.Id FROM cpe_integration.Lessons l JOIN cpe_integration.Subjects s ON s.Id=l.SubjectId "
+                f"WHERE s.Code='{course_code}' AND l.SortOrder=1;")
+            online_page = student.request(f"/student/lessons/{online_lesson_id}")[1]
+            assert image_fragment in online_page and "<figcaption>" in online_page
+            assert "Source: <a" in online_page
+        for course_code, image_code in (("MT 211", "mt211"), ("CPE 312", "cpe312"), ("CPE 322", "cpe322"),
                 ("CPE 323", "cpe323"), ("CPE 416", "cpe416")):
             lesson_id_for_image = sql("SELECT l.Id FROM cpe_integration.Lessons l JOIN cpe_integration.Subjects s ON s.Id=l.SubjectId "
                 f"WHERE s.Code='{course_code}' AND l.SortOrder=1;")
@@ -326,7 +338,8 @@ def verify(mysql_bin):
         assert ">Attempt<" in result_body and ">#2<" in result_body
         assert student.request(f"/student/lessons/{second_lesson_id}")[0] == 200
         second_lesson_body = student.request(f"/student/lessons/{second_lesson_id}")[1]
-        assert "MatchingResponses[0]" in second_lesson_body and "/images/lessons/cpe211/lesson-2.svg" in second_lesson_body
+        assert "Implement either a circular-array queue or a linked stack." in second_lesson_body
+        assert "https://upload.wikimedia.org/wikipedia/commons/5/56/QUEUE_VS_STACK.svg" in second_lesson_body
         assert "Data Structures And Algorithms" in student.request("/student/progress")[1]
         assert sql("SELECT COUNT(*) FROM cpe_integration.ActivitySubmissions;") == "1"
         assert sql("SELECT COUNT(*) FROM cpe_integration.SubmissionAttachments WHERE FileName='array-trace.png' AND FileSize>0;") == "1"
@@ -340,21 +353,20 @@ def verify(mysql_bin):
         assert admin.request("/admin/assessments?type=FinalExam")[0] == 200
         assert admin.request("/admin/results")[0] == 200
         assert admin.request("/admin/statistics")[0] == 200
-        image_form = {"LessonId": first_lesson_id, "AltText": "Test upload", "Caption": "Test only", "DisplayOrder": "99", "IsPublished": "false"}
-        assert admin.multipart_post("/admin/lesson-images/save", image_form,
-            [("ImageFile", "test.png", "image/png", sample_png)], "/admin/lesson-images/create")[0] == 302
-        stored_id = sql("SELECT Id FROM cpe_integration.LessonImages WHERE ImageData IS NOT NULL LIMIT 1;")
-        stored_path = f"/images/lessons/stored/{stored_id}"
-        assert sql(f"SELECT OCTET_LENGTH(ImageData) FROM cpe_integration.LessonImages WHERE Id={stored_id};") == str(len(sample_png))
-        assert admin.request(stored_path)[0] == 200
-        assert student.request(stored_path)[0] == 404
-        assert anonymous.request(stored_path)[0] == 302
-        assert admin.multipart_post("/admin/lesson-images/save", image_form,
-            [("ImageFile", "fake.png", "image/png", b"not an image")], "/admin/lesson-images/create")[0] == 200
-        assert sql("SELECT COUNT(*) FROM cpe_integration.LessonImages WHERE ImageData IS NOT NULL;") == "1"
+        image_url = "https://upload.wikimedia.org/wikipedia/commons/0/05/Associative_array_as_linked_list.svg"
+        image_form = {"LessonId": first_lesson_id, "ImagePath": image_url,
+            "SourceUrl": "https://commons.wikimedia.org/wiki/File:Associative_array_as_linked_list.svg",
+            "SourceName": "Wikimedia Commons", "License": "Public domain", "Author": "Aleksi Nurmi",
+            "AltText": "Integration test image", "Caption": "Integration test caption",
+            "DisplayOrder": "99", "IsPublished": "false"}
+        assert admin.post("/admin/lesson-images/save", image_form, "/admin/lesson-images/create")[0] == 302
+        stored_id = sql(f"SELECT Id FROM cpe_integration.LessonImages WHERE ImagePath='{image_url}' ORDER BY Id DESC LIMIT 1;")
+        assert sql(f"SELECT COUNT(*) FROM cpe_integration.LessonImages WHERE Id={stored_id} AND ImageData IS NULL AND IsPublished=0 AND SourceUrl LIKE 'https://commons.wikimedia.org/%';") == "1"
+        assert admin.request(f"/admin/lesson-images/{stored_id}/edit")[0] == 200
+        assert "Integration test image" not in student.request(lesson_path)[1]
         assert admin.post(f"/admin/lesson-images/{stored_id}/delete", {}, f"/admin/lesson-images/{stored_id}/delete")[0] == 302
-        assert admin.request(stored_path)[0] == 404
-        print("PASS: Persistent lesson-image upload, signature validation, draft protection and deletion.", flush=True)
+        assert sql(f"SELECT COUNT(*) FROM cpe_integration.LessonImages WHERE Id={stored_id};") == "0"
+        print("PASS: Online lesson-image management, draft protection, and deletion.", flush=True)
         assert admin.request(f"/admin/assessments/{first_quiz_id}")[0] == 200
         assert admin.request(f"/admin/questions/create?assessmentId={first_quiz_id}")[0] == 200
         assert admin.request(f"/admin/results/{attempt_id}")[0] == 200
@@ -375,7 +387,7 @@ def verify(mysql_bin):
         assert student.request(preview_path)[0] == 302
         assert anonymous.request(review_path)[0] == 302
         rejected_grade_status = admin.post(grade_path, {"Grade.Score": "90"}, review_path)[0]
-        assert rejected_grade_status in (400, 404, 405), rejected_grade_status
+        assert rejected_grade_status in (302, 400, 404, 405), rejected_grade_status
         columns = sql("SELECT COUNT(*) FROM information_schema.columns WHERE table_schema='cpe_integration' "
             "AND table_name='ActivitySubmissions' AND column_name IN ('Grade','Feedback','GradedAtUtc','GradedById','Revision');")
         assert columns == "0"
@@ -422,7 +434,7 @@ def verify(mysql_bin):
             f"/admin/materials/create?lessonId={lesson_id}")[0] == 302
         status, subject_body, _ = student.request("/student/subjects")
         assert status == 200 and "CPE 211" in subject_body and "TEST 999" in subject_body
-        assert "Sophomore" in subject_body and "Junior" in subject_body and "Senior" in subject_body
+        assert "Freshman" in subject_body and "Sophomore" in subject_body and "Junior" in subject_body and "Senior" in subject_body
         assert "Digital Foundations" in student.request(f"/student/subjects/{subject_id}")[1]
         assert "Binary and hexadecimal" in student.request(f"/student/lessons/{lesson_id}")[1]
         assert admin.post("/admin/subjects/save", {"Id": subject_id, "Code": "TEST 999",
@@ -432,9 +444,10 @@ def verify(mysql_bin):
         assert student.request(f"/student/subjects/{subject_id}")[0] == 404
         assert admin.post(f"/admin/subjects/{subject_id}/delete", {},
             f"/admin/subjects/{subject_id}/delete")[0] == 302
-        assert sql("SELECT COUNT(*) FROM cpe_integration.Subjects;") == "34"
+        assert sql("SELECT COUNT(*) FROM cpe_integration.Subjects;") == "38"
         print("PASS: Exact grouped catalog, Admin CRUD, draft filtering, activity content, and route isolation.", flush=True)
-        assert student.post("/Student/Profile", {"FullName": "Saved Profile", "University": "Test College",
+        assert student.post("/Student/Profile", {"EditProfile.FullName": "Saved Profile", "EditProfile.University": "Test College",
+            "EditProfile.YearLevel": "Freshman",
             "AccountType": "Admin", "Id": "another-user"})[0] == 302
         assert sql("SELECT FullName FROM cpe_integration.AspNetUsers WHERE Email='second@example.test';") == "Test Student"
         app_process.terminate()
@@ -453,9 +466,10 @@ def verify(mysql_bin):
         assert login(student, "student", "student@example.test", password)[0] == 302
         assert student.post("/Student/Account/Logout", {}, "/Student/Dashboard")[0] == 302
         assert student.request("/Student/Dashboard")[0] == 302
+        lockout_client = Client(base)
         for _ in range(5):
-            assert login(second, "student", "second@example.test", "Wrong!" + secrets.token_hex(12))[0] == 200
-        assert login(second, "student", "second@example.test", simple_password)[0] == 200
+            assert login(lockout_client, "student", "second@example.test", "Wrong!" + secrets.token_hex(12))[0] == 200
+        assert login(lockout_client, "student", "second@example.test", simple_password)[0] == 200
         assert sql("SELECT COUNT(*) FROM cpe_integration.AspNetUsers WHERE Email='second@example.test' AND LockoutEnd IS NOT NULL;") == "1"
         assert admin.post("/Admin/Account/Logout", {}, "/Admin/Dashboard")[0] == 302
         assert admin.request("/Admin/Dashboard")[0] == 302

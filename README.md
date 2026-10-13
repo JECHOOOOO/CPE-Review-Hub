@@ -12,7 +12,7 @@ the `MySQL80` Windows service. It must be running when using accounts.
 2. Stop the app if it is running, then double-click **Setup CPE Review Hub.cmd**.
 3. Enter your MySQL connection details in its local prompts. Password input is
    hidden. The connection is tested before it is saved in .NET user-secrets.
-4. Setup applies versioned migrations and installs the exact 34-course catalog
+4. Setup applies versioned migrations and installs the 38-course catalog
    without resetting users or existing attempts. Choose **Y** to create your
    administrator, then enter the admin email, name and password.
 5. Use the Start launcher below. Students register at `/Student/Account/Register`.
@@ -74,8 +74,8 @@ student profile editing, and admin student search/enable/disable. Authentication
 uses separate protected cookies, layouts, routes and server-verified account
 types. Registering through the student portal can never grant admin access.
 
-The catalog contains the requested 34 courses: 11 Sophomore (ID 200), 16 Junior
-(ID 300), and 7 Senior (ID 400) courses. Every course has six published lessons. Every
+The catalog contains 38 courses: 4 Freshman (ID 100), 11 Sophomore (ID 200),
+16 Junior (ID 300), and 7 Senior (ID 400) courses. Every course has six published lessons. Every
 lesson includes a substantial, course-specific editable study guide with
 objectives, explanations, definitions, procedures, examples and takeaways. A
 short, topic-specific icebreaker activity appears before its published 10-item quiz. Activities use
@@ -85,9 +85,10 @@ has a published 50-item final exam assembled only from concepts taught in its
 six lessons. Course cards and lessons are clickable.
 
 Administrators can create, edit, publish and delete subjects, lessons, their
-icebreaker activities, plain-text review materials, and lesson images. Students can browse published content by the fixed
-Sophomore, Junior and Senior academic years. Draft content is never returned by Student routes.
-The database stores 2,040 lesson questions with four choices and feedback,
+icebreaker activities, plain-text review materials, and lesson images. Students
+can browse published content by the Freshman, Sophomore, Junior, and Senior
+academic years. Draft content is never returned by Student routes.
+The database stores 2,280 lesson questions with four choices and feedback,
 reusable assessment-question ordering, activity submissions, assessment
 attempts and selected answers. A student must submit the ungraded lesson activity before
 its quiz unlocks. Passing the automatically scored quiz completes the lesson and
@@ -97,12 +98,16 @@ screens remain a future management feature; the normalized database structure
 already supports them. No demo accounts, scores or hard-coded passwords are
 seeded.
 
-The visual audit keeps 148 repository-owned educational SVGs under
-`wwwroot/images/lessons/{course}/`; 56 lessons intentionally have no seeded image
-because a generic diagram would not improve the topic. Each `LessonImages` row stores the local URL,
-alt text, caption, order, publication status, and lesson relationship. The Student
-lesson view places responsive figures between content sections. Admins can add,
-edit, reorder, hide, upload, or remove lesson-image records from **Lesson images**.
+The repository contains 148 course-specific educational SVGs under
+`wwwroot/images/lessons/{course}/`; the current seed manifest associates 126
+local SVGs and 32 attributed HTTPS visuals (including eight for Freshman lessons).
+Lessons may remain image-free when an image would not improve understanding.
+The other SVGs are retained because existing database rows may still refer to
+them; verify database references before removing an asset. Lesson-image records
+retain their lesson relationship, display order, publication status, alt text,
+caption, and available source/license metadata. The Student lesson view places
+responsive figures between content sections. Admins can add, edit, reorder, hide,
+upload, or remove lesson-image records from **Lesson images**.
 
 ## Start manually
 
@@ -139,7 +144,9 @@ additional JavaScript dependency is required.
 ## Verify
 
 ```powershell
-dotnet build
+dotnet restore CPE-Review-Hub.csproj
+dotnet build CPE-Review-Hub.csproj --configuration Release --no-restore
+dotnet test CPE-Review-Hub.Tests/CPE-Review-Hub.Tests.csproj --configuration Release
 python tests/verify_mysql.py
 ```
 
@@ -149,7 +156,14 @@ test credentials, and removes only its own temporary directory under `obj`.
 It does not connect to your MySQL80 service or use your database credentials.
 It checks migrations, persistence, passwords, CSRF, account types, portal
 isolation, profile ownership, account disabling, content CRUD, draft filtering,
-the exact grouped 34-course catalog, six-lesson structure, long study guides,
+the exact grouped 38-course catalog, six-lesson structure, long study guides,
 course-specific typed activities, all audited lesson-image records and served SVGs,
 question and choice counts, activity gating, 10-item quiz scoring,
 answer feedback, progress, Student content browsing, lockouts, logout and outages.
+
+For production deployment requirements, environment-variable names, and
+operational/security guidance, see [Vercel deployment](docs/VERCEL-DEPLOYMENT.md),
+[Security and operations](docs/SECURITY-AND-OPERATIONS.md), and
+[Production status](docs/PRODUCTION-STATUS.md). Never commit `.env` files or
+credentials; use local .NET user-secrets for development and the hosting
+platform's protected environment variables for deployment.

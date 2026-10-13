@@ -7,12 +7,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace CPE_Review_Hub.Areas.Admin.Controllers;
 
 [Area("Admin"), Authorize(Policy = PortalSecurity.Admin)]
 public class StudentsController(UserManager<ApplicationUser> users, ApplicationDbContext db,
-    StudentProgressService progressService) : Controller
+    StudentProgressService progressService, IMemoryCache cache) : Controller
 {
     [HttpGet]
     public async Task<IActionResult> Index(string? search)
@@ -33,10 +34,13 @@ public class StudentsController(UserManager<ApplicationUser> users, ApplicationD
     {
         var user = await users.FindByIdAsync(id);
         if (user is null || user.AccountType != PortalSecurity.Student) return NotFound();
+        var previousStamp = user.SecurityStamp;
         user.IsActive = active;
         // Rotate on disable AND re-enable so an older cookie cannot become valid again.
         user.SecurityStamp = Guid.NewGuid().ToString();
         var result = await users.UpdateAsync(user);
+        if (result.Succeeded && !string.IsNullOrWhiteSpace(previousStamp))
+            cache.Remove(PortalSecurity.PrincipalCacheKey(PortalSecurity.Student, user.Id, previousStamp));
         TempData[result.Succeeded ? "Success" : "Error"] = result.Succeeded
             ? "Student account status updated." : "Could not update this account. Try again.";
         return RedirectToAction(nameof(Index));

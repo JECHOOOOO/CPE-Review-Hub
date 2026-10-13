@@ -56,8 +56,9 @@ dotnet run --no-launch-profile -- --seed-course-catalog
 dotnet run --no-launch-profile -- --create-admin
 ```
 
-The catalog command idempotently installs or repairs the exact 34 requested
-courses, their six course-specific lessons, study guides, activities, published
+The catalog command idempotently installs or repairs the current 38-course
+catalog (4 Freshman, 11 Sophomore, 16 Junior, and 7 Senior courses), their six
+course-specific lessons, study guides, activities, published
 10-item quizzes and published 50-item final exams. Questions, four choices,
 correct-answer flags and feedback are derived from the same lesson blueprint so
 assessments do not introduce untaught topics. The command is safe to rerun and
