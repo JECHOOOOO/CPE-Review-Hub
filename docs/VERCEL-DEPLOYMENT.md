@@ -14,7 +14,7 @@ The included multi-stage build preserves ASP.NET Core MVC and targets .NET 10. I
 - Vercel account/project access and confirmation that the intended academic use meets free-plan terms and quotas. Never select a paid plan automatically.
 - Hosted MySQL 8-compatible service with verified TLS. Aiven advertises a free MySQL tier; inspect its current capacity and account eligibility before provisioning: https://aiven.io/docs/products/mysql/concepts/mysql-free-tier
 - Durable shared ASP.NET Data Protection keys. The current local key folder cannot survive container replacement or serve multiple instances reliably. Choose a persistent key repository and protect keys at rest before allowing student logins.
-- Durable lesson-image upload storage. Activity attachments already live in MySQL, but Admin lesson-image uploads currently write to wwwroot/images/lessons/uploads. A container filesystem is not a production upload store. Migrate these assets to persistent storage and update the existing image service/controller before enabling uploads.
+- Durable lesson-image upload storage. Activity attachments already live in MySQL, but Admin lesson-image uploads currently write to `src/CPE-Review-Hub/wwwroot/images/lessons/uploads`. A container filesystem is not a production upload store. Migrate these assets to persistent storage and update the existing image service/controller before enabling uploads.
 - Configure trusted proxy HTTPS handling for the actual platform. Hosting:LocalProxy trusts loopback only; it is not a generic Vercel proxy configuration. Do not blindly trust arbitrary forwarded headers.
 - Add clean student/admin route aliases while keeping old links working; test authorization for both forms. Current entry points remain /student.html and /admin.html.
 - Verify Gmail SMTP connectivity from the actual deployment. Never disable certificate validation. Welcome emails must not contain passwords.
@@ -22,7 +22,7 @@ The included multi-stage build preserves ASP.NET Core MVC and targets .NET 10. I
 
 ## Existing database and safe migration
 
-The project uses MySql.EntityFrameworkCore 10.0.9, ApplicationDbContext, and MySQL (not an interchangeable MariaDB configuration). The existing local database is cpe_review_hub. Migrations live in Data/Migrations. Do not drop or reseed the live database to deploy.
+The project uses MySql.EntityFrameworkCore 10.0.9, ApplicationDbContext, and MySQL (not an interchangeable MariaDB configuration). The existing local database is cpe_review_hub. Migrations live in `src/CPE-Review-Hub/Data/Migrations`. Do not drop or reseed the live database to deploy.
 
 1. Schedule a brief write pause and create a consistent logical backup of local MySQL, including schema, data, migration history, and binary activity attachments. Keep the backup outside Git and the Docker build context.
 2. Separately inventory and back up uploaded lesson-image files and referenced static assets.

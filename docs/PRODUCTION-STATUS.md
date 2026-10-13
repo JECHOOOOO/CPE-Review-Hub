@@ -16,7 +16,7 @@ The local database was backed up privately and copied into the initially empty A
 
 Migration `20260908182217_PersistProductionAssets` adds `DataProtectionKeys` and nullable `LessonImages.ImageData` (longblob) / `ContentType`. It was applied to both local and cloud databases. Existing image paths and content remain intact. No local uploaded image files existed at migration time.
 
-Uploaded lesson images now use database bytes and `/images/lessons/stored/{id}`; bundled educational SVG diagrams remain under `wwwroot/images/lessons`. Uploaded images require authentication; unpublished images are administrator-only. File signatures are checked. Activity attachments already use database storage. Never use the container filesystem for new persistent uploads.
+Uploaded lesson images now use database bytes and `/images/lessons/stored/{id}`; bundled educational SVG diagrams remain under `src/CPE-Review-Hub/wwwroot/images/lessons`. Uploaded images require authentication; unpublished images are administrator-only. File signatures are checked. Activity attachments already use database storage. Never use the container filesystem for new persistent uploads.
 
 Data Protection keys are stored in MySQL and encrypted with an RSA certificate kept in production secrets. Preserve that certificate when redeploying; replacing it without retaining old decryption certificates invalidates existing cookies/tokens. Plan certificate rotation before its five-year expiry.
 

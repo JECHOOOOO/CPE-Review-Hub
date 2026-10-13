@@ -17,10 +17,10 @@ jobs:
         with:
           dotnet-version: 10.0.x
       - name: Restore application
-        run: dotnet restore CPE-Review-Hub.csproj
+        run: dotnet restore src/CPE-Review-Hub/CPE-Review-Hub.csproj
       - name: Build release application
-        run: dotnet build CPE-Review-Hub.csproj --configuration Release --no-restore
+        run: dotnet build src/CPE-Review-Hub/CPE-Review-Hub.csproj --configuration Release --no-restore
       - name: Run unit tests
-        run: dotnet test CPE-Review-Hub.Tests/CPE-Review-Hub.Tests.csproj --configuration Release
+        run: dotnet test tests/CPE-Review-Hub.Tests/CPE-Review-Hub.Tests.csproj --configuration Release
       - name: Publish deployment artifact
-        run: dotnet publish CPE-Review-Hub.csproj --configuration Release --no-build --output publish
+        run: dotnet publish src/CPE-Review-Hub/CPE-Review-Hub.csproj --configuration Release --no-build --output publish

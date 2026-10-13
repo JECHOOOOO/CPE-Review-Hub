@@ -2,6 +2,13 @@
 
 Existing ASP.NET Core MVC application targeting .NET 10.
 
+## Repository layout
+
+- `src/CPE-Review-Hub/` — the ASP.NET Core MVC app, EF Core migrations, and web assets.
+- `tests/` — the C# unit-test project and isolated MySQL integration test.
+- `scripts/` — local setup/start launchers and asset-generation tools.
+- `docs/` — system, database, deployment, and curriculum documentation.
+
 ## Configure MySQL first (one time)
 
 Use **MySQL 8 or newer**, not SQLite or XAMPP's MariaDB. The development PC has
@@ -99,7 +106,7 @@ already supports them. No demo accounts, scores or hard-coded passwords are
 seeded.
 
 The repository contains 148 course-specific educational SVGs under
-`wwwroot/images/lessons/{course}/`; the current seed manifest associates 126
+`src/CPE-Review-Hub/wwwroot/images/lessons/{course}/`; the current seed manifest associates 126
 local SVGs and 32 attributed HTTPS visuals (including eight for Freshman lessons).
 Lessons may remain image-free when an image would not improve understanding.
 The other SVGs are retained because existing database rows may still refer to
@@ -111,9 +118,10 @@ upload, or remove lesson-image records from **Lesson images**.
 
 ## Start manually
 
-From this repository folder:
+From the project folder:
 
 ```powershell
+cd src/CPE-Review-Hub
 dotnet run --launch-profile http
 ```
 
@@ -144,9 +152,9 @@ additional JavaScript dependency is required.
 ## Verify
 
 ```powershell
-dotnet restore CPE-Review-Hub.csproj
-dotnet build CPE-Review-Hub.csproj --configuration Release --no-restore
-dotnet test CPE-Review-Hub.Tests/CPE-Review-Hub.Tests.csproj --configuration Release
+dotnet restore src/CPE-Review-Hub/CPE-Review-Hub.csproj
+dotnet build src/CPE-Review-Hub/CPE-Review-Hub.csproj --configuration Release --no-restore
+dotnet test tests/CPE-Review-Hub.Tests/CPE-Review-Hub.Tests.csproj --configuration Release
 python tests/verify_mysql.py
 ```
 

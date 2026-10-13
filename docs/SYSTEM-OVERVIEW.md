@@ -22,7 +22,7 @@ flowchart TD
         SAUTH --> SD[Student dashboard]
         SD --> SLOGOUT[Student logout clears both portal cookies]
         SLOGOUT --> SL
-        SD --> LEVEL[Choose Sophomore, Junior, or Senior]
+        SD --> LEVEL[Choose Freshman, Sophomore, Junior, or Senior]
         LEVEL --> COURSE[Open course]
         COURSE --> LESSON[Read unlocked lesson and visuals]
         LESSON --> ACT[Complete icebreaker activity]
@@ -81,7 +81,7 @@ or manually typed URL cannot bypass server-side authorization.
 - **Database:** `cpe_review_hub`.
 - **DbContext:** `CPE_Review_Hub.Data.ApplicationDbContext`.
 - **Connection:** `ConnectionStrings:ReviewHub` is stored in Windows .NET user-secrets, outside Git.
-- **Schema:** EF Core migrations in `Data/Migrations`; setup applies pending migrations without recreating the database.
+- **Schema:** EF Core migrations in `src/CPE-Review-Hub/Data/Migrations`; setup applies pending migrations without recreating the database.
 
 The schema has 19 tables:
 
@@ -95,7 +95,7 @@ The schema has 19 tables:
 
 MySQL and the ASP.NET Core application are two separate processes. The local
 `MySQL80` Windows service listens on `127.0.0.1:3306` and owns the
-`cpe_review_hub` database. `dotnet run --launch-profile http` starts the web
+`cpe_review_hub` database. From `src/CPE-Review-Hub`, `dotnet run --launch-profile http` starts the web
 application on `http://localhost:5293`. The application then connects to MySQL
 with the dedicated `cpe_review_hub` database user.
 
@@ -130,7 +130,7 @@ rows are mapped back into C# models before a Razor View generates the HTML.
 - **Lesson display:** the Student controller reads the Lesson together with its
   Subject, Review Materials, published Lesson Images, Activity, and Assessment.
   Image metadata is in MySQL; repository-owned SVG files are served from
-  `wwwroot/images/lessons`.
+  `src/CPE-Review-Hub/wwwroot/images/lessons`.
 - **Activity submission:** the first response inserts an `ActivitySubmissions`
   row; a later response updates that same row. The unique
   `(UserId, LessonActivityId)` index prevents duplicate completion records.

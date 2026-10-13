@@ -1,6 +1,7 @@
 # Starts the existing MVC project, not the separate React prototype.
 $ErrorActionPreference = 'Stop'
-$projectDirectory = Split-Path -Parent $PSScriptRoot
+$repositoryDirectory = Split-Path -Parent $PSScriptRoot
+$projectDirectory = Join-Path $repositoryDirectory 'src\CPE-Review-Hub'
 $projectFile = Join-Path $projectDirectory 'CPE-Review-Hub.csproj'
 $settingsFile = Join-Path $projectDirectory 'Properties\launchSettings.json'
 

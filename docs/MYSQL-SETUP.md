@@ -69,7 +69,7 @@ cannot be overwritten/promoted. Students register only through
 
 ## Migrations
 
-`Data/Migrations` contains the Identity account schema, learning-content
+`src/CPE-Review-Hub/Data/Migrations` contains the Identity account schema, learning-content
 foundation, activity/assessment/question-bank schema, and student activity and
 assessment progress schema. Runtime startup does not automatically change the
 database. Apply migrations deliberately with `--initialize-database`; it uses

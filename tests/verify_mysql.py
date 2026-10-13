@@ -22,7 +22,8 @@ import urllib.parse
 import urllib.request
 
 ROOT = Path(__file__).resolve().parents[1]
-DLL = ROOT / "bin/Debug/net10.0/CPE-Review-Hub.dll"
+APP_ROOT = ROOT / "src/CPE-Review-Hub"
+DLL = APP_ROOT / "bin/Debug/net10.0/CPE-Review-Hub.dll"
 HIDDEN = subprocess.CREATE_NO_WINDOW if os.name == "nt" else 0
 
 
@@ -123,7 +124,7 @@ def verify(mysql_bin):
         return result.stdout.strip()
 
     def command(*args, input=None):
-        result = subprocess.run(["dotnet", str(DLL), *args], cwd=ROOT, env=env, input=input,
+        result = subprocess.run(["dotnet", str(DLL), *args], cwd=APP_ROOT, env=env, input=input,
             text=True, capture_output=True, creationflags=HIDDEN, timeout=180)
         assert result.returncode == 0, f"App command {args} failed: {result.stdout[-900:]} {result.stderr[-900:]}"
 
@@ -131,7 +132,7 @@ def verify(mysql_bin):
         output = open(work / f"app-{time.time_ns()}.log", "w", encoding="utf-8")
         handles.append(output)
         return subprocess.Popen(["dotnet", str(DLL), "--urls", f"http://127.0.0.1:{app_port}"],
-            cwd=ROOT, env=env, stdout=output, stderr=subprocess.STDOUT, creationflags=HIDDEN)
+            cwd=APP_ROOT, env=env, stdout=output, stderr=subprocess.STDOUT, creationflags=HIDDEN)
 
     def wait_app(client):
         deadline = time.monotonic() + 20

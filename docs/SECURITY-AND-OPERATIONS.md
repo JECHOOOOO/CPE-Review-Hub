@@ -2,7 +2,7 @@
 
 ## Runtime architecture
 
-Production requests flow from the browser to the Vercel ASP.NET Core container and then to Aiven MySQL over TLS. Static files committed under `wwwroot` ship with the container. Uploaded lesson images and activity attachments are stored in MySQL so they survive a container replacement.
+Production requests flow from the browser to the Vercel ASP.NET Core container and then to Aiven MySQL over TLS. Static files committed under `src/CPE-Review-Hub/wwwroot` ship with the container. Uploaded lesson images and activity attachments are stored in MySQL so they survive a container replacement.
 
 The Vercel image explicitly enables `Hosting__VercelProxy`. COLMS then accepts only the forwarded HTTPS scheme needed behind that managed gateway, so authentication redirects remain `https://`. Local execution does not trust arbitrary forwarded headers by default.
 

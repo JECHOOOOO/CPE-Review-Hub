@@ -11,7 +11,7 @@ appsettings.Local.json
 appsettings.Secrets.json
 **/*.pfx
 **/*.pem
-!certificates/aiven-ca.pem
+!src/CPE-Review-Hub/certificates/aiven-ca.pem
 **/*.key
 **/*.sql
 **/*.dump
