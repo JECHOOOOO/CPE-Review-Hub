@@ -1,5 +1,5 @@
 @echo off
-cd /d "%~dp0"
+cd /d "%~dp0\.."
 set "ASPNETCORE_ENVIRONMENT=Development"
 dotnet run --no-launch-profile -- --configure-email
 echo.

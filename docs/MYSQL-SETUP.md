@@ -25,7 +25,7 @@ indexes, schema alterations, and normal reads/writes. Do not grant server-wide
 administration rights. Match the user's allowed host to the connection host
 (normally localhost / 127.0.0.1).
 
-Stop the application and run **Setup CPE Review Hub.cmd**. Default prompts:
+Stop the application and run **scripts/Setup CPE Review Hub.cmd**. Default prompts:
 
 | Setting | Suggested local value |
 | --- | --- |

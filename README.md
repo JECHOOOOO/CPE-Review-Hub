@@ -9,7 +9,7 @@ the `MySQL80` Windows service. It must be running when using accounts.
 
 1. Create a `cpe_review_hub` database and a dedicated MySQL user with access to
    that database. See [MySQL setup](docs/MYSQL-SETUP.md).
-2. Stop the app if it is running, then double-click **Setup CPE Review Hub.cmd**.
+2. Stop the app if it is running, then double-click **scripts/Setup CPE Review Hub.cmd**.
 3. Enter your MySQL connection details in its local prompts. Password input is
    hidden. The connection is tested before it is saved in .NET user-secrets.
 4. Setup applies versioned migrations and installs the 38-course catalog
@@ -29,7 +29,7 @@ the same PC. TLS remains required when a remote MySQL host is configured.
 ## Start on Windows
 
 1. Install the .NET 10 SDK if it is not already installed.
-2. Double-click **Start CPE Review Hub.cmd** in this folder.
+2. Double-click **scripts/Start CPE Review Hub.cmd**.
 3. Wait for the browser to open at **http://localhost:5293**.
 
 Keep the server window open while using the site. Closing the browser does not
@@ -57,7 +57,7 @@ real verification messages through Gmail:
 1. Turn on 2-Step Verification for the Gmail sender account.
 2. Create a 16-character Google App Password for **COLMS: CentOs Learning Management System**. Do not use
    the normal Gmail password.
-3. Double-click **Setup Gmail Email.cmd** in this folder.
+3. Double-click **scripts/Setup Gmail Email.cmd**.
 4. Enter the Gmail sender address and paste the App Password. Password input is
    hidden. The setup sends a test message before saving the settings.
 

@@ -146,7 +146,7 @@ rows are mapped back into C# models before a Razor View generates the HTML.
 
 ### Setup, migrations, and normal startup
 
-`Setup CPE Review Hub.cmd` verifies the service and credentials, stores the
+`scripts/Setup CPE Review Hub.cmd` verifies the service and credentials, stores the
 connection string in Windows .NET user-secrets, and applies pending EF Core
 migrations. Migration names already recorded in `__EFMigrationsHistory` are not
 applied again. Normal `dotnet run` uses the existing schema and does not recreate
